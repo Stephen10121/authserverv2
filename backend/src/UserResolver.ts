@@ -1,8 +1,10 @@
-import { Arg, Ctx, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql";
+import { Arg, Ctx, Field, Mutation, ObjectType, Query, Resolver, UseMiddleware } from "type-graphql";
 import { User } from "./entity/User";
 import { hash,  compare } from "bcryptjs";
 import { MyContext } from "./MyContext";
 import { createAccessToken, createRefreshToken } from "./auth";
+import { isAuth } from "./isAuth";
+import { sendRefreshToken } from "./sendRefreshToken";
 
 @ObjectType()
 class LoginResponse {
@@ -18,8 +20,10 @@ export class UserResolver {
     }
 
     @Query(() => String)
-    bye() {
-        return "by!"
+    @UseMiddleware(isAuth)
+    bye(
+        @Ctx() { payload }: MyContext) {
+        return `Your id is ${payload!.userId}`;
     }
 
     @Query(() => [User])
@@ -46,7 +50,7 @@ export class UserResolver {
             throw new Error("Invalid Password");
         }
 
-        res.cookie("G_VAR", createRefreshToken(user), {httpOnly: true})
+        sendRefreshToken(res, createRefreshToken(user));
 
         return {
             accessToken: createAccessToken(user)
@@ -55,20 +59,24 @@ export class UserResolver {
 
     @Mutation(() => Boolean)
     async register(
+        @Arg('username') username: string,
+        @Arg("name") name: string,
         @Arg('email') email: string,
+        @Arg("phone") phone: string,
         @Arg('password') password: string,
+        @Arg("tfa") tfa: string,
     ) {
         const hashedPassword = await hash(password, 3);
 
         try {
             console.log(email, hashedPassword);
             await User.insert({
-                usersName: "123",
-                usersRName: "Jeff",
+                usersName: username,
+                usersRName: name,
                 usersEmail: email,
-                usersPhone: "240",
+                usersPhone: phone,
                 usersPassword: hashedPassword,
-                users2FA: "false",
+                users2FA: tfa,
                 usersHash: "ej4wnrjk3"
             });
         } catch (err) {
