@@ -32,6 +32,17 @@ export class UserResolver {
         return User.find();
     }
 
+    @Query(() => String)
+    @UseMiddleware(isAuth)
+    async fetchData(@Ctx() { payload }: MyContext): Promise<String> {
+        const user = await User.findOne({ where: { id: payload!.userId } });
+        if (!user) {
+            throw new Error("User doesnt exist");
+        }
+        const user2 = JSON.stringify(user);
+        return user2;
+    }
+
     @Mutation(() => Boolean)
     async revokeRefreshTokensForUser(
         @Arg('userId', () => Int) userId: number
@@ -66,7 +77,7 @@ export class UserResolver {
         };
     }
 
-    @Mutation(() => Boolean)
+    @Mutation(() => String)
     async register(
         @Arg('username') username: string,
         @Arg("name") name: string,
@@ -75,10 +86,15 @@ export class UserResolver {
         @Arg('password') password: string,
         @Arg("tfa") tfa: string,
     ) {
+        const user = await User.findOne({ where: {usersName: username} });
+
+        if (user) {
+            throw new Error("User already exists.");
+        }
+
         const hashedPassword = await hash(password, 3);
 
         try {
-            console.log(email, hashedPassword);
             await User.insert({
                 usersName: username,
                 usersRName: name,
@@ -90,8 +106,16 @@ export class UserResolver {
             });
         } catch (err) {
             console.error(err);
-            return false;
+            throw new Error("Error registering user.")
         }
-        return true;
+
+        const userLogged = await User.findOne({ where: {usersName: username} });
+
+        if (!userLogged) {
+            throw new Error("Error registering user.")
+        }
+        const test: string = createAccessToken(userLogged);
+        console.log(test);
+        return test;
     }
 }
