@@ -35,4 +35,7 @@ export class User extends BaseEntity {
     @Field()
     @Column("text")
     usersHash: string
+
+    @Column("int", {default: 0})
+    tokenVersion: number;
 }
