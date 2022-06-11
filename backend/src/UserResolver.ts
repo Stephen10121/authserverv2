@@ -115,7 +115,6 @@ export class UserResolver {
             throw new Error("Error registering user.")
         }
         const test: string = createAccessToken(userLogged);
-        console.log(test);
         return test;
     }
 }

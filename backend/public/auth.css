@@ -1,0 +1,114 @@
+@font-face {
+    font-family: "George-Italic";
+    src: url(fonts/Louis-George-Cafe-Italic.ttf);
+  }
+  
+  body {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f0f0f0;
+  }
+  
+  #nouser {
+    width: 70%;
+    height: 70%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: rgba(17, 12, 46, 0.15) 0px 48px 100px 0px;
+  }
+  
+  .error {
+    color: red;
+    font-family: sans-serif;
+  }
+  
+  #nouser form {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  input {
+    height: 40px;
+    width: 100%;
+    border: 1px solid gray;
+    border-bottom-right-radius: 5px;
+    border-top-right-radius: 5px;
+    padding: 0 10px;
+    font-family: "George-Italic", sans-serif;
+  }
+  
+  .label {
+    display: flex;
+    width: 90%;
+    flex-direction: row;
+  }
+  
+  .iconpart {
+    height: 40px;
+    width: 40px;
+    background: rgb(134, 255, 134);
+    border-bottom-left-radius: 5px;
+    border-top-left-radius: 5px;
+    border: 1px solid gray;
+    border-right: none;
+    padding: 7px;
+  }
+  
+  .iconpart img {
+    width: 100%;
+    height: 100%;
+  }
+  
+  #nouser button {
+    width: 90%;
+    height: 40px;
+    background-color: rgb(134, 255, 134);
+    border: none;
+    border-radius: 100vw;
+    cursor: pointer;
+    font-family: "George-Italic", sans-serif;
+  }
+  
+  button:hover {
+    outline: 2px solid rgb(134, 255, 134);
+  }
+  
+  #nouser {
+    display: none;
+  }
+  
+  #isuser {
+    display: flex;
+    width: 70%;
+    height: 70%;
+    overflow-y: auto;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: rgba(17, 12, 46, 0.15) 0px 48px 100px 0px;
+  }
+  
+  #isuser button {
+    width: 90%;
+    padding: 10px;
+    background-color: rgb(134, 255, 134);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: "George-Italic", sans-serif;
+  }

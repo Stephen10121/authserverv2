@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex,nofollow">
+    <link rel="shortcut icon" href="https://media.istockphoto.com/vectors/security-symbol-lock-icon-app-security-symbol-for-your-web-site-vector-id1139901980?k=20&m=1139901980&s=170667a&w=0&h=7L7RrA9cerBjX9S7chF_07RqMBQphJ2bIXkEfMFKtd4=" type="image/x-icon">
+    <link rel="stylesheet" href="reset.css">
+    <link rel="stylesheet" href="auth.css">
+    <title>Auth</title>
+    <script src="auth.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.25.0/axios.min.js" integrity="sha512-/Q6t3CASm04EliI1QyIDAA/nDo9R8FQ/BULoUFyN4n/BDdyIxeH7u++Z+eobdmr11gG5D/6nPFyDlnisDwhpYA==" defer crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+    <div id="nouser">
+        <form action="#" id="login-form">
+            <p id="signuperror" class="error hide"></p>
+            <div class="label">
+                <div class="iconpart"><img src="/icons/person-fill.svg" alt="Person"></div>
+                <input type="text" id="username" placeholder="Username">
+            </div>
+            <div class="label">
+                <div class="iconpart"><img src="/icons/shield-lock.svg" alt="Person"></div>
+                <input type="password" placeholder="Password">
+            </div>
+            <button type="submit">Login</button>
+        </form>
+        <button onclick="currentUser()">Login to existing account</button>
+    </div>
+    <div class="exists" id="isuser">
+        <p id="error2cool" class="error hide"></p>
+        <% if(locals.userName) {%>
+            <button onclick="sendAuth()"><%= userName %></button>
+        <% } %>
+        <button onclick="newUser()">Login to new account</button>
+    </div>
+</body>
+</html>

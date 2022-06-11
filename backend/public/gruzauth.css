@@ -1,0 +1,24 @@
+#sauth-login {
+  width: 220px;
+  font-family: "George-Italic", sans-serif;
+  border-radius: 100vw;
+  border: none;
+  background-color: white;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+  height: 50px;
+  cursor: pointer;
+  transition: box-shadow 0.25s linear;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#sauth-login span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#sauth-login:hover {
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 8px 8px;
+}

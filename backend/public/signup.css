@@ -1,0 +1,187 @@
+@font-face {
+  font-family: "George-Italic";
+  src: url(fonts/Louis-George-Cafe-Italic.ttf);
+}
+
+body {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f0f0f0;
+}
+
+.hide {
+  display: none;
+}
+
+.error {
+  color: red;
+  font-family: sans-serif;
+}
+
+.gerror {
+  color: rgb(0, 252, 0);
+  font-family: sans-serif;
+}
+
+#nouser {
+  width: 70%;
+  height: 70%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: rgba(17, 12, 46, 0.15) 0px 48px 100px 0px;
+  overflow-y: auto;
+}
+
+input {
+  height: 40px;
+  width: 100%;
+  border: 1px solid gray;
+  border-bottom-right-radius: 5px;
+  border-top-right-radius: 5px;
+  padding: 0 10px;
+  font-family: "George-Italic", sans-serif;
+}
+
+.label {
+  display: flex;
+  width: 90%;
+  flex-direction: row;
+}
+
+.iconpart {
+  height: 40px;
+  width: 40px;
+  background: rgb(134, 255, 134);
+  border-bottom-left-radius: 5px;
+  border-top-left-radius: 5px;
+  border: 1px solid gray;
+  border-right: none;
+  padding: 7px;
+}
+
+.iconpart img {
+  width: 100%;
+  height: 100%;
+}
+
+#nouser button {
+  width: 90%;
+  height: 40px;
+  background-color: rgb(134, 255, 134);
+  border: none;
+  border-radius: 100vw;
+  cursor: pointer;
+  font-family: "George-Italic", sans-serif;
+}
+
+button:hover {
+  outline: 2px solid rgb(134, 255, 134);
+}
+
+.label2 {
+  display: flex;
+  width: 90%;
+  height: 40px;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid gray;
+  border-radius: 5px;
+  padding: 0 10px;
+  font-family: "George-Italic", sans-serif;
+}
+
+.soon {
+  position: relative;
+  pointer-events: none;
+}
+
+.soon::after {
+  content: " Not Done!";
+  font-weight: bold;
+  color: red;
+}
+
+.successAnimation {
+  width: 100px !important;
+  height: 100px !important;
+  position: relative;
+  transition: 0.25s linear;
+  z-index: 20;
+  overflow-y: visible !important;
+  cursor: pointer;
+  transition: box-shadow 0.25s linear;
+}
+
+.successAnimation:hover {
+  box-shadow: rgb(17 12 46 / 15%) 15px 18px 20px 10px !important;
+}
+
+.successAnimation:hover::before {
+  box-shadow: rgb(17 12 46 / 15%) 15px 18px 20px 10px;
+}
+
+.successAnimation::after {
+  content: "✔";
+  font-size: 2rem;
+}
+
+.successAnimation::before {
+  content: "Go home";
+  position: absolute;
+  width: 0;
+  left: 100px;
+  height: 80px;
+  background-color: rgb(134, 255, 134);
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+  box-shadow: rgb(17 12 46 / 15%) 0px 48px 100px 0px;
+  font-family: "George-Italic", sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  z-index: 14;
+  visibility: hidden;
+  transition: box-shadow 0.25s linear;
+  animation: makebig 0.25s linear 0.25s forwards;
+}
+
+@keyframes makebig {
+  0% {
+    width: 0;
+    visibility: visible;
+    font-size: 1rem;
+  }
+  100% {
+    width: 200px;
+    visibility: visible;
+    font-size: 2rem;
+  }
+}
+
+.successAnimation * {
+  display: none;
+}
+
+@media only screen and (max-width: 500px) {
+  #nouser {
+    width: 100%;
+    height: 100%;
+    background-color: #f0f0f0;
+  }
+}
+
+@media only screen and (min-width: 1000px) {
+  #nouser {
+    width: 40%;
+  }
+}

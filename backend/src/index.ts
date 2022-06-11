@@ -11,14 +11,88 @@ import { verify } from "jsonwebtoken";
 import { User } from "./entity/User";
 import { createAccessToken, createRefreshToken } from "./auth";
 import { sendRefreshToken } from "./sendRefreshToken";
+import { sendRequest } from "./functions";
 
 (async () => {
     const app = express();
-
-    app.use(cookieParser());
+    app.set('view engine', 'ejs');
+    app.use(cookieParser(), express.json(), express.static('public'), express.urlencoded({ extended: true }));
 
     app.get('/', (_req, res) => {
         res.json({msg: "good"});
+    });
+
+    interface Payload {
+        userId: number;
+        tokenVersion: number;
+        iat: number;
+        exp: number;
+    }
+
+    app.get("/auth", async (req, res) => {
+        if (req.cookies["G_VAR"]) {
+            console.log(`[server] Verifying ${req.cookies.G_VAR}`);
+            let payload2;
+            try {
+                payload2 = verify(req.cookies["G_VAR"], process.env.REFRESH_TOKEN_SECRET!);
+            } catch (err) {
+                res.clearCookie("G_VAR").json({error: true, msg: "Invalid cookie."});
+            }
+
+            if (!payload2) {
+                res.clearCookie("G_VAR").json({ error: true });
+                return;
+            }
+
+            const payload = payload2 as Payload;
+            const user = await User.findOne({ where: {id: payload.userId} });
+
+            if (!user) {
+                res.clearCookie("G_VAR").json({ error: true, msg: "Invalid cookie." });
+                return;
+            }
+            res.render("auth", {userName: user.usersRName});
+            return;
+        }
+        res.render("auth");
+    });
+
+    app.post("/auth", async (req, res) => {
+        if (!req.body["userData"]) {
+            res.json({error: true, errorMessage: "Missing parameters"});
+            return;
+        }
+        if (!req.body.userData["website"] || !req.body.userData["key"]) {
+            res.json({error: true, errorMessage: "Missing parameters."});
+            return;
+        }
+
+        if (!req.cookies["G_VAR"]) {
+            res.json({ error: true, errorMessage: "No cookie." });
+        }
+        
+        let payload2;
+        try {
+            payload2 = verify(req.cookies.G_VAR, process.env.REFRESH_TOKEN_SECRET!);
+        } catch (err) {
+            res.clearCookie("G_VAR").json({error: true, errorMessage: "Invalid cookie."});
+            return;
+        }
+
+        if (!payload2) {
+            res.clearCookie("G_VAR").json({ error: true, errorMessage: "Internal Error" });
+            return;
+        }
+
+        const payload = payload2 as Payload;
+        const user = await User.findOne({ where: {id: payload.userId} });
+
+        if (!user) {
+            res.clearCookie("G_VAR").json({ error: true, msg: "Invalid cookie." });
+            return;
+        }
+        await sendRequest(req.body.userData.website, req.body.userData.key, user.usersRName, user.usersEmail, user.usersName);
+        res.json({ msg: "Good" });
     });
 
     app.post("/refresh_token", async (req, res) => {
