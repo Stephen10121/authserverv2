@@ -1,11 +1,12 @@
 <script lang="ts">
   import { map_range } from "../functions/map";
   export let rotate: number;
+  export let max: number;
   export let backgroundColor: string;
   export let gaugeColor: string;
-  let rotate2 = map_range(rotate, 0, 100, 0, 360);
+  let rotate2 = map_range(rotate, 0, max, 0, 360);
   $: {
-    rotate2 = map_range(rotate, 0, 100, 0, 180);
+    rotate2 = map_range(rotate, 0, max, 0, 180);
   }
 </script>
 
@@ -15,7 +16,7 @@
   class="gauge--1"
 >
   <div class="mask">
-    <div class="semi-circle"><p>{rotate}%</p></div>
+    <div class="semi-circle"><p>{rotate}/{max}</p></div>
     <div
       class="semi-circle--mask"
       style="transform: rotate({rotate2}deg) translate3d(0, 0, 0);"
