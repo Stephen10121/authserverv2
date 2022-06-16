@@ -1,81 +1,50 @@
 <!-- svelte-ignore missing-declaration -->
 <script lang="ts">
   import Meter from "./Meter.svelte";
-  let rotateLen: number = 1;
-  let plus: boolean = false;
-  let rotateLen2: number = 1;
-  let plus2: boolean = false;
-  let rotateLen3: number = 1;
-  let plus3: boolean = false;
-  let rotateLen4: number = 1;
-  let plus4: boolean = false;
-  let rotateLen5: number = 1;
-  let plus5: boolean = false;
-  setInterval(() => {
-    rotateLen = plus ? rotateLen + 1 : rotateLen - 1;
-    if (rotateLen === 0) {
-      plus = true;
-    }
-    if (rotateLen === 100) {
-      plus = false;
-    }
-  }, 50);
-  setInterval(() => {
-    rotateLen2 = plus2 ? rotateLen2 + 1 : rotateLen2 - 1;
-    if (rotateLen2 === 0) {
-      plus2 = true;
-    }
-    if (rotateLen2 === 100) {
-      plus2 = false;
-    }
-  }, 60);
-  setInterval(() => {
-    rotateLen3 = plus3 ? rotateLen3 + 1 : rotateLen3 - 1;
-    if (rotateLen3 === 0) {
-      plus3 = true;
-    }
-    if (rotateLen3 === 100) {
-      plus3 = false;
-    }
-  }, 70);
-  setInterval(() => {
-    rotateLen4 = plus4 ? rotateLen4 + 1 : rotateLen4 - 1;
-    if (rotateLen4 === 0) {
-      plus4 = true;
-    }
-    if (rotateLen4 === 100) {
-      plus4 = false;
-    }
-  }, 80);
-  setInterval(() => {
-    rotateLen5 = plus5 ? rotateLen5 + 1 : rotateLen5 - 1;
-    if (rotateLen5 === 0) {
-      plus5 = true;
-    }
-    if (rotateLen5 === 100) {
-      plus5 = false;
-    }
-  }, 90);
+  import Stats from "./Stats.svelte";
+  let unsecureSubs: number = 5;
+  let logins: number = 100;
+  let failed: number = 20;
+  let popular: string = "drive.gruzservices.com";
+  let subscriptions: number = 5;
 </script>
 
 <main>
-  <header>header</header>
+  <header
+    >header
+    <label for="l1">Most Popular</label>
+    <input type="text" bind:value={popular} id="l1" />
+    <label for="l1">Unsecure Percentage</label>
+    <input type="number" name="number" id="l2" bind:value={unsecureSubs} />
+    <label for="l3">Login Attempts</label>
+    <input type="number" name="number2" id="l3" bind:value={logins} />
+    <label for="l4">Failed Attempts</label>
+    <input type="number" name="number3" id="l4" bind:value={failed} />
+  </header>
   <section>
-    <Meter rotate={rotateLen} backgroundColor="#dfdfdf" gaugeColor="#430498" />
-    <Meter rotate={rotateLen2} backgroundColor="#dfdfdf" gaugeColor="#436573" />
-    <Meter rotate={rotateLen3} backgroundColor="#dfdfdf" gaugeColor="#593787" />
-    <Meter rotate={rotateLen4} backgroundColor="#dfdfdf" gaugeColor="#345898" />
-    <Meter rotate={rotateLen5} backgroundColor="#dfdfdf" gaugeColor="#147290" />
-    <button
-      on:click={() => {
-        rotateLen += 20;
-      }}>More</button
-    >
-    <button
-      on:click={() => {
-        rotateLen -= 20;
-      }}>Less</button
-    >
+    <div class="meterPart tile">
+      <div class="extraInfo">
+        <p>?</p>
+        <div class="show">
+          Percentage of websites your subscribed to that don't encrypt their
+          data.
+        </div>
+      </div>
+      <Meter
+        rotate={unsecureSubs}
+        backgroundColor="#dfdfdf"
+        gaugeColor="#430498"
+      />
+      <p class="meter-title">Unsecure Subscriptions</p>
+    </div>
+    <div class="stats tile">
+      <Stats
+        mostPopular={popular}
+        failedAttempts={failed}
+        {logins}
+        {subscriptions}
+      />
+    </div>
   </section>
 </main>
 
@@ -93,9 +62,100 @@
     background-color: #f3f3f3;
   }
 
+  .meterPart {
+    grid-area: meter;
+    position: relative;
+  }
+
+  .stats {
+    grid-area: stats;
+  }
+
   section {
     width: 100vw;
     height: 100%;
     background-color: #dfdfdf;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-rows: 200px 200px;
+    gap: 20px;
+    grid-template-areas: "meter stats stats stats";
+    overflow: hidden;
+  }
+
+  .tile {
+    background-color: #dfdfdf;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    position: relative;
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+    flex-direction: column;
+  }
+
+  .meter-title {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-family: "Roboto", sans-serif;
+    font-size: 1rem;
+    font-weight: bold;
+  }
+
+  .extraInfo p {
+    width: 20px;
+    height: 20px;
+    background-color: black;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 1px;
+    border-radius: 50%;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    cursor: pointer;
+    font-family: "Roboto", sans-serif;
+    font-weight: bold;
+    user-select: none;
+  }
+
+  .show {
+    opacity: 0;
+    visibility: hidden;
+    width: 200px;
+    height: 100px;
+    background-color: green;
+    position: absolute;
+    right: 0;
+    top: 0;
+    z-index: 10;
+    transition: 0.25s;
+    font-family: "Roboto", sans-serif;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #dfdfdf;
+  }
+
+  .extraInfo:hover .show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  @media only screen and (max-width: 1200px) {
+    section {
+      grid-template-areas: "meter stats stats stats" "... stats stats stats";
+    }
+  }
+  @media only screen and (max-width: 550px) {
+    section {
+      grid-template-columns: 1fr;
+      grid-template-areas: "meter" "stats";
+      grid-template-rows: auto;
+    }
   }
 </style>

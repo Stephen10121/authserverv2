@@ -60,6 +60,7 @@
     content: "";
     position: absolute;
     bottom: 0;
+    color: red;
     left: 50%;
     z-index: 2;
     display: block;
