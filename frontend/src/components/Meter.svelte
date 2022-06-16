@@ -52,7 +52,7 @@
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 100;
-    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-family: "Poppins", sans-serif;
     font-weight: bold;
     font-stretch: expanded;
   }

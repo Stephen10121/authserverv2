@@ -1,7 +1,9 @@
 <!-- svelte-ignore missing-declaration -->
 <script lang="ts">
+  import Date from "./Date.svelte";
   import LineChart from "./LineChart.svelte";
   import Meter from "./Meter.svelte";
+  import Password from "./Password.svelte";
   import Stats from "./Stats.svelte";
   let secureSubs: number = 5;
   let logins: number = 100;
@@ -51,6 +53,12 @@
     <section class="chart tile">
       <LineChart />
     </section>
+    <section class="date tile">
+      <Date />
+    </section>
+    <section class="password tile">
+      <Password />
+    </section>
   </section>
 </main>
 
@@ -79,7 +87,14 @@
 
   .chart {
     grid-area: chart;
-    height: 200px;
+  }
+
+  .date {
+    grid-area: date;
+  }
+
+  .password {
+    grid-area: password;
   }
 
   .main {
@@ -91,7 +106,7 @@
     grid-template-columns: 1fr 1fr 1fr 1fr;
     grid-template-rows: 200px 200px 200px;
     gap: 20px;
-    grid-template-areas: "meter stats stats stats" "chart chart ... ...";
+    grid-template-areas: "meter stats stats stats" "chart chart date password" "... ... date ...";
     overflow-x: hidden;
   }
 
@@ -159,13 +174,18 @@
 
   @media only screen and (max-width: 1200px) {
     .main {
-      grid-template-areas: "meter stats stats stats" "meter stats stats stats" "chart chart ... ...";
+      grid-template-areas: "meter stats stats stats" "meter stats stats stats" "chart chart date password" "... ... date ...";
+    }
+  }
+  @media only screen and (max-width: 1100px) {
+    .main {
+      grid-template-areas: "meter stats stats stats" "meter stats stats stats" "chart chart date date" "password password date date";
     }
   }
   @media only screen and (max-width: 550px) {
     .main {
       grid-template-columns: 1fr;
-      grid-template-areas: "meter" "stats" "chart";
+      grid-template-areas: "meter" "stats" "chart" "date" "date" "password";
       grid-template-rows: auto;
     }
 
