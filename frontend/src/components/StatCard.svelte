@@ -30,18 +30,25 @@
 
   .card div img {
     width: 100%;
+    -webkit-user-drag: none;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
   }
 
   .card h2 {
     grid-area: title;
     font-family: "Roboto", sans-serif;
     font-size: 0.75rem;
+    color: var(--main-color);
   }
 
   .card p {
     grid-area: res;
     font-family: "Poppins", sans-serif;
     font-size: 0.75rem;
+    color: var(--main-color);
   }
 
   .card {

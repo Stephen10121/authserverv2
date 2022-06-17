@@ -2,7 +2,6 @@
   import { map_range } from "../functions/map";
   export let rotate: number;
   export let max: number;
-  export let backgroundColor: string;
   export let gaugeColor: string;
   let rotate2 = map_range(rotate, 0, max, 0, 360);
   $: {
@@ -11,10 +10,7 @@
 </script>
 
 <!-- svelte-ignore missing-declaration -->
-<div
-  style="--theme-color-background: {backgroundColor};--theme-color: {gaugeColor}"
-  class="gauge--1"
->
+<div style="--theme-color: {gaugeColor}" class="gauge--1">
   <div class="mask">
     <div class="semi-circle"><p>{rotate}/{max}</p></div>
     <div
@@ -55,6 +51,7 @@
     font-family: "Poppins", sans-serif;
     font-weight: bold;
     font-stretch: expanded;
+    color: var(--main-color);
   }
 
   .semi-circle::before {
@@ -68,7 +65,7 @@
     width: 8.75rem;
     height: 4.375rem;
     margin-left: -4.375rem;
-    background: var(--theme-color-background);
+    background: var(--main-background-color);
     border-radius: 50% 50% 50% 50% / 100% 100% 0% 0%;
   }
   .semi-circle--mask {

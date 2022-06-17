@@ -1,10 +1,28 @@
-<script lang="ts"></script>
+<script lang="ts">
+  import Prompt from "./Prompt.svelte";
+  let showPrompt: boolean = false;
+  let deleteAccount: boolean = false;
+</script>
 
 <div class="password">
   <p>Danger Zone</p>
   <button>Change Password</button>
-  <button>Delete Account</button>
-  <button>Blacklist Websites</button>
+  <button
+    on:click={() => {
+      showPrompt = true;
+    }}>Delete Account</button
+  >
+  {#if showPrompt}
+    <Prompt
+      on:closeit={() => {
+        showPrompt = false;
+      }}
+      on:answer={() => {
+        deleteAccount = true;
+        showPrompt = false;
+      }}
+    />
+  {/if}
 </div>
 
 <style>

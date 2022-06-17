@@ -35,10 +35,12 @@
   .day {
     font-family: "Roboto", sans-serif;
     font-size: 10rem;
+    color: var(--main-color);
   }
 
   .mon {
     font-family: "Poppins", sans-serif;
     font-size: 3rem;
+    color: var(--main-color);
   }
 </style>

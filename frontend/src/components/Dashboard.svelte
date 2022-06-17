@@ -1,30 +1,27 @@
 <!-- svelte-ignore missing-declaration -->
 <script lang="ts">
+  import ConnectedDevices from "./ConnectedDevices.svelte";
   import Date from "./Date.svelte";
   import LineChart from "./LineChart.svelte";
   import Meter from "./Meter.svelte";
   import Password from "./Password.svelte";
   import Stats from "./Stats.svelte";
-  let secureSubs: number = 5;
+  import { toggle, toggleStartup } from "../functions/toggleTheme";
+  let secureSubs: number = 4;
   let logins: number = 100;
   let failed: number = 20;
   let popular: string = "drive.gruzservices.com";
-  let subscriptions: number = 5;
+  let subscriptions: number = 10;
+  toggleStartup();
 </script>
 
 <main>
-  <header
-    >header
-    <label for="l1">Most Popular</label>
-    <input type="text" bind:value={popular} id="l1" />
-    <label for="l1">Secure Percentage</label>
-    <input type="number" name="number" id="l2" bind:value={secureSubs} />
-    <label for="l3">Login Attempts</label>
-    <input type="number" name="number2" id="l3" bind:value={logins} />
-    <label for="l4">Failed Attempts</label>
-    <input type="number" name="number3" id="l4" bind:value={failed} />
-    <label for="l5">Subs</label>
-    <input type="number" name="number4" id="l5" bind:value={subscriptions} />
+  <header>
+    <h1>Auth Dashboard</h1>
+    <ul>
+      <li><button on:click={toggle}>Toggle Theme</button></li>
+      <li><a href="/">Logout</a></li>
+    </ul>
   </header>
   <section class="main">
     <section class="meterPart tile">
@@ -35,12 +32,7 @@
           Percentage of websites your subscribed to that encrypt their data.
         </div>
       </div>
-      <Meter
-        max={subscriptions}
-        rotate={secureSubs}
-        backgroundColor="#dfdfdf"
-        gaugeColor="#430498"
-      />
+      <Meter max={subscriptions} rotate={secureSubs} gaugeColor="#430498" />
     </section>
     <section class="stats tile">
       <Stats
@@ -59,6 +51,9 @@
     <section class="password tile">
       <Password />
     </section>
+    <section class="ips tile">
+      <ConnectedDevices />
+    </section>
   </section>
 </main>
 
@@ -73,7 +68,47 @@
   header {
     width: 100vw;
     height: 100%;
-    background-color: #f3f3f3;
+    background-color: var(--header-background-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+  }
+
+  header h1 {
+    font-family: "Poppins", sans-serif;
+    font-weight: bold;
+    color: var(--header-color);
+  }
+
+  header li {
+    display: inline;
+  }
+
+  header li:last-child {
+    margin-left: 10px;
+  }
+
+  header a {
+    color: var(--header-color);
+    font-family: "Roboto", sans-serif;
+    text-decoration: underline;
+  }
+
+  header button {
+    background-color: var(--header-background-color);
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+    color: var(--header-color);
+    font-family: "Poppins", sans-serif;
+    cursor: pointer;
+    transition: box-shadow 0.25s linear;
+  }
+
+  header button:hover {
+    box-shadow: rgba(0, 0, 0, 0.24) 5px 7px 8px;
   }
 
   .meterPart {
@@ -97,27 +132,32 @@
     grid-area: password;
   }
 
+  .ips {
+    grid-area: ips;
+  }
+
   .main {
     width: 100vw;
     height: 100%;
-    background-color: #dfdfdf;
+    background-color: var(--main-background-color);
     padding: 20px;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr 1fr;
-    grid-template-rows: 200px 200px 200px;
+    grid-template-rows: 200px 200px 200px 200px;
     gap: 20px;
-    grid-template-areas: "meter stats stats stats" "chart chart date password" "... ... date ...";
+    grid-template-areas: "meter stats stats stats" "chart chart date password" "... ... date ips";
     overflow-x: hidden;
+    overflow-y: hidden;
   }
 
   .tile {
-    background-color: #dfdfdf;
+    background-color: var(--main-background-color);
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 10px;
     position: relative;
-    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+    box-shadow: var(--shadow);
     flex-direction: column;
   }
 
@@ -128,6 +168,7 @@
     font-family: "Roboto", sans-serif;
     font-size: 1rem;
     font-weight: bold;
+    color: var(--main-color);
   }
 
   .extraInfo p {
@@ -174,18 +215,28 @@
 
   @media only screen and (max-width: 1200px) {
     .main {
-      grid-template-areas: "meter stats stats stats" "meter stats stats stats" "chart chart date password" "... ... date ...";
+      grid-template-areas: "meter stats stats stats" "meter stats stats stats" "chart chart date password" "... ... date ips";
     }
   }
   @media only screen and (max-width: 1100px) {
     .main {
-      grid-template-areas: "meter stats stats stats" "meter stats stats stats" "chart chart date date" "password password date date";
+      overflow-y: auto;
+      grid-template-areas: "meter stats stats stats" "meter stats stats stats" "chart chart date date" "password password date date" "ips ... ... ...";
     }
   }
   @media only screen and (max-width: 550px) {
+    header {
+      justify-content: center;
+    }
+
+    header h1 {
+      display: none;
+    }
+
     .main {
+      overflow-y: auto;
       grid-template-columns: 1fr;
-      grid-template-areas: "meter" "stats" "chart" "date" "date" "password";
+      grid-template-areas: "meter" "stats" "chart" "date" "password" "ips";
       grid-template-rows: auto;
     }
 

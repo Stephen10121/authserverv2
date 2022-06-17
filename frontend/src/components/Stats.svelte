@@ -51,6 +51,7 @@
     font-family: "Roboto", sans-serif;
     font-size: 1rem;
     font-weight: bold;
+    color: var(--main-color);
   }
 
   @media only screen and (max-width: 1200px) {

@@ -12,13 +12,17 @@ import { User } from "./entity/User";
 import { createAccessToken, createRefreshToken } from "./auth";
 import { sendRefreshToken } from "./sendRefreshToken";
 import { sendRequest } from "./functions";
+// @ts-ignore
+import { capture } from "express-device";
 
 (async () => {
     const app = express();
     app.set('view engine', 'ejs');
-    app.use(cookieParser(), express.json(), express.static('public'), express.urlencoded({ extended: true }));
+    app.use(cookieParser(), express.json(), express.static('public'), express.urlencoded({ extended: true }), capture());
 
-    app.get('/', (_req, res) => {
+    app.get('/', async (req, res) => {
+        // @ts-ignore
+        console.log(req.device.type);
         res.json({msg: "good"});
     });
 
