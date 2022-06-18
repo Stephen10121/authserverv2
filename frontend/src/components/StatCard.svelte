@@ -13,7 +13,7 @@
     ><img src={icon ? icon : null} alt="Icon" /></div
   >
   <h2>{title ? title : "N/A"}</h2>
-  <p>{answer ? answer : "N/A"}</p>
+  <p>{answer}</p>
 </div>
 
 <style>

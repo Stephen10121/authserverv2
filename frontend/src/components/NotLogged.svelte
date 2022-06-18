@@ -1,5 +1,6 @@
 <script lang="ts">
   import { loginIt } from "../functions/login";
+  export let socket;
   export let PROXY;
   let popup1;
   let home1;
@@ -65,7 +66,7 @@
     <section class="home" bind:this={home1}>
       <section class="sec1">
         <div>
-          <button id="sauth-login" on:click={() => loginIt(PROXY)}
+          <button id="sauth-login" on:click={() => loginIt(PROXY, socket.id)}
             >Login with Gruzservices <span
               ><img src="/lock2.svg" alt="Lock" /></span
             ></button
@@ -352,6 +353,31 @@
     font-family: sans-serif;
   }
 
+  #sauth-login {
+    width: 220px;
+    font-family: "George-Italic", sans-serif;
+    border-radius: 100vw;
+    border: none;
+    background-color: white;
+    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+    height: 50px;
+    cursor: pointer;
+    transition: box-shadow 0.25s linear;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #sauth-login span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #sauth-login:hover {
+    box-shadow: rgba(0, 0, 0, 0.24) 0px 8px 8px;
+  }
+
   @media only screen and (max-width: 1100px) {
     .home,
     .contact,
@@ -382,29 +408,5 @@
       flex-direction: column;
       gap: 5px;
     }
-  }
-  #sauth-login {
-    width: 220px;
-    font-family: "George-Italic", sans-serif;
-    border-radius: 100vw;
-    border: none;
-    background-color: white;
-    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
-    height: 50px;
-    cursor: pointer;
-    transition: box-shadow 0.25s linear;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  #sauth-login span {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  #sauth-login:hover {
-    box-shadow: rgba(0, 0, 0, 0.24) 0px 8px 8px;
   }
 </style>

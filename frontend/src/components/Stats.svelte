@@ -1,7 +1,7 @@
 <script lang="ts">
   import StatCard from "./StatCard.svelte";
   export let logins: number;
-  export let failedAttempts: number;
+  export let failed: number;
   export let mostPopular: string;
   export let subscriptions: number;
 </script>
@@ -15,7 +15,7 @@
     iconBackground="rgba(79, 0, 153, 0.7)"
   />
   <StatCard
-    answer={failedAttempts}
+    answer={failed}
     icon="./shield-x.svg"
     title="Failed Attempts"
     iconBackground="rgba(0, 82, 195, 0.7)"

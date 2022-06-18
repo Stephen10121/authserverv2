@@ -22,6 +22,6 @@ const popupCenter = ({postServer, key, title, w, h, where}) => {
     if (window.focus) newWindow.focus();
 }
 
-export const loginIt = (location) => {
-    popupCenter({postServer:`${location}myAuth`, key: "dakey", title: 'Authenticate', w: 520, h: 570, where:location});
+export const loginIt = (location, key) => {
+    popupCenter({postServer:`${location}myAuth`, key, title: 'Authenticate', w: 520, h: 570, where:location});
 }

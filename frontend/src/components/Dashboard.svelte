@@ -8,11 +8,12 @@
   import Stats from "./Stats.svelte";
   import { toggle, toggleStartup } from "../functions/toggleTheme";
   import Websites from "./Websites.svelte";
-  let secureSubs: number = 4;
-  let logins: number = 100;
-  let failed: number = 20;
-  let popular: string = "drive.gruzservices.com";
-  let subscriptions: number = 10;
+  export let userData: any;
+  let secureSubs: number = userData.https;
+  let logins: number = userData.attemptedLogins;
+  let failed: number = userData.failedLogins;
+  let popular: string = userData.mostPopular;
+  let subscriptions: number = userData.sites.length;
   toggleStartup();
 </script>
 
@@ -36,18 +37,13 @@
       <Meter max={subscriptions} rotate={secureSubs} gaugeColor="#430498" />
     </section>
     <section class="stats tile">
-      <Stats
-        mostPopular={popular}
-        failedAttempts={failed}
-        {logins}
-        {subscriptions}
-      />
+      <Stats mostPopular={popular} {failed} {logins} {subscriptions} />
     </section>
     <section class="chart tile">
       <h1>Hi Stephen</h1>
     </section>
     <section class="tile websites">
-      <Websites />
+      <Websites sites={userData.sites} />
     </section>
     <section class="date tile">
       <Date />

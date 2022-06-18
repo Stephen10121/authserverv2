@@ -16,11 +16,20 @@ import { sendRequest } from "./functions";
 // @ts-ignore
 import { capture } from "express-device";
 import { compare, hash } from "bcryptjs";
+import http from "http";
 
 (async () => {
     const app = express();
     app.set('view engine', 'ejs');
     app.use(cookieParser(), express.json(), express.static('public'), express.urlencoded({ extended: true }), capture());
+    const server = http.createServer(app);
+    const io = require("socket.io")(server, {
+        cors: {
+            origin: '*',
+            methods: ['GET', 'POST'],
+            allowEIO3: true
+        }
+      });
 
     app.use((_req, res, next) => {
         res.setHeader('Access-Control-Allow-Origin', "*");
@@ -245,6 +254,7 @@ import { compare, hash } from "bcryptjs";
             failedLogins: failed
         }
         console.log(info);
+        io.to(req.body.key).emit("login", info);
         res.json({ msg: "Good" });
     });
 
@@ -298,7 +308,11 @@ import { compare, hash } from "bcryptjs";
 
     apolloServer.applyMiddleware({ app });
 
-    app.listen(4000, () => {
+    io.on("connection", (socket: any) => {
+        console.log(`Connection from ${socket.id}`);
+    });
+
+    server.listen(4000, () => {
         console.log("[server] Running on port 4000.");
     });
 })();
