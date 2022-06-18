@@ -102,7 +102,9 @@ export class UserResolver {
                 usersPhone: phone,
                 usersPassword: hashedPassword,
                 users2FA: tfa,
-                usersHash: "ej4wnrjk3"
+                usersSuccessLogins: 0,
+                usersFailedLogins: 0,
+                usersPopularSites: "{}"
             });
         } catch (err) {
             console.error(err);

@@ -7,6 +7,7 @@
   import Password from "./Password.svelte";
   import Stats from "./Stats.svelte";
   import { toggle, toggleStartup } from "../functions/toggleTheme";
+  import Websites from "./Websites.svelte";
   let secureSubs: number = 4;
   let logins: number = 100;
   let failed: number = 20;
@@ -29,7 +30,7 @@
       <div class="extraInfo">
         <p>?</p>
         <div class="show">
-          Percentage of websites your subscribed to that encrypt their data.
+          Percentage of websites your subscribed to that encrypts their data.
         </div>
       </div>
       <Meter max={subscriptions} rotate={secureSubs} gaugeColor="#430498" />
@@ -43,7 +44,10 @@
       />
     </section>
     <section class="chart tile">
-      <LineChart />
+      <h1>Hi Stephen</h1>
+    </section>
+    <section class="tile websites">
+      <Websites />
     </section>
     <section class="date tile">
       <Date />
@@ -124,6 +128,13 @@
     grid-area: chart;
   }
 
+  .chart h1 {
+    font-family: "Roboto", sans-serif;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--main-color);
+  }
+
   .date {
     grid-area: date;
   }
@@ -136,6 +147,10 @@
     grid-area: ips;
   }
 
+  .websites {
+    grid-area: websites;
+  }
+
   .main {
     width: 100vw;
     height: 100%;
@@ -143,11 +158,11 @@
     padding: 20px;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr 1fr;
-    grid-template-rows: 200px 200px 200px 200px;
+    grid-template-rows: 1fr 1fr 1fr 1fr;
     gap: 20px;
-    grid-template-areas: "meter stats stats stats" "chart chart date password" "... ... date ips";
+    grid-template-areas: "meter stats stats stats" "chart websites date password" "... websites date ips";
     overflow-x: hidden;
-    overflow-y: hidden;
+    overflow-y: auto;
   }
 
   .tile {
@@ -215,15 +230,27 @@
 
   @media only screen and (max-width: 1200px) {
     .main {
-      grid-template-areas: "meter stats stats stats" "meter stats stats stats" "chart chart date password" "... ... date ips";
+      grid-template-rows: 200px 200px 200px 200px;
+      grid-template-areas: "meter stats stats stats" "meter stats stats stats" "chart websites date password" "... websites date ips";
     }
   }
+
   @media only screen and (max-width: 1100px) {
     .main {
       overflow-y: auto;
-      grid-template-areas: "meter stats stats stats" "meter stats stats stats" "chart chart date date" "password password date date" "ips ... ... ...";
+      grid-template-rows: 200px 200px 200px 200px 200px 200px;
+      grid-template-areas: "meter stats stats stats" "meter stats stats stats" "chart chart date date" "password password date date" "ips websites websites ..." "... websites websites ...";
     }
   }
+
+  @media only screen and (max-width: 700px) {
+    .main {
+      overflow-y: auto;
+      grid-template-rows: 200px 200px 200px 200px 200px 200px;
+      grid-template-areas: "meter stats stats stats" "meter stats stats stats" "chart chart date date" "password password date date" "ips websites websites ..." "... websites websites ...";
+    }
+  }
+
   @media only screen and (max-width: 550px) {
     header {
       justify-content: center;
@@ -236,7 +263,7 @@
     .main {
       overflow-y: auto;
       grid-template-columns: 1fr;
-      grid-template-areas: "meter" "stats" "chart" "date" "password" "ips";
+      grid-template-areas: "meter" "stats" "chart" "date" "password" "ips" "websites";
       grid-template-rows: auto;
     }
 

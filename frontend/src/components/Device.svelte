@@ -12,7 +12,7 @@
   .device {
     width: 100%;
     height: 40px;
-    background-color: rgba(0, 82, 195, 0.7);
+    background-color: rgb(119, 166, 194);
     border-radius: 5px;
     display: flex;
     align-items: center;

@@ -33,8 +33,16 @@ export class User extends BaseEntity {
     users2FA: string
 
     @Field()
+    @Column("int")
+    usersSuccessLogins: number
+
+    @Field()
+    @Column("int")
+    usersFailedLogins: number
+
+    @Field()
     @Column("text")
-    usersHash: string
+    usersPopularSites: string
 
     @Column("int", {default: 0})
     tokenVersion: number;

@@ -5,25 +5,39 @@ import express from "express";
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
 import { UserResolver } from "./UserResolver";
-import { createConnection } from "typeorm";
+import { createConnection, getConnection } from "typeorm";
 import cookieParser from "cookie-parser";
 import { verify } from "jsonwebtoken";
 import { User } from "./entity/User";
+import { Site } from "./entity/Sites";
 import { createAccessToken, createRefreshToken } from "./auth";
 import { sendRefreshToken } from "./sendRefreshToken";
 import { sendRequest } from "./functions";
 // @ts-ignore
 import { capture } from "express-device";
+import { compare, hash } from "bcryptjs";
 
 (async () => {
     const app = express();
     app.set('view engine', 'ejs');
     app.use(cookieParser(), express.json(), express.static('public'), express.urlencoded({ extended: true }), capture());
 
+    app.use((_req, res, next) => {
+        res.setHeader('Access-Control-Allow-Origin', "*");
+        res.setHeader('Access-Control-Allow-Headers', '*');
+        next();
+    });
+
     app.get('/', async (req, res) => {
-        // @ts-ignore
-        console.log(req.device.type);
-        res.json({msg: "good"});
+        // console.log(req.device.type);
+        console.log(req.cookies["G_VAR"]);
+        res.render("index");
+    });
+
+    app.get("/signup", (req, res) => {
+        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress ;
+        console.log(`[server] ${ip} requested signup page.`);
+        res.render('signup');
     });
 
     interface Payload {
@@ -95,8 +109,151 @@ import { capture } from "express-device";
             res.clearCookie("G_VAR").json({ error: true, msg: "Invalid cookie." });
             return;
         }
+        if (user.usersPopularSites === "") {
+            let newPopular: any = {}
+            newPopular[req.body.userData.website] = 1;
+            await User.update({id: user.id}, {usersPopularSites: JSON.stringify(newPopular)});
+        } else {
+            const sites = JSON.parse(user.usersPopularSites);
+            const siteKeys = Object.keys(sites);
+            if (siteKeys.includes(req.body.userData.website)) {
+                sites[req.body.userData.website]=sites[req.body.userData.website]+1;
+            } else {
+                sites[req.body.userData.website]=1;
+            }
+            await User.update({id: user.id}, {usersPopularSites: JSON.stringify(sites)});
+        }
+        await getConnection().getRepository(User).increment({id: user.id}, 'usersSuccessLogins', 1);
         await sendRequest(req.body.userData.website, req.body.userData.key, user.usersRName, user.usersEmail, user.usersName);
         res.json({ msg: "Good" });
+    });
+
+    app.post("/login", async (req, res) => {
+        if (!req.body["userData"]) {
+            res.json({error: true, errorMessage: "An error occured. Please refresh"});
+            return;
+        }
+        const data = req.body.userData;
+        if (!data["username"] || !data["password"]) {
+            res.json({error: true, errorMessage: "Missing fields"});
+            return;
+        }
+        const user = await User.findOne({ where: { usersName: data.username } });
+
+        if (!user) {
+            res.clearCookie("G_VAR").json({ error: true, errorMessage: "Invalid Username." });
+            return;
+        }
+        const valid = await compare(data.password, user.usersPassword);
+
+        if (!valid) {
+            res.clearCookie("G_VAR").json({ error: true, errorMessage: "Invalid Password." });
+            await getConnection().getRepository(User).increment({id: user.id}, 'usersFailedLogins', 1);
+            return;
+        }
+
+        // sendRefreshToken(res, createRefreshToken(user));
+        return res.cookie("G_VAR", createRefreshToken(user), { maxAge: 990000000}).json({error: false});
+    });
+
+    app.post("/signup", async (req, res) => {
+        if (!req.body["userData"]) {
+            res.json({error: true, errorMessage: "An error occured. Please refresh"});
+            return;
+        }
+        const data = req.body.userData;
+        data["phone"] = "false";
+        if (!data["rname"] || !data["email"] || !data["username"] || !data["phone"] || !data["password"] || !data["rpassword"]) {
+            res.json({error: true, errorMessage: "Missing fields"});
+            return;
+        }
+        if (data.password !== data.rpassword) {
+            res.json({error: true, errorMessage: "Passwords don't match!"});
+            return;
+        }
+
+        const user = await User.findOne({ where: {usersName: data.username} });
+
+        if (user) {
+            res.json({error: true, errorMessage: "User already exists!"});
+            return;
+        }
+
+        const hashedPassword = await hash(data.password, 3);
+
+        try {
+            await User.insert({
+                usersName: data.username,
+                usersRName: data.rname,
+                usersEmail: data.email,
+                usersPhone: data.phone,
+                usersPassword: hashedPassword,
+                users2FA: "false",
+                usersSuccessLogins: 0,
+                usersFailedLogins: 0,
+                usersPopularSites: ""
+            });
+        } catch (err) {
+            res.json({error: true, errorMessage: "Error registering user."});
+            return;
+        }
+
+        const userLogged = await User.findOne({ where: {usersName: data.username} });
+
+        if (!userLogged) {
+            res.json({error: true, errorMessage: "Error registering user."});
+            return;
+        }
+        res.cookie("G_VAR", createRefreshToken(userLogged), { maxAge: 990000000}).json({error: false});
+    });
+
+    app.post("/myAuth", async (req, res) => {
+        const siteArray = await Site.find({ where: { sitesOwner: req.body.username} });
+        const sites = siteArray.map((site) => {return site.sitesWebsite});
+        const user = await User.findOne({ where: { usersName: req.body.username } });
+        let success = 0;
+        let failed = 0;
+        let mostPopular;
+        if (user) {
+            if (user["usersSuccessLogins"]) {
+                success = user.usersSuccessLogins;
+            }
+            if (user["usersFailedLogins"]) {
+                failed = user.usersFailedLogins;
+            }
+            const sitesPopular = JSON.parse(user.usersPopularSites);
+            const siteKeys = Object.keys(sitesPopular);
+            let currentPop = {
+                val: 0,
+                key: ""
+            }
+            for (let i=0;i<siteKeys.length;i++) {
+                let value = sitesPopular[siteKeys[i]];
+                if (value > currentPop.val) {
+                    currentPop.val = value;
+                    currentPop.key = siteKeys[i];
+                }
+            }
+            mostPopular = currentPop.key;
+        }
+        const info = {
+            userData: req.body,
+            sites,
+            mostPopular,
+            https: sites.filter(x => x.includes("https")).length,
+            attemptedLogins: success+failed,
+            failedLogins: failed
+        }
+        console.log(info);
+        res.json({ msg: "Good" });
+    });
+
+    app.post("/contact", (req, res) => {
+        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress ;
+        console.log(req.body);
+        console.log(`[server] ${req.body.email}@${ip} sent contact form.`);
+        // sendMail(req.body.email, req.body.what);
+        res.json({msg: "Message Recieved!"});
     });
 
     app.post("/refresh_token", async (req, res) => {

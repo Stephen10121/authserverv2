@@ -24,6 +24,10 @@
 	--shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
 } */
 
+html {
+	font-size: 15px;
+}
+
 body {
 	width: 100vw;
 	height: 100vh;

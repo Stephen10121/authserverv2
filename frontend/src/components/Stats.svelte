@@ -66,7 +66,7 @@
 
   @media only screen and (max-width: 800px) {
     .stats {
-      padding: 20px 10px;
+      padding: 30px 10px 10px 10px;
     }
   }
 

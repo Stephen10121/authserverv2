@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index,follow">
+    <meta name="description" content="GruzAuth securly authenticate all of your websites.">
+    <meta name="theme-color" content="#f3f3f3">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="reset.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="gruzauth.css">
+    <link rel="shortcut icon" href="https://media.istockphoto.com/vectors/security-symbol-lock-icon-app-security-symbol-for-your-web-site-vector-id1139901980?k=20&amp;m=1139901980&amp;s=170667a&amp;w=0&amp;h=7L7RrA9cerBjX9S7chF_07RqMBQphJ2bIXkEfMFKtd4=" type="image/x-icon">
+    <script src="script.js" defer></script>
+    <title>GruzAuth | Gruzservices</title>
+</head>
+<body>
+    <div class="popup">
+        <div><button onclick="closeN()">&#10006;</button></div>
+        <p id="message">N/A</p>
+    </div>
+    <header>
+        <a href="#"><h1>Gruzservices</h1></a>
+        <ul>
+            <li id="bhome" class="hide"><button onclick="home()">Home</button></li>
+            <li><button onclick="contact()">Contact</button></li>
+            <li><button onclick="about()">About</button></li>
+        </ul>
+    </header>
+    <main>
+        <section class="home">
+            <section class="sec1">
+                <div>
+                    <button id="sauth-login" onclick="loginIt()">Login with Gruzservices <span><img src="/icons/lock.svg" alt="Lock"></span></button><br><br>
+                    <a id="sauth-signup" href="/signup">Signup to Gruzservices</a>
+                </div>
+            </section>
+            <section class="sec2">
+                <img src="/lock.svg" alt="Lock Icon">
+            </section>
+        </section>
+        <section class="contact hide">
+            <section class="sec2">
+                <img src="/contact.svg" alt="Lock Icon">
+            </section>
+            <section class="sec1">
+                <form id="contactform" class="contact">
+                    <input name="email" type="email" placeholder="Email" required>
+                    <textarea name="what" id="textarea" cols="30" rows="10" placeholder="What do you want to tell me?" required></textarea>
+                    <button type="submit">Send</button>
+                </form>
+            </section>
+        </section>
+        <section class="about hide">
+            <section class="sec1">
+                <div>
+                    <h1>What is this?</h1>
+                    <p>Every time I build a website, I have to do the authentication part every single time. It is unnecessary and not convenient to the end user. Now I only need to plug my server to this authentication server and not worry about it again.</p>
+                </div>
+            </section>
+            <section class="sec2">
+                <img src="/about.svg" alt="Lock Icon">
+            </section>
+        </section>
+    </main>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+        integrity=
+        "sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" 
+        crossorigin="anonymous">
+    </script>
+    <script>
+        const contact = () => {
+            document.querySelector(".home").classList.add("hide");
+            document.querySelector(".contact").classList.remove("hide");
+            document.querySelector(".about").classList.add("hide");
+            document.querySelector("#bhome").classList.remove("hide");
+        }
+        const about = () => {
+            document.querySelector(".home").classList.add("hide");
+            document.querySelector(".about").classList.remove("hide");
+            document.querySelector(".contact").classList.add("hide");
+            document.querySelector("#bhome").classList.remove("hide");
+        }
+        const home = () => {
+            document.querySelector(".about").classList.add("hide");
+            document.querySelector(".home").classList.remove("hide");
+            document.querySelector(".contact").classList.add("hide");
+            document.querySelector("#bhome").classList.add("hide");
+        }
+        document.querySelector("#contactform").addEventListener("submit", (e) => {
+            e.preventDefault();
+            const data = {
+                email: e.target[0].value,
+                what: e.target[1].value
+            }
+            $.post("/contact", data, (data, status) => {
+                if (status === "success") {
+                    document.querySelector("#message").innerText = data.msg;
+                    openN();
+                } else {
+                    document.querySelector("#message").innerText = "Error sending message";
+                    openN();
+                }
+            });
+        });
+        const closeN = () => {
+            document.querySelector(".popup").classList.remove("movedown");
+            document.querySelector(".popup").classList.add("moveup");
+        }
+        const openN = () => {
+            document.querySelector(".popup").classList.remove("moveup");
+            document.querySelector(".popup").classList.add("movedown");
+        }
+    </script>
+</body>
+</html>

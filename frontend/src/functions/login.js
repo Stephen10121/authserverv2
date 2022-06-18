@@ -1,8 +1,8 @@
-const popupCenter = ({postServer, key, title, w, h}) => {
+const popupCenter = ({postServer, key, title, w, h, where}) => {
     // Fixes dual-screen position                             Most browsers      Firefox
     const dualScreenLeft = window.screenLeft !==  undefined ? window.screenLeft : window.screenX;
     const dualScreenTop = window.screenTop !==  undefined   ? window.screenTop  : window.screenY;
-    const url = `/auth?website=${postServer}&key=${key}`
+    const url = `${where}auth?website=${postServer}&key=${key}`
     const width = window.innerWidth ? window.innerWidth : document.documentElement.clientWidth ? document.documentElement.clientWidth : screen.width;
     const height = window.innerHeight ? window.innerHeight : document.documentElement.clientHeight ? document.documentElement.clientHeight : screen.height;
 
@@ -22,6 +22,6 @@ const popupCenter = ({postServer, key, title, w, h}) => {
     if (window.focus) newWindow.focus();
 }
 
-const loginIt = () => {
-    popupCenter({postServer:`${window.location.href}myAuth`, key: "dakey", title: 'Authenticate', w: 520, h: 570});
+export const loginIt = (location) => {
+    popupCenter({postServer:`${location}myAuth`, key: "dakey", title: 'Authenticate', w: 520, h: 570, where:location});
 }

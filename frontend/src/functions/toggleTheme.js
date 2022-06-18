@@ -7,7 +7,7 @@ export const toggle = () => {
         r.style.setProperty('--header-color', 'rgb(179, 179, 179)');
         r.style.setProperty('--main-background-color', 'rgb(25, 32, 43)');
         r.style.setProperty('--main-color', '#dfdfdf');
-        r.style.setProperty('--shadow', 'rgba(0, 0, 0, 0.24) 0px 3px 8px');
+        r.style.setProperty('--shadow', 'rgb(0 0 0) 0px 3px 8px');
         window.localStorage.setItem("theme", "light");
     } else {
         r.style.setProperty('--header-background-color', '#f3f3f3');
@@ -25,7 +25,7 @@ export const toggleStartup = () => {
         r.style.setProperty('--header-color', 'rgb(179, 179, 179)');
         r.style.setProperty('--main-background-color', 'rgb(25, 32, 43)');
         r.style.setProperty('--main-color', '#dfdfdf');
-        r.style.setProperty('--shadow', 'rgba(0, 0, 0, 0.24) 0px 3px 8px');
+        r.style.setProperty('--shadow', 'rgb(0 0 0) 0px 3px 8px');
     } else {
         r.style.setProperty('--header-background-color', '#f3f3f3');
         r.style.setProperty('--header-color', '#000000');
