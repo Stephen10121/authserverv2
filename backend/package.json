@@ -38,6 +38,7 @@
   "scripts": {
     "test": "ts-node src/index.ts",
     "start2": "nodemon --exec ts-node src/index.ts",
-    "start": "ts-node src/index.ts"
+    "start": "ts-node src/index.ts",
+    "build": "tsc auth.js"
   }
 }
