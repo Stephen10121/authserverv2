@@ -20,4 +20,8 @@ export class Site extends BaseEntity {
     @Field()
     @Column("text")
     sitesHash: string
+
+    @Field()
+    @Column("text")
+    sitesBlackList: string
 }

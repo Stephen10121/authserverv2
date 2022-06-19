@@ -2,7 +2,7 @@ import { Site } from "./entity/Sites";
 import { createHash } from "crypto";
 import request from "request";
 
-const hashed = (password: string) => {
+export const hashed = (password: string) => {
     const hash = createHash('sha256').update(password).digest("hex");
     return hash;
 }
@@ -12,7 +12,8 @@ const addSite = async (owner: string, website: string):Promise<boolean> => {
         await Site.insert({
             sitesOwner: owner,
             sitesWebsite: website,
-            sitesHash: hashed(hashed(owner)+hashed(website))
+            sitesHash: hashed(hashed(owner)+hashed(website)),
+            sitesBlackList: "false"
         });
     } catch (err) {
         console.error(err);
@@ -37,11 +38,18 @@ const getOtherWebsiteKey = async (website: string, owner: string):Promise<String
         userSites = await getSites(owner, website) as any;
     }
     const sites = userSites as any;
-    return sites.sitesHash;
+    
+    if (sites.sitesBlackList === "false") {
+        return sites.sitesHash;
+    };
+    return "false";
 }
 
 export const sendRequest = async (website: string, key: string, name: string, email: string, username: string) => {
     const userData = await getOtherWebsiteKey(website, username);
+    if (userData === "false") {
+        return;
+    }
     var clientServerOptions = {
         uri: website,
         body: JSON.stringify({data: userData, key, name, email, username}),

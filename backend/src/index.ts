@@ -12,7 +12,7 @@ import { User } from "./entity/User";
 import { Site } from "./entity/Sites";
 import { createAccessToken, createRefreshToken } from "./auth";
 import { sendRefreshToken } from "./sendRefreshToken";
-import { sendRequest } from "./functions";
+import { hashed, sendRequest } from "./functions";
 // @ts-ignore
 import { capture } from "express-device";
 import { compare, hash } from "bcryptjs";
@@ -64,6 +64,7 @@ import http from "http";
                 payload2 = verify(req.cookies["G_VAR"], process.env.REFRESH_TOKEN_SECRET!);
             } catch (err) {
                 res.clearCookie("G_VAR").json({error: true, msg: "Invalid cookie."});
+                return;
             }
 
             if (!payload2) {
@@ -218,7 +219,7 @@ import http from "http";
 
     app.post("/myAuth", async (req, res) => {
         const siteArray = await Site.find({ where: { sitesOwner: req.body.username} });
-        const sites = siteArray.map((site) => {return site.sitesWebsite});
+        const sites = siteArray.map((site) => {return {site: site.sitesWebsite, blackList: site.sitesBlackList}});
         const user = await User.findOne({ where: { usersName: req.body.username } });
         let success = 0;
         let failed = 0;
@@ -249,11 +250,11 @@ import http from "http";
             userData: req.body,
             sites,
             mostPopular,
-            https: sites.filter(x => x.includes("https")).length,
+            https: sites.filter(x => x.site.includes("https")).length,
             attemptedLogins: success+failed,
             failedLogins: failed
         }
-        console.log(info);
+        
         io.to(req.body.key).emit("login", info);
         res.json({ msg: "Good" });
     });
@@ -310,6 +311,33 @@ import http from "http";
 
     io.on("connection", (socket: any) => {
         console.log(`Connection from ${socket.id}`);
+
+        socket.on("blacklist", async (data: any) => {
+            if (!data["name"] || !data["key"] || data["blackList"] === undefined) {
+                io.to(socket.id).emit("blacklist", false);
+                return;
+            }
+            const site = await Site.findOne({ where: { sitesWebsite: data.name } });
+            if (!site) {
+                io.to(socket.id).emit("blacklist", false);
+                return;
+            }
+            let owner = site.sitesOwner;
+            let website = site.sitesWebsite;
+            if (hashed(hashed(owner)+hashed(website)) !== hashed(hashed(owner)+hashed(data.name))) {
+                io.to(socket.id).emit("blacklist", false);
+                return;
+            }
+            
+            if (data.blackList) {
+                console.log(`[server] Blacklisting ${data.name} for ${owner}.`);
+                await Site.update({sitesHash: hashed(hashed(owner)+hashed(data.name))}, {sitesBlackList: "true"});
+            } else {
+                console.log(`[server] Unblacklisting ${data.name} for ${owner}.`);
+                await Site.update({sitesHash: hashed(hashed(owner)+hashed(data.name))}, {sitesBlackList: "false"});
+            }
+            io.to(socket.id).emit("blacklist", true);
+        });
     });
 
     server.listen(4000, () => {

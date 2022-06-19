@@ -2,7 +2,19 @@
   import { createEventDispatcher } from "svelte";
   const dispatch = createEventDispatcher();
   export let name: string;
-  export let blackListed: boolean;
+  export let socket: any;
+  export let userData: any;
+  export let blackList: any;
+  let blackListed: boolean;
+  if (blackList === "false") {
+    blackListed = false;
+  } else {
+    blackListed = true;
+  }
+
+  socket.on("blacklist", (data: any) => {
+    console.log(data);
+  });
 </script>
 
 <div class={blackListed ? "blackList" : "website"}>
@@ -14,16 +26,23 @@
   {#if blackListed}
     <button
       on:click={() => {
-        dispatch("un-blacklist", true);
+        blackListed = false;
+        socket.emit("blacklist", {
+          name,
+          key: userData.data,
+          blackList: false,
+        });
       }}
       name="Un-Blacklist"
       title="Un-Blacklist"
-      ><img src="./shield-check.svg" alt="Un-Blacklist" /></button
     >
+      <img src="./shield-check.svg" alt="Un-Blacklist" />
+    </button>
   {:else}
     <button
       on:click={() => {
-        dispatch("blacklist", true);
+        blackListed = true;
+        socket.emit("blacklist", { name, key: userData.data, blackList: true });
       }}
       name="Blacklist"
       title="Blacklist"><img src="./shield-x.svg" alt="Blacklist" /></button

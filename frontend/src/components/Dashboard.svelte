@@ -2,13 +2,14 @@
 <script lang="ts">
   import ConnectedDevices from "./ConnectedDevices.svelte";
   import Date from "./Date.svelte";
-  import LineChart from "./LineChart.svelte";
+  // import LineChart from "./LineChart.svelte";
   import Meter from "./Meter.svelte";
   import Password from "./Password.svelte";
   import Stats from "./Stats.svelte";
   import { toggle, toggleStartup } from "../functions/toggleTheme";
   import Websites from "./Websites.svelte";
   export let userData: any;
+  export let socket: any;
   let secureSubs: number = userData.https;
   let logins: number = userData.attemptedLogins;
   let failed: number = userData.failedLogins;
@@ -43,7 +44,7 @@
       <h1>Hi Stephen</h1>
     </section>
     <section class="tile websites">
-      <Websites sites={userData.sites} />
+      <Websites sites={userData.sites} {socket} userData={userData.userData} />
     </section>
     <section class="date tile">
       <Date />

@@ -1,21 +1,13 @@
 <script lang="ts">
   import Website from "./Website.svelte";
-  export let sites;
-  let blackList1: boolean = true;
+  export let sites: any;
+  export let socket: any;
+  export let userData;
 </script>
 
 <div class="websites">
   {#each sites as site}
-    <Website
-      name={site}
-      blackListed={blackList1}
-      on:blacklist={() => {
-        blackList1 = true;
-      }}
-      on:un-blacklist={() => {
-        blackList1 = false;
-      }}
-    />
+    <Website {userData} {socket} name={site.site} blackList={site.blackList} />
   {/each}
 </div>
 
