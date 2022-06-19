@@ -34,6 +34,7 @@
     "display_override": ["window-controls-overlay"],
     "theme_color": "rgb(28, 41, 56)",
     "background-color": "#000000",
+    "background_color": "#000000",
     "display": "fullscreen",
     "orientation": "portrait"
 }
