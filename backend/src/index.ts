@@ -21,7 +21,7 @@ import http from "http";
 (async () => {
     const app = express();
     app.set('view engine', 'ejs');
-    app.use(cookieParser(), express.json(), app.use(express.static('../public')), express.urlencoded({ extended: true }), capture());
+    app.use(cookieParser(), express.json(), app.use(express.static('public')), express.urlencoded({ extended: true }), capture());
     const server = http.createServer(app);
     const io = require("socket.io")(server, {
         cors: {
