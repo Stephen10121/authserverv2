@@ -37,11 +37,11 @@ import http from "http";
         next();
     });
 
-    app.get('/', async (req, res) => {
-        // console.log(req.device.type);
-        console.log(req.cookies["G_VAR"]);
-        res.render("index");
-    });
+    // app.get('/', async (req, res) => {
+    //     // console.log(req.device.type);
+    //     console.log(req.cookies["G_VAR"]);
+    //     res.render("index");
+    // });
 
     app.get("/signup", (req, res) => {
         const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress ;
