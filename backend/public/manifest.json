@@ -1,12 +1,40 @@
 {
     "manifest_version": 1,
     "name": "GruzAuth | Gruzservices",
+    "short_name": "GruzAuth",
     "description": "GruzAuth securly authenticate all of your websites.",
     "version": "1.1",
-    "icons": {
-        "961": "https://media.istockphoto.com/vectors/security-symbol-lock-icon-app-security-symbol-for-your-web-site-vector-id1139901980?k=20&amp;m=1139901980&amp;s=170667a&amp;w=0&amp;h=7L7RrA9cerBjX9S7chF_07RqMBQphJ2bIXkEfMFKtd4="
-    },
+    "icons": [
+        {
+          "src": "icons2/manifest-icon-192.maskable.png",
+          "sizes": "192x192",
+          "type": "image/png",
+          "purpose": "any"
+        },
+        {
+          "src": "icons2/manifest-icon-192.maskable.png",
+          "sizes": "192x192",
+          "type": "image/png",
+          "purpose": "maskable"
+        },
+        {
+          "src": "icons2/manifest-icon-512.maskable.png",
+          "sizes": "512x512",
+          "type": "image/png",
+          "purpose": "any"
+        },
+        {
+          "src": "icons2/manifest-icon-512.maskable.png",
+          "sizes": "512x512",
+          "type": "image/png",
+          "purpose": "maskable"
+        }
+      ],
     "start_url": "https://auth.gruzservices.com/",
-    "display": "standalone",
-    "prefer_related_applications": false
+    "display_override": ["window-controls-overlay"],
+    "theme_color": "rgb(28, 41, 56)",
+    "background-color": "#000000",
+    "background_color": "#000000",
+    "display": "fullscreen",
+    "orientation": "portrait"
 }
