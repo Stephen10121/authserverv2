@@ -23,6 +23,13 @@ import path from "path";
     console.log(path.join(__dirname,"..",'public'));
     const app = express();
     app.set('view engine', 'ejs');
+    
+    app.use((_req, res, next) => {
+        res.setHeader('Access-Control-Allow-Origin', "*");
+        res.setHeader('Access-Control-Allow-Headers', '*');
+        next();
+    });
+    
     app.use(cookieParser(), express.json(), express.static(path.join(__dirname,"..",'public')), express.urlencoded({ extended: true }), capture());
     const server = http.createServer(app);
     const io = require("socket.io")(server, {
@@ -32,12 +39,6 @@ import path from "path";
             allowEIO3: true
         }
       });
-
-    app.use((_req, res, next) => {
-        res.setHeader('Access-Control-Allow-Origin', "*");
-        res.setHeader('Access-Control-Allow-Headers', '*');
-        next();
-    });
 
     // app.get('/', async (req, res) => {
     //     // console.log(req.device.type);
