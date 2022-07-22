@@ -100,6 +100,7 @@ import path from "path";
 
         if (!req.cookies["G_VAR"]) {
             res.json({ error: true, errorMessage: "No cookie." });
+            return;
         }
         
         let payload2;
@@ -154,13 +155,13 @@ import path from "path";
         const user = await User.findOne({ where: { usersName: data.username } });
 
         if (!user) {
-            res.clearCookie("G_VAR").json({ error: true, errorMessage: "Invalid Username." });
+            res.json({ error: true, errorMessage: "Invalid Username." });
             return;
         }
         const valid = await compare(data.password, user.usersPassword);
 
         if (!valid) {
-            res.clearCookie("G_VAR").json({ error: true, errorMessage: "Invalid Password." });
+            res.json({ error: true, errorMessage: "Invalid Password." });
             await getConnection().getRepository(User).increment({id: user.id}, 'usersFailedLogins', 1);
             return;
         }
@@ -317,6 +318,10 @@ import path from "path";
 
         socket.on("blacklist", async (data: any) => {
             if (!data["name"] || !data["key"] || data["blackList"] === undefined) {
+                io.to(socket.id).emit("blacklist", false);
+                return;
+            }
+            if (data.name === "http://localhost:4000/myAuth" || data.name === "https://auth.gruzservices.com/myAuth") {
                 io.to(socket.id).emit("blacklist", false);
                 return;
             }

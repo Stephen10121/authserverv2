@@ -3,7 +3,7 @@
 </script>
 
 <div class="connectedDevices">
-  <p>Connected Devices</p>
+  <p>Connected Devices (Fake)</p>
   <Device name="desktop5" ip="10.80.3.3" />
   <Device name="desktop3" ip="10.80.3.4" />
   <Device name="stephens-phone" ip="10.80.3.5" />

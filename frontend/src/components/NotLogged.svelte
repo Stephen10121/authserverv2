@@ -263,7 +263,7 @@
     width: 220px;
     font-family: "George-Italic", sans-serif;
     border-radius: 100vw;
-    font-size: 1em;
+    font-size: 0.9rem;
     text-decoration: none;
     color: black;
     text-align: center;
@@ -355,6 +355,7 @@
 
   #sauth-login {
     width: 220px;
+    font-size: 0.9rem;
     font-family: "George-Italic", sans-serif;
     border-radius: 100vw;
     border: none;

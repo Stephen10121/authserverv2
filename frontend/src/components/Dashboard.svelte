@@ -41,7 +41,7 @@
       <Stats mostPopular={popular} {failed} {logins} {subscriptions} />
     </section>
     <section class="chart tile">
-      <h1>Hi Stephen</h1>
+      <h1>Hi {userData.userData.name}</h1>
     </section>
     <section class="tile websites">
       <Websites sites={userData.sites} {socket} userData={userData.userData} />

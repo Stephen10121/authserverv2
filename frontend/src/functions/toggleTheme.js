@@ -1,8 +1,8 @@
 const r = document.querySelector(':root');
 
 export const toggle = () => {
-    const rs = getComputedStyle(r);
-    if (window.localStorage.getItem("theme") === "dark" | !window.localStorage.getItem("theme")) {
+    const theme = window.localStorage.getItem("theme");
+    if (theme === "dark" || !theme) {
         r.style.setProperty('--header-background-color', '#202020');
         r.style.setProperty('--header-color', 'rgb(179, 179, 179)');
         r.style.setProperty('--main-background-color', 'rgb(25, 32, 43)');
