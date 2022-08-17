@@ -225,6 +225,7 @@
     border-radius: 100vw;
     border: 1px solid gray;
     padding: 10px;
+    font-family: "Poppins", sans-serif;
   }
 
   .contact textarea {
@@ -232,6 +233,7 @@
     resize: none;
     border-radius: 20px;
     padding: 10px;
+    font-family: "Poppins", sans-serif;
   }
 
   .contact button {
