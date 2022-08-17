@@ -88,6 +88,10 @@
   #nouser {
     display: none;
   }
+
+  #nouser a {
+    color: rgb(111, 231, 111);
+  }
   
   #isuser {
     display: flex;

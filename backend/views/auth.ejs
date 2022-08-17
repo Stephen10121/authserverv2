@@ -13,7 +13,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.25.0/axios.min.js" integrity="sha512-/Q6t3CASm04EliI1QyIDAA/nDo9R8FQ/BULoUFyN4n/BDdyIxeH7u++Z+eobdmr11gG5D/6nPFyDlnisDwhpYA==" defer crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
-    <div id="nouser">
+    <div id="nouser" style="display:<%=locals.userName?'none':'flex'%>">
         <form action="#" id="login-form">
             <p id="signuperror" class="error hide"></p>
             <div class="label">
@@ -27,8 +27,9 @@
             <button type="submit">Login</button>
         </form>
         <button onclick="currentUser()">Login to existing account</button>
+        <a href="/signup">Don't have an account? Sign Up!</a>
     </div>
-    <div class="exists" id="isuser">
+    <div class="exists" id="isuser" style="display:<%=locals.userName?'flex':'none'%>">
         <p id="error2cool" class="error hide"></p>
         <% if(locals.userName) {%>
             <button onclick="sendAuth()"><%= userName %></button>
