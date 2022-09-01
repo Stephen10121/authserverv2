@@ -11,38 +11,75 @@
     <link rel="stylesheet" href="signup.css">
     <link rel="stylesheet" href="checkbox.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.25.0/axios.min.js" integrity="sha512-/Q6t3CASm04EliI1QyIDAA/nDo9R8FQ/BULoUFyN4n/BDdyIxeH7u++Z+eobdmr11gG5D/6nPFyDlnisDwhpYA==" defer crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script defer src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
     <script src="signup.js" defer></script>
     <title>Signup | GruzAuth</title>
 </head>
 <body>
-    <form action="#" id="nouser" onclick="clickSuccess(self)">
-        <p class="error hide" id="signuperror">Error 5</p>
-        <p class="gerror hide" id="gsignuperror">Error 5</p>
-        <div class="label">
-            <div class="iconpart"><img src="/icons/tag.svg" alt="Person"></div>
-            <input type="text" id="rname" placeholder="Name">
+    <div class="slider" id="nouser" onclick="clickSuccess(self)">
+        <form action="#" id="signupform" class="signupform">
+            <p class="error hide" id="signuperror">Error 5</p>
+            <p class="gerror hide" id="gsignuperror">Error 5</p>
+            <div class="label">
+                <div class="iconpart"><img src="/icons/tag.svg" alt="Person"></div>
+                <input type="text" id="rname" placeholder="Name">
+            </div>
+            <div class="label">
+                <div class="iconpart"><img src="/icons/mailbox.svg" alt="Person"></div>
+                <input type="email" id="email" placeholder="Email">
+            </div>
+            <div class="label">
+                <div class="iconpart"><img src="/icons/person-badge.svg" alt="Person"></div>
+                <input type="text" id="username" placeholder="Username">
+            </div>
+            <div class="label">
+                <div class="iconpart"><img src="/icons/shield-lock.svg" alt="Person"></div>
+                <input type="password" placeholder="Password">
+            </div>
+            <div class="label">
+                <div class="iconpart"><img src="/icons/shield-check.svg" alt="Person"></div>
+                <input type="password" placeholder="Repeat Password">
+            </div>
+            <div class="label2">
+                <label for="twofa">Allow 2 factor authentication.</label>
+                <input type="checkbox" id="twofa" class="checkbox" onchange="checkBoxChange(this)"/>
+            </div>
+            <button type="submit" id="submitButton">Signup</button>
+        </form>
+        <div class="tfa" style="display:flex;">
+            <div id="login-form">
+                <p class="status"><span id="success"></span><span id="error"></span></p>
+                <div class="label">
+                    <div class="iconpart"><img src="/icons/cursor-text.svg" alt="Person"></div>
+                    <input type="text" placeholder="2fa Method Name (e.g., Bobs Security Key)." id="keyName"/>
+                </div>
+                <button id="btnBegin">Begin</button>
+            </div>
+            <button id="finishButton" style="display:none;" onclick="relocate()">Finish</button>
+            <button id="cancelButton" onclick="relocate(true)">Cancel and Finish</button>
         </div>
-        <div class="label">
-            <div class="iconpart"><img src="/icons/mailbox.svg" alt="Person"></div>
-            <input type="email" id="email" placeholder="Email">
-        </div>
-        <div class="label">
-            <div class="iconpart"><img src="/icons/person-badge.svg" alt="Person"></div>
-            <input type="text" id="username" placeholder="Username">
-        </div>
-        <div class="label">
-            <div class="iconpart"><img src="/icons/shield-lock.svg" alt="Person"></div>
-            <input type="password" placeholder="Password">
-        </div>
-        <div class="label">
-            <div class="iconpart"><img src="/icons/shield-check.svg" alt="Person"></div>
-            <input type="password" placeholder="Repeat Password">
-        </div>
-        <div class="label2">
-            <label for="twofa" class="soon">Allow 2 factor authentication.</label>
-            <input type="checkbox" id="twofa" class="checkbox notNow"/>
-        </div>
-        <button type="submit">Signup</button>
-    </form>
+        <style>
+            .status * {
+                font-family: "George-Italic", sans-serif;
+                font-size: 1.5rem;
+                font-weight: bold;
+                font-stretch: expanded;
+            }
+            .status #success {
+                color: rgb(134, 255, 134);
+            }
+            .status #error {
+                color: red;
+            }
+            #login-form {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+                gap: 20px;
+            }
+        </style>
+    </div>
 </body>
 </html>

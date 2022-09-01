@@ -29,15 +29,32 @@ body {
 #nouser {
   width: 70%;
   height: 80%;
+  position: relative;
+  background-color: white;
+  display: grid;
+  grid-template-columns: 100% 100%;
+  border-radius: 10px;
+  box-shadow: rgba(17, 12, 46, 0.15) 0px 48px 100px 0px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+#nouser .signupform,
+#nouser .tfa {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
   gap: 20px;
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: rgba(17, 12, 46, 0.15) 0px 48px 100px 0px;
   overflow-y: auto;
+  transition: margin-left 0.45s linear;
+}
+
+#signuptform {
+  position: relative;
+  left: 0;
 }
 
 input {
@@ -70,6 +87,12 @@ input {
 .iconpart img {
   width: 100%;
   height: 100%;
+  user-drag: none;
+  -webkit-user-drag: none;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
 }
 
 #nouser button {
@@ -117,6 +140,8 @@ button:hover {
   transition: 0.25s linear;
   z-index: 20;
   overflow-y: visible !important;
+  overflow-x: visible !important;
+  padding-left: 35px !important;
   cursor: pointer;
   transition: box-shadow 0.25s linear;
 }
@@ -139,6 +164,7 @@ button:hover {
   position: absolute;
   width: 0;
   left: 100px;
+  top:10px;
   height: 80px;
   background-color: rgb(134, 255, 134);
   border-top-right-radius: 10px;

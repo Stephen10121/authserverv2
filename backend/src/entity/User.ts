@@ -44,6 +44,10 @@ export class User extends BaseEntity {
     @Column("text")
     usersPopularSites: string
 
+    @Field()
+    @Column("text")
+    usersCurrentChallenge: string
+
     @Column("int", {default: 0})
     tokenVersion: number;
 }

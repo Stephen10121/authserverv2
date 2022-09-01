@@ -17,6 +17,7 @@
     "typescript": "3.6.3"
   },
   "dependencies": {
+    "@simplewebauthn/server": "^6.2.0",
     "apollo-server-express": "^2.9.3",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.4",
