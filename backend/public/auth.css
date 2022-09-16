@@ -29,6 +29,11 @@
     color: red;
     font-family: sans-serif;
   }
+
+  .success {
+      color: rgb(111, 231, 111);
+      font-family: sans-serif;
+  }
   
   #nouser #login-form {
     width: 100%;
@@ -129,12 +134,18 @@
     height: 70%;
     overflow-y: auto;
     align-items: center;
-    justify-content: center;
+    justify-content: space-evenly;
     flex-direction: column;
     gap: 10px;
+    padding: 20px;
     background-color: white;
     border-radius: 10px;
     box-shadow: rgba(17, 12, 46, 0.15) 0px 48px 100px 0px;
+  }
+
+  #tfaPart h1 {
+    font-family: "Poppins", sans-serif;
+    font-size: 2rem;
   }
   
   #tfaPart button {

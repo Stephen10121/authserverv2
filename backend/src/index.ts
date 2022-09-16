@@ -230,7 +230,6 @@ import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserMod
         
         // (Pseudocode) Retrieve the logged-in user
         const user: UserModel | boolean = await getUserFromDB(payload.userId);
-        console.log(user);
         if (!user) {
             res.status(400).send({ error: `Cant find user.` });
             return;
@@ -255,12 +254,11 @@ import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserMod
             res.status(400).send({ error: `Error Saving Challenge.` });
             return;
         }
-        console.log({options});
         res.send(options);
       });
       
       app.post("/startAuthentication", async (req, res) => {
-        const { body } = req;
+        const body = req.body;
         if (!req.cookies["G_VAR"]) {
             res.status(400).send({ error: "User not logged in." });
             return;
@@ -295,18 +293,18 @@ import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserMod
         }
         // (Pseudocode} Retrieve an authenticator from the DB that
         // should match the `id` in the returned credential
-        const authenticator = getUserAuthenticator(user, body.id);
+        const authenticator = getUserAuthenticator(user, body.asseResp.id);
 
         if (!authenticator) {
-          console.error(`Could not find authenticator ${body.id} for user ${user.id}`);
-          res.status(400).send({ error: `Could not find authenticator ${body.id} for user ${user.id}` });
+          console.error(`Could not find authenticator ${body.asseResp.id} for user ${user.id}`);
+          res.status(400).send({ error: `Could not find authenticator ${body.asseResp.id} for user ${user.id}` });
           return;
         }
 
         let verification;
         try {
           verification = await verifyAuthenticationResponse({
-            credential: body,
+            credential: body.asseResp,
             expectedChallenge,
             expectedOrigin: origin,
             expectedRPID: rpID,
@@ -324,6 +322,30 @@ import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserMod
           const { newCounter } = authenticationInfo;
           saveUpdatedAuthenticatorCounter(authenticator, newCounter);
         }
+        
+        const user2 = await User.findOne({ where: {id: payload.userId} });
+
+        if (!user2) {
+            res.clearCookie("G_VAR").json({ error: true, msg: "Invalid cookie." });
+            return;
+        }
+
+        if (user2.usersPopularSites === "") {
+            let newPopular: any = {}
+            newPopular[body.userData.website] = 1;
+            await User.update({id: user2.id}, {usersPopularSites: JSON.stringify(newPopular)});
+        } else {
+            const sites = JSON.parse(user2.usersPopularSites);
+            const siteKeys = Object.keys(sites);
+            if (siteKeys.includes(body.userData.website)) {
+                sites[body.userData.website]=sites[body.userData.website]+1;
+            } else {
+                sites[body.userData.website]=1;
+            }
+            await User.update({id: user2.id}, {usersPopularSites: JSON.stringify(sites)});
+        }
+        await getConnection().getRepository(User).increment({id: user2.id}, 'usersSuccessLogins', 1);
+        await sendRequest(body.userData.website, body.userData.key, user2.usersRName, user2.usersEmail, user2.usersName);
         res.send({verified});
         return;
       });

@@ -137,12 +137,22 @@ try {
 
 // POST the response to the endpoint that calls
 // @simplewebauthn/server -> verifyAuthenticationResponse()
+const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+const website = urlParams.get('website');
+const key = urlParams.get('key');
+const cookie = getCookie("G_VAR");
+const data = {
+    key,
+    website,
+    cookie
+}
 const verificationResp = await fetch('/startAuthentication', {
     method: 'POST',
     headers: {
     'Content-Type': 'application/json',
     },
-    body: JSON.stringify(asseResp),
+    body: JSON.stringify({asseResp, userData: data}),
 });
 
 // Wait for the results of verification
@@ -151,6 +161,7 @@ const verificationJSON = await verificationResp.json();
 // Show UI appropriate for the `verified` status
 if (verificationJSON && verificationJSON.verified) {
     elemSuccess2.innerHTML = 'Success!';
+    window.close();
 } else {
     elemError2.innerHTML = `Oh no, something went wrong! Response: <pre>${JSON.stringify(
     verificationJSON.error,

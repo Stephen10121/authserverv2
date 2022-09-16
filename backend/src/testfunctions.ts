@@ -39,7 +39,6 @@ export async function getUserFromDB(id: number) {
         if (!newAuth) {
             continue
         }
-        console.log({credid:newAuth.credentialID, credpubkey: newAuth.credentialPublicKey});
         newAuth.transports = JSON.parse(newAuth.transports);
         newDevices.push(newAuth as unknown as Authenticator);
     }
@@ -72,7 +71,6 @@ export async function getUserCurrentChallenge(user: UserModel) {
 
 export async function addNewDevice(device:Authenticator) {
     try {
-        console.log({newcred:Buffer.from(device.credentialID.toJSON().data).toString(),newcredPubKey:device.credentialPublicKey});
         let newDevice = {
             credentialID: device.credentialID,
             credentialPublicKey: device.credentialPublicKey,
@@ -96,7 +94,6 @@ export async function addNewDevice(device:Authenticator) {
 
 export function getUserAuthenticator(user: UserModel, id: any) {
     for (let i = 0; i<user.devices.length; i++) {
-        console.log({id: Buffer.from(id), userDevices: base64url.encode(user.devices[i].credentialID)});
         if (base64url.encode(user.devices[i].credentialID) === id) {
             return user.devices[i] as Authenticator;
         }
