@@ -122,3 +122,27 @@
     cursor: pointer;
     font-family: "George-Italic", sans-serif;
   }
+
+  #tfaPart {
+    display: none;
+    width: 70%;
+    height: 70%;
+    overflow-y: auto;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: rgba(17, 12, 46, 0.15) 0px 48px 100px 0px;
+  }
+  
+  #tfaPart button {
+    width: 90%;
+    padding: 10px;
+    background-color: rgb(134, 255, 134);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: "George-Italic", sans-serif;
+  }

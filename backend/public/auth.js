@@ -42,6 +42,11 @@ const sendAuth = () => {
             alert("error. check console.");
             return;
         }
+        if (res.data.tfa) {
+            document.querySelector("#tfaPart").style.display = "flex";
+            document.querySelector("#isuser").style.display = "none";
+            return;
+        }
         errorMessage.innerText = "Success";
         errorMessage.classList.remove("hide");
         errorM2.innerText = "Success";
@@ -68,10 +73,13 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
         errorMessage.classList.remove("hide");
         return;
     }
+    errorMessage.innerText = "loading";
+    errorMessage.classList.remove("hide");
     axios.post('/login', {
         userData: data
       })
       .then((res) => {
+        errorMessage.classList.add("hide");
         if (!res) {
             errorMessage.innerText = "An error occured. Please refresh.";
             errorMessage.classList.remove("hide");
@@ -80,6 +88,11 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
         if (res.data.error) {
             errorMessage.innerText = res.data.errorMessage;
             errorMessage.classList.remove("hide");
+            return;
+        }
+        if (res.data.tfa) {
+            document.querySelector("#tfaPart").style.display = "flex";
+            document.querySelector("#nouser").style.display = "none";
             return;
         }
         errorMessage.innerText = "Success.";
@@ -93,3 +106,54 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
         return;
     });
 });
+
+
+const { startAuthentication } = SimpleWebAuthnBrowser;
+
+// <span>/<p>/etc...
+const elemSuccess2 = document.getElementById('success2');
+// <span>/<p>/etc...
+const elemError2 = document.getElementById('error2');
+
+// Start authentication when the user clicks a button
+const tfaSend = async () => {
+// Reset success/error messages
+elemSuccess2.innerHTML = '';
+elemError2.innerHTML = '';
+
+// GET authentication options from the endpoint that calls
+// @simplewebauthn/server -> generateAuthenticationOptions()
+const resp = await fetch('/getAuthenticationOptions');
+
+let asseResp;
+try {
+    // Pass the options to the authenticator and wait for a response
+    asseResp = await startAuthentication(await resp.json());
+} catch (error) {
+    // Some basic error handling
+    elemError2.innerText = error;
+    throw error;
+}
+
+// POST the response to the endpoint that calls
+// @simplewebauthn/server -> verifyAuthenticationResponse()
+const verificationResp = await fetch('/startAuthentication', {
+    method: 'POST',
+    headers: {
+    'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(asseResp),
+});
+
+// Wait for the results of verification
+const verificationJSON = await verificationResp.json();
+
+// Show UI appropriate for the `verified` status
+if (verificationJSON && verificationJSON.verified) {
+    elemSuccess2.innerHTML = 'Success!';
+} else {
+    elemError2.innerHTML = `Oh no, something went wrong! Response: <pre>${JSON.stringify(
+    verificationJSON.error,
+    )}</pre>`;
+}
+}

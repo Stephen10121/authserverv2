@@ -1,10 +1,10 @@
 import base64url from 'base64url';
 import { User } from "./entity/User";
-import { Key } from "./entity/Keys";
-
+import { Key, KeysAuthenticator } from "./entity/Keys";
 type AuthenticatorTransport = "ble" | "internal" | "nfc" | "usb";
 
 export type Authenticator = {
+    id: number;
     // SQL: Encode to base64url then store as `TEXT`. Index this column
     credentialID: Buffer;
     // SQL: Store raw bytes as `BYTEA`/`BLOB`/etc...
@@ -26,27 +26,25 @@ export type UserModel = {
     devices: Array<Authenticator>;
 };
 
-let testUser = {
-    id: `1`,
-    username: "Jeff",
-    devices: [],
-    currentChallenge: ""
-} as UserModel;
 
 export async function getUserFromDB(id: number) {
     const user = await User.findOne({ where: {id}});
-    const devices = await Key.find({ where: { keysOwner: id } });
-    let parsedDevices = [];
-    for (let i =0; i<devices.length;i++) {
-        parsedDevices.push(JSON.parse(devices[i].keysAuthenticator));
-    }
-    console.log(parsedDevices);
     if (!user) {
         return false;
     }
-    const newModel = {id: `${id}`, username: user.usersName, currentChallenge: user.usersCurrentChallenge, devices: parsedDevices}
+    let devices = await Key.find({ where: { keysOwner: id } });
+    let newDevices = [];
+    for (let i=0; i<devices.length; i++) {
+        let newAuth = await KeysAuthenticator.findOne({where : {id: devices[i].keysAuthenticator}});
+        if (!newAuth) {
+            continue
+        }
+        console.log({credid:newAuth.credentialID, credpubkey: newAuth.credentialPublicKey});
+        newAuth.transports = JSON.parse(newAuth.transports);
+        newDevices.push(newAuth as unknown as Authenticator);
+    }
+    const newModel = {id: `${id}`, username: user.usersName, currentChallenge: user.usersCurrentChallenge, devices: newDevices}
     return newModel as UserModel;
-    //return {id: `${id}`, username: user.usersName, currentChallenge: user.currentChal};
   }
   
 export async function setUserCurrentChallenge(user: UserModel, challenge: string) {
@@ -74,9 +72,20 @@ export async function getUserCurrentChallenge(user: UserModel) {
 
 export async function addNewDevice(device:Authenticator) {
     try {
+        console.log({newcred:Buffer.from(device.credentialID.toJSON().data).toString(),newcredPubKey:device.credentialPublicKey});
+        let newDevice = {
+            credentialID: device.credentialID,
+            credentialPublicKey: device.credentialPublicKey,
+            counter: device.counter,
+            transports: JSON.stringify(device.transports),
+            owner: device.owner,
+            blacklist: device.blacklist,
+            name: device.name
+        }
+        const addedAuthenticator = await KeysAuthenticator.insert(newDevice);
         await Key.insert({
             keysOwner: device.owner,
-            keysAuthenticator: JSON.stringify(device)
+            keysAuthenticator: addedAuthenticator.raw
         });
         return true;
     } catch (err) {
@@ -85,14 +94,22 @@ export async function addNewDevice(device:Authenticator) {
     }
 }
 
-export function getUserAuthenticators(_user: UserModel) {
-    return testUser.devices;
-}
-
 export function getUserAuthenticator(user: UserModel, id: any) {
-    return user.devices.find(device => device.credentialID.equals(base64url.toBuffer(id)));
+    for (let i = 0; i<user.devices.length; i++) {
+        console.log({id: Buffer.from(id), userDevices: base64url.encode(user.devices[i].credentialID)});
+        if (base64url.encode(user.devices[i].credentialID) === id) {
+            return user.devices[i] as Authenticator;
+        }
+    }
+    return false;
 }
 
-export function saveUpdatedAuthenticatorCounter(authenticator: Authenticator, newCount: number) {
-    authenticator.counter = newCount;
+export async function saveUpdatedAuthenticatorCounter(authenticator: Authenticator, newCount: number) {
+    try {
+        await KeysAuthenticator.update({id: authenticator.id}, {counter: newCount});
+        return true;
+    } catch (err) {
+        console.error(err);
+        return false;
+    }
 }

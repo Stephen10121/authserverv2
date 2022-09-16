@@ -2,9 +2,6 @@ import * as dotenv from "dotenv";
 dotenv.config({ path: __dirname+'/.env' });
 import "reflect-metadata";
 import express from "express";
-import { ApolloServer } from "apollo-server-express";
-import { buildSchema } from "type-graphql";
-import { UserResolver } from "./UserResolver";
 import { createConnection, getConnection } from "typeorm";
 import cookieParser from "cookie-parser";
 import { verify } from "jsonwebtoken";
@@ -19,7 +16,7 @@ import { compare, hash } from "bcryptjs";
 import http from "http";
 import path from "path";
 import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from '@simplewebauthn/server';
-import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserModel, Authenticator, addNewDevice, getUserAuthenticators, getUserAuthenticator, saveUpdatedAuthenticatorCounter } from "./testfunctions";
+import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserModel, Authenticator, addNewDevice, getUserAuthenticator, saveUpdatedAuthenticatorCounter } from "./testfunctions";
 
   // Human-readable title for your website
   const rpName = 'GruzAuth';
@@ -183,13 +180,14 @@ import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserMod
         if (verified && registrationInfo) {
           const { credentialPublicKey, credentialID, counter } = registrationInfo;
       
-          const existingDevice = user.devices.find(device => device.credentialID.equals(credentialID));
+          const existingDevice = user.devices.find(device => device.credentialID===credentialID);
       
           if (!existingDevice) {
             /**
              * Add the returned device to the user's list of devices
              */
             const newDevice: Authenticator = {
+                id: 1,
               credentialPublicKey,
               credentialID,
               counter,
@@ -209,16 +207,37 @@ import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserMod
         return;
       });
 
-      app.get("/getAuthenticationOptions", async (_req, res) => {
+      app.get("/getAuthenticationOptions", async (req, res) => {
+        if (!req.cookies["G_VAR"]) {
+            res.status(400).send({ error: "User not logged in." });
+            return;
+        }
+
+        let payload2;
+        try {
+            payload2 = verify(req.cookies["G_VAR"], process.env.REFRESH_TOKEN_SECRET!);
+        } catch (err) {
+            res.clearCookie("G_VAR").status(400).send({error: "Invalid cookie."});
+            return;
+        }
+
+        if (!payload2) {
+            res.clearCookie("G_VAR").status(400).send({ error: "No User found." });
+            return;
+        }
+
+        const payload = payload2 as Payload;
+        
         // (Pseudocode) Retrieve the logged-in user
-        const user: UserModel | boolean = await getUserFromDB(2);
+        const user: UserModel | boolean = await getUserFromDB(payload.userId);
+        console.log(user);
         if (!user) {
             res.status(400).send({ error: `Cant find user.` });
             return;
         }
         // (Pseudocode) Retrieve any of the user's previously-
         // registered authenticators
-        const userAuthenticators: Authenticator[] = getUserAuthenticators(user);
+        const userAuthenticators: Authenticator[] = user.devices;
       
         const options = generateAuthenticationOptions({
           // Require users to use a previously-registered authenticator
@@ -236,36 +255,54 @@ import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserMod
             res.status(400).send({ error: `Error Saving Challenge.` });
             return;
         }
-      
+        console.log({options});
         res.send(options);
       });
       
       app.post("/startAuthentication", async (req, res) => {
-        const dbId = 2;
         const { body } = req;
+        if (!req.cookies["G_VAR"]) {
+            res.status(400).send({ error: "User not logged in." });
+            return;
+        }
+
+        let payload2;
+        try {
+            payload2 = verify(req.cookies["G_VAR"], process.env.REFRESH_TOKEN_SECRET!);
+        } catch (err) {
+            res.clearCookie("G_VAR").status(400).send({error: "Invalid cookie."});
+            return;
+        }
+
+        if (!payload2) {
+            res.clearCookie("G_VAR").status(400).send({ error: "No User found." });
+            return;
+        }
+
+        const payload = payload2 as Payload;
       
         // (Pseudocode) Retrieve the logged-in user
-        const user: UserModel | boolean = await getUserFromDB(dbId);
+        const user: UserModel | boolean = await getUserFromDB(payload.userId);
         if (!user) {
             res.status(400).send({ error: `Cant find user.` });
             return;
         }
         // (Pseudocode) Get `options.challenge` that was saved above
-        const expectedChallenge = await getUserCurrentChallenge(user);
+        const expectedChallenge = user.currentChallenge;
         if (!expectedChallenge) {
             res.status(400).send({ error: "Cannot find user." });
             return;
         }
         // (Pseudocode} Retrieve an authenticator from the DB that
         // should match the `id` in the returned credential
-        const authenticator = getUserAuthenticator(user, body.rawId);
-      
+        const authenticator = getUserAuthenticator(user, body.id);
+
         if (!authenticator) {
           console.error(`Could not find authenticator ${body.id} for user ${user.id}`);
           res.status(400).send({ error: `Could not find authenticator ${body.id} for user ${user.id}` });
           return;
         }
-      
+
         let verification;
         try {
           verification = await verifyAuthenticationResponse({
@@ -273,7 +310,7 @@ import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserMod
             expectedChallenge,
             expectedOrigin: origin,
             expectedRPID: rpID,
-            authenticator,
+            authenticator: authenticator
           });
         } catch (error) {
           console.error(error);
@@ -393,6 +430,11 @@ import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserMod
             res.clearCookie("G_VAR").json({ error: true, msg: "Invalid cookie." });
             return;
         }
+
+        if (user.users2FA === "1") {
+            res.json({ error: false, tfa: true });
+            return;
+        }
         if (user.usersPopularSites === "") {
             let newPopular: any = {}
             newPopular[req.body.userData.website] = 1;
@@ -432,6 +474,10 @@ import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserMod
         if (!await compare(data.password, user.usersPassword)) {
             res.json({ error: true, errorMessage: "Invalid Password." });
             await getConnection().getRepository(User).increment({id: user.id}, 'usersFailedLogins', 1);
+            return;
+        }
+        if (user.users2FA === "1") {
+            res.cookie("G_VAR", createRefreshToken(user), { maxAge: 990000000}).json({ error: false, tfa: true });
             return;
         }
 
@@ -577,15 +623,6 @@ import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserMod
     });
 
     await createConnection();
-
-    const apolloServer = new ApolloServer({
-        schema: await buildSchema({
-            resolvers: [UserResolver]
-        }),
-        context: ({ req, res }) => ({ req, res })
-    });
-
-    apolloServer.applyMiddleware({ app });
 
     io.on("connection", (socket: any) => {
         console.log(`Connection from ${socket.id}`);

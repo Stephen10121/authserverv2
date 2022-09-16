@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="reset.css">
     <link rel="stylesheet" href="auth.css">
     <title>Auth</title>
+    <script defer src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
     <script src="auth.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.25.0/axios.min.js" integrity="sha512-/Q6t3CASm04EliI1QyIDAA/nDo9R8FQ/BULoUFyN4n/BDdyIxeH7u++Z+eobdmr11gG5D/6nPFyDlnisDwhpYA==" defer crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
@@ -35,6 +36,10 @@
             <button onclick="sendAuth()"><%= userName %></button>
         <% } %>
         <button onclick="newUser()">Login to new account</button>
+    </div>
+    <div id="tfaPart">
+        <p class="status"><span id="success2"></span><span id="error2"></span></p>
+        <button onclick="tfaSend()">Begin</button>
     </div>
 </body>
 </html>
