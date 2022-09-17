@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import { verify } from "jsonwebtoken";
 import { User } from "./entity/User";
 import { Site } from "./entity/Sites";
+import { Key, KeysAuthenticator } from "./entity/Keys";
 import { createAccessToken, createRefreshToken } from "./auth";
 import { sendRefreshToken } from "./sendRefreshToken";
 import { hashed, sendRequest } from "./functions";
@@ -36,7 +37,7 @@ import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserMod
         next();
     });
     
-    app.use(cookieParser(), express.json(), express.static(path.join(__dirname,"..",'public')), express.urlencoded({ extended: true }), capture());
+    app.use(cookieParser(), express.json(), express.static(path.join(__dirname,"..","..","frontend",'public')), express.urlencoded({ extended: true }), capture());
     const server = http.createServer(app);
     const io = require("socket.io")(server, {
         cors: {
@@ -570,27 +571,44 @@ import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserMod
         let success = 0;
         let failed = 0;
         let mostPopular;
-        if (user) {
-            if (user["usersSuccessLogins"]) {
-                success = user.usersSuccessLogins;
+
+        if (!user) {
+            res.json({ msg: "Bad" });
+            return;
+        }
+
+        if (user["usersSuccessLogins"]) {
+            success = user.usersSuccessLogins;
+        }
+        if (user["usersFailedLogins"]) {
+            failed = user.usersFailedLogins;
+        }
+        const sitesPopular = JSON.parse(user.usersPopularSites);
+        const siteKeys = Object.keys(sitesPopular);
+        let currentPop = {
+            val: 0,
+            key: ""
+        }
+        for (let i=0;i<siteKeys.length;i++) {
+            let value = sitesPopular[siteKeys[i]];
+            if (value > currentPop.val) {
+                currentPop.val = value;
+                currentPop.key = siteKeys[i];
             }
-            if (user["usersFailedLogins"]) {
-                failed = user.usersFailedLogins;
+        }
+        mostPopular = currentPop.key;
+        let keyDataArray = [];
+        const keys = await Key.find({where: {keysOwner : user.id}});
+        for (let i=0; i<keys.length; i++) {
+            let authenticator = await KeysAuthenticator.findOne({ where: { id: keys[i].keysAuthenticator } });
+            if (!authenticator) {
+                continue
             }
-            const sitesPopular = JSON.parse(user.usersPopularSites);
-            const siteKeys = Object.keys(sitesPopular);
-            let currentPop = {
-                val: 0,
-                key: ""
+            let keyData = {
+                id: keys[i].id,
+                name: authenticator.name
             }
-            for (let i=0;i<siteKeys.length;i++) {
-                let value = sitesPopular[siteKeys[i]];
-                if (value > currentPop.val) {
-                    currentPop.val = value;
-                    currentPop.key = siteKeys[i];
-                }
-            }
-            mostPopular = currentPop.key;
+            keyDataArray.push(keyData);
         }
         const info = {
             userData: req.body,
@@ -598,7 +616,9 @@ import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserMod
             mostPopular,
             https: sites.filter(x => x.site.includes("https")).length,
             attemptedLogins: success+failed,
-            failedLogins: failed
+            failedLogins: failed,
+            tfa: user.users2FA,
+            tfaKeys: keyDataArray
         }
         
         io.to(req.body.key).emit("login", info);

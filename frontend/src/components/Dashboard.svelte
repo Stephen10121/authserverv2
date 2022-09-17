@@ -1,6 +1,5 @@
 <!-- svelte-ignore missing-declaration -->
 <script lang="ts">
-  import ConnectedDevices from "./ConnectedDevices.svelte";
   import Date from "./Date.svelte";
   // import LineChart from "./LineChart.svelte";
   import Meter from "./Meter.svelte";
@@ -8,6 +7,7 @@
   import Stats from "./Stats.svelte";
   import { toggle, toggleStartup } from "../functions/toggleTheme";
   import Websites from "./Websites.svelte";
+  import SecondFactor from "./SecondFactor.svelte";
   export let userData: any;
   export let socket: any;
   let secureSubs: number = userData.https;
@@ -15,6 +15,8 @@
   let failed: number = userData.failedLogins;
   let popular: string = userData.mostPopular;
   let subscriptions: number = userData.sites.length;
+  let tfa: string = userData.tfa;
+  let tfaKeys: any = userData.tfaKeys;
   toggleStartup();
 </script>
 
@@ -53,7 +55,7 @@
       <Password />
     </section>
     <section class="ips tile">
-      <ConnectedDevices />
+      <SecondFactor {tfa} {tfaKeys} />
     </section>
   </section>
 </main>

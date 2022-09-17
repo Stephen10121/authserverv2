@@ -2,7 +2,7 @@
   import Website from "./Website.svelte";
   export let sites: any;
   export let socket: any;
-  export let userData;
+  export let userData: any;
 </script>
 
 <div class="websites">

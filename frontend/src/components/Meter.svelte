@@ -89,7 +89,7 @@
     width: 12.625rem;
     height: 6.375rem;
     margin: -1px 0 0 -1px;
-    background: #f2f2f2;
+    background: var(--main-background-color);
     border-radius: 50% 50% 50% 50% / 100% 100% 0% 0%;
   }
   .gauge--1 .semi-circle {

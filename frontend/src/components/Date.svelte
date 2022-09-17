@@ -1,25 +1,25 @@
 <script lang="ts">
-  let yourDate = new Date();
-  let date = yourDate.toISOString().split("T")[0].split("-");
+  import { Temporal } from "@js-temporal/polyfill";
+  let newDate = Temporal.Now.zonedDateTimeISO();
   const months = {
-    "01": "Jan",
-    "02": "Feb",
-    "03": "March",
-    "04": "April",
-    "05": "May",
-    "06": "June",
-    "07": "July",
-    "08": "Aug",
-    "09": "Sep",
-    "10": "Oct",
-    "11": "Nov",
-    "12": "Dec",
+    1: "Jan",
+    2: "Feb",
+    3: "March",
+    4: "April",
+    5: "May",
+    6: "June",
+    7: "July",
+    8: "Aug",
+    9: "Sep",
+    10: "Oct",
+    11: "Nov",
+    12: "Dec",
   };
 </script>
 
 <div class="date-part">
-  <p class="mon">{months[date[1]]} {date[0]}</p>
-  <p class="day">{date[2]}</p>
+  <p class="mon">{months[newDate.month]} {newDate.year}</p>
+  <p class="day">{newDate.day}</p>
 </div>
 
 <style>
