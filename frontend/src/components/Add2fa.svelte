@@ -1,29 +1,111 @@
 <script>
   import { createEventDispatcher } from "svelte";
   const dispatch = createEventDispatcher();
+  import * as SimpleWebAuthnBrowser from "@simplewebauthn/browser";
+  const { startRegistration } = SimpleWebAuthnBrowser;
+
+  let elemBegin;
+  let elemSuccess;
+  let elemError;
+  let keyName;
+
+  const relocate = async (cancel) => {
+    if (cancel) {
+      dispatch("cancel", true);
+    } else {
+      dispatch("success", true);
+    }
+  };
+
+  // Start registration when the user clicks a button
+  const beginRegistration = async () => {
+    elemBegin.style.display = "none";
+    // Reset success/error messages
+    elemSuccess.innerHTML = "";
+    elemError.innerHTML = "";
+    if (!keyName || keyName === undefined || keyName === "") {
+      elemError.innerText = "Name the 2fa Method.";
+      elemBegin.style.display = "block";
+      return;
+    }
+
+    // GET registration options from the endpoint that calls
+    // @simplewebauthn/server -> generateRegistrationOptions()
+    const resp = await fetch(`/getRegistrationOptions`);
+    console.log(resp);
+    let attResp;
+    try {
+      // Pass the options to the authenticator and wait for a response
+      attResp = await startRegistration(await resp.json());
+      attResp["keyName"] = keyName;
+    } catch (error) {
+      // Some basic error handling
+      if (error.name === "InvalidStateError") {
+        elemError.innerText =
+          "Error: Authenticator was probably already registered by user";
+      } else {
+        elemError.innerText = error;
+      }
+
+      throw error;
+    }
+
+    // POST the response to the endpoint that calls
+    // @simplewebauthn/server -> verifyRegistrationResponse()
+    const verificationResp = await fetch("/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(attResp),
+    });
+
+    // Wait for the results of verification
+    const verificationJSON = await verificationResp.json();
+
+    // Show UI appropriate for the `verified` status
+    if (verificationJSON && verificationJSON.verified) {
+      dispatch("success", true);
+      elemSuccess.innerHTML = "Success!";
+      document.querySelector("#finishButton").style.display = "block";
+      document.querySelector("#cancelButton").style.display = "none";
+    } else {
+      elemError.innerHTML = `Oh no, something went wrong! Response: <pre>${JSON.stringify(
+        verificationJSON
+      )}</pre>`;
+    }
+  };
 </script>
 
 <div class="addOn" id="addOnCover">
   <div class="addOnBox">
-    <p class="status"><span id="success" /><span id="error" /></p>
+    <p class="status"
+      ><span bind:this={elemSuccess} id="success" /><span
+        bind:this={elemError}
+        id="error"
+      /></p
+    >
     <div class="label">
       <div class="iconpart"
         ><img src="/icons/cursor-text.svg" alt="Person" /></div
       >
       <input
+        bind:value={keyName}
         type="text"
         placeholder="2fa Method Name (e.g., Bobs Security Key)."
         id="keyName"
       />
     </div>
-    <button id="btnBegin">Begin</button>
-    <button id="finishButton" style="display:none;" onclick="relocate()">
+    <button bind:this={elemBegin} on:click={beginRegistration} id="btnBegin"
+      >Begin</button
+    >
+    <button id="finishButton" style="display:none;" on:click={relocate}>
       Finish
     </button>
     <button
       id="cancelButton"
       on:click={() => {
-        dispatch("cancel", true);
+        relocate(true);
       }}>Cancel</button
     >
   </div>

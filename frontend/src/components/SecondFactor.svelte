@@ -1,13 +1,48 @@
-<script lang="ts">
-  //import Device from "./Device.svelte";
-  import Add2fa from "./Add2fa.svelte";
+<script>
+  import Prompt from "./Prompt.svelte";
   import Key from "./Key.svelte";
-  export let tfa: string;
-  export let tfaKeys: any;
-  let tfa2 = tfa === "1" ? true : (false as boolean);
-  let showAdd = false;
+  import AddKey from "./AddKey.svelte";
+  import { identity } from "svelte/internal";
+  export let tfa;
+  export let tfaKeys2;
+  let tfaKeys = tfaKeys2;
+  let deleteIt = false;
 </script>
 
+{#if deleteIt}
+  <Prompt
+    on:closeit={() => {
+      deleteIt = false;
+    }}
+    on:answer={async ({ detail }) => {
+      if (detail) {
+        const verificationResp = await fetch("/deleteKey", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: deleteIt.id,
+            name: deleteIt.name,
+          }),
+        });
+
+        // Wait for the results of verification
+        const verificationJSON = await verificationResp.json();
+        if (verificationJSON["error"] === false) {
+          let newKeys = [];
+          for (let i = 0; i < tfaKeys.length; i++) {
+            if (tfaKeys[i].id !== deleteIt.id) {
+              newKeys.push(tfaKeys[i]);
+            }
+          }
+          tfaKeys = newKeys;
+        }
+        deleteIt = false;
+      }
+    }}
+  />
+{/if}
 <div class="twofactor">
   <div class="extraInfo">
     <p>?</p>
@@ -16,30 +51,33 @@
     </div>
   </div>
   <p class="title">2 factor authentication</p>
-  {#if !tfa2}
-    <button
-      class="enable"
-      on:click={() => {
-        showAdd = true;
-      }}>Enable 2fa</button
-    >
-  {:else}
-    {#each tfaKeys as key}
-      <Key name={key.name} id={key.id} />
-    {/each}
-    <button
-      class="enable"
-      on:click={() => {
-        showAdd = true;
-      }}>Add another method</button
-    >
-  {/if}
-  {#if showAdd}
-    <Add2fa
-      on:cancel={() => {
-        showAdd = false;
+  {#each tfaKeys as key}
+    <Key
+      name={key.name}
+      id={key.id}
+      on:delete={({ detail }) => {
+        deleteIt = detail;
       }}
     />
+  {/each}
+  <AddKey
+    on:success={async () => {
+      const resp = await fetch(`/getKeys`);
+      try {
+        let respJSON = await resp.json();
+        console.log(respJSON);
+        if (respJSON["keys"]) {
+          tfaKeys = respJSON.keys;
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }}
+  />
+  {#if !tfa}
+    <div class="blackout">
+      <h1>Disabled</h1>
+    </div>
   {/if}
 </div>
 
@@ -57,6 +95,28 @@
     overflow-y: auto;
   }
 
+  .blackout {
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.25);
+    position: absolute;
+    border-radius: 5px;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .blackout h1 {
+    color: red;
+    text-transform: uppercase;
+    font-family: sans-serif;
+    display: inline-block;
+    border: 2px solid red;
+    padding: 5px;
+  }
+
   .title {
     position: absolute;
     top: 10px;
@@ -67,20 +127,6 @@
     color: var(--main-color);
   }
 
-  .enable {
-    width: 100%;
-    height: 40px;
-    cursor: pointer;
-    border-radius: 5px;
-    background-color: rgb(119, 166, 194);
-    font-family: "Poppins", sans-serif;
-    border: none !important;
-    font-size: 1rem;
-  }
-
-  .enable:hover {
-    background-color: rgb(101, 144, 168);
-  }
   .extraInfo p {
     width: 20px;
     height: 20px;

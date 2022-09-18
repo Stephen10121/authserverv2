@@ -8,6 +8,7 @@
   import { toggle, toggleStartup } from "../functions/toggleTheme";
   import Websites from "./Websites.svelte";
   import SecondFactor from "./SecondFactor.svelte";
+  import { detach } from "svelte/internal";
   export let userData: any;
   export let socket: any;
   let secureSubs: number = userData.https;
@@ -17,6 +18,7 @@
   let subscriptions: number = userData.sites.length;
   let tfa: string = userData.tfa;
   let tfaKeys: any = userData.tfaKeys;
+  let tfaTrue = tfa === "1" ? true : false;
   toggleStartup();
 </script>
 
@@ -52,10 +54,37 @@
       <Date />
     </section>
     <section class="password tile">
-      <Password />
+      <Password
+        {tfaTrue}
+        on:changeTfa={async ({ detail }) => {
+          if (detail) {
+            try {
+              const resp = await fetch(`/enabletfa`, { method: "POST" });
+              const respJson = await resp.json();
+              if (!respJson.error) {
+                tfaTrue = true;
+              }
+            } catch (error) {
+              console.error(error);
+              tfaTrue = false;
+            }
+          } else {
+            try {
+              const resp = await fetch(`/canceltfa`, { method: "POST" });
+              const respJson = await resp.json();
+              if (!respJson.error) {
+                tfaTrue = false;
+              }
+            } catch (error) {
+              console.error(error);
+              tfaTrue = true;
+            }
+          }
+        }}
+      />
     </section>
     <section class="ips tile">
-      <SecondFactor {tfa} {tfaKeys} />
+      <SecondFactor tfa={tfaTrue} tfaKeys2={tfaKeys} />
     </section>
   </section>
 </main>
@@ -132,6 +161,8 @@
     font-size: 2.5rem;
     font-weight: bold;
     color: var(--main-color);
+    margin-top: 10px;
+    margin-bottom: 10px;
   }
 
   .date {

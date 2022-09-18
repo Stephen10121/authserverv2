@@ -382,6 +382,124 @@ import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserMod
         res.send({error: false});
     });
 
+    app.post("/deleteKey", async (req, res) => {
+        if (!req.cookies["G_VAR"]) {
+            res.status(400).send({ error: "User not logged in." });
+            return;
+        }
+        
+        if (!req.body["name"] || !req.body["id"]) {
+            res.status(400).send({error: "Missing parameters."});
+            return;
+        }
+
+        let payload2;
+        try {
+            payload2 = verify(req.cookies["G_VAR"], process.env.REFRESH_TOKEN_SECRET!);
+        } catch (err) {
+            res.clearCookie("G_VAR").status(400).send({error: "Invalid cookie."});
+            return;
+        }
+
+        if (!payload2) {
+            res.clearCookie("G_VAR").status(400).send({ error: "No User found." });
+            return;
+        }
+
+        const payload = payload2 as Payload;
+        try {
+            const gotKey = await Key.findOne({where: { keysOwner: payload.userId, id: req.body.id}});
+            if (!gotKey) {
+                res.status(400).send({ error: "No key found." });
+                return;
+            }
+            const gotKeyAuthenticator = await KeysAuthenticator.findOne({ where: { id: gotKey.keysAuthenticator, name: req.body.name }});
+            if (!gotKeyAuthenticator) {
+                res.status(400).send({ error: "No key found." });
+                return;
+            }
+            console.log(await getConnection().createQueryBuilder().delete().from(KeysAuthenticator).where("id = :id", { id: gotKey.keysAuthenticator }).execute());
+            console.log(await getConnection().createQueryBuilder().delete().from(Key).where("keysOwner = :keysOwner", { keysOwner: payload.userId }).execute());
+        } catch (err) {
+            console.error(err);
+            res.status(400).send({ error: "Internal Error" });
+            return;
+        }
+        res.send({error: false});
+    });
+
+    app.get("/getkeys", async (req, res) => {
+        if (!req.cookies["G_VAR"]) {
+            res.status(400).send({ error: "User not logged in." });
+            return;
+        }
+
+        let payload2;
+        try {
+            payload2 = verify(req.cookies["G_VAR"], process.env.REFRESH_TOKEN_SECRET!);
+        } catch (err) {
+            res.clearCookie("G_VAR").status(400).send({error: "Invalid cookie."});
+            return;
+        }
+
+        if (!payload2) {
+            res.clearCookie("G_VAR").status(400).send({ error: "No User found." });
+            return;
+        }
+
+        const payload = payload2 as Payload;
+        try {
+            const gotKey = await Key.find({where: { keysOwner: payload.userId}});
+            if (!gotKey) {
+                res.status(400).send({ error: "No key found." });
+                return;
+            }
+            let toSend = [];
+            for (let i=0;i<gotKey.length;i++) {
+                let authetn = await KeysAuthenticator.findOne({where: {id: gotKey[i].keysAuthenticator}});
+                if (!authetn) {
+                    continue
+                }
+                toSend.push({id: gotKey[i].id, name: authetn.name});
+            }
+            res.send({keys: toSend});
+        } catch (err) {
+            console.error(err);
+            res.status(400).send({ error: "Internal Error" });
+            return;
+        }
+    });
+
+    app.post("/enabletfa", async (req, res) => {
+        if (!req.cookies["G_VAR"]) {
+            res.status(400).send({ error: "User not logged in." });
+            return;
+        }
+
+        let payload2;
+        try {
+            payload2 = verify(req.cookies["G_VAR"], process.env.REFRESH_TOKEN_SECRET!);
+        } catch (err) {
+            res.clearCookie("G_VAR").status(400).send({error: "Invalid cookie."});
+            return;
+        }
+
+        if (!payload2) {
+            res.clearCookie("G_VAR").status(400).send({ error: "No User found." });
+            return;
+        }
+
+        const payload = payload2 as Payload;
+        try {
+            await User.update({id: payload.userId}, {users2FA: "1"});
+        } catch (err) {
+            console.error(err);
+            res.status(400).send({ error: "Internal Error" });
+            return;
+        }
+        res.send({error: false});
+    });
+
     interface Payload {
         userId: number;
         tokenVersion: number;
@@ -455,8 +573,11 @@ import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserMod
         }
 
         if (user.users2FA === "1") {
-            res.json({ error: false, tfa: true });
-            return;
+            const findKeys = await Key.find({where: {keysOwner: payload.userId.toString() }});
+            if (findKeys.length !== 0) {
+                res.json({ error: false, tfa: true });
+                return;
+            }
         }
         if (user.usersPopularSites === "") {
             let newPopular: any = {}
@@ -500,8 +621,11 @@ import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserMod
             return;
         }
         if (user.users2FA === "1") {
-            res.cookie("G_VAR", createRefreshToken(user), { maxAge: 990000000}).json({ error: false, tfa: true });
-            return;
+            const findKeys = await Key.find({where: {keysOwner: user.id.toString() }});
+            if (findKeys.length !== 0) {
+                res.cookie("G_VAR", createRefreshToken(user), { maxAge: 990000000}).json({ error: false, tfa: true });
+                return;
+            }
         }
 
         // sendRefreshToken(res, createRefreshToken(user));

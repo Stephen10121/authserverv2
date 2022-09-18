@@ -1,24 +1,10 @@
 <script>
-  import Prompt from "./Prompt.svelte";
-
+  import { createEventDispatcher } from "svelte";
+  const dispatch = createEventDispatcher();
   export let name;
   export let id;
-  let deleteIt = false;
 </script>
 
-{#if deleteIt}
-  <Prompt
-    on:closeit={() => {
-      deleteIt = false;
-    }}
-    on:answer={({ detail }) => {
-      if (detail) {
-        console.log(`delete ${name}. id: ${id}`);
-        deleteIt = false;
-      }
-    }}
-  />
-{/if}
 <div class="website">
   <img class="web-img" src="./key.svg" alt="Key" />
   <p class="name">{name ? name : "N/A"}</p>
@@ -26,7 +12,7 @@
     name="delete"
     title="Delete"
     on:click={() => {
-      deleteIt = true;
+      dispatch("delete", { id, name });
     }}><img src="./trash3.svg" alt="Delete" /></button
   >
 </div>
