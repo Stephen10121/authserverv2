@@ -22,7 +22,7 @@ import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserMod
   // Human-readable title for your website
   const rpName = 'GruzAuth';
   // A unique identifier for your website
-  const rpID = 'key.gruzservices.com';
+  const rpID = 'auth.gruzservices.com';
   // The URL at which registrations and authentications should occur
   const origin = `https://${rpID}`;
 
