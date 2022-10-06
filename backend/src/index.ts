@@ -4,6 +4,7 @@ import "reflect-metadata";
 import express from "express";
 import { createConnection } from "typeorm";
 import cookieParser from "cookie-parser";
+import cookie from "cookie";
 import { User } from "./entity/User";
 import { Site } from "./entity/Sites";
 import { Key, KeysAuthenticator } from "./entity/Keys";
@@ -17,6 +18,7 @@ import { authRoutes } from "./authRoutes";
 import { homePageRoutes } from "./homePageRoutes";
 import { loginRoutes } from "./loginRoutes";
 import { signupRoutes } from "./signupRoutes";
+import { verify } from "jsonwebtoken";
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -102,6 +104,13 @@ createConnection().then((_data) => {
     console.log("Connection created.");
 });
 
+interface Payload {
+    userId: number;
+    tokenVersion: number;
+    iat: number;
+    exp: number;
+}
+
 io.on("connection", (socket: any) => {
     console.log(`Connection from ${socket.id}`);
 
@@ -110,11 +119,41 @@ io.on("connection", (socket: any) => {
             io.to(socket.id).emit("blacklist", false);
             return;
         }
+
+        const cookieif = socket.handshake.headers.cookie;
+        const cookies = cookie.parse(cookieif);
+        
+        if (!cookies["G_VAR"]) {
+            io.to(socket.id).emit("blacklist", false);
+            return;
+        }
+
+        let payload2;
+        try {
+            payload2 = verify(cookies.G_VAR, process.env.REFRESH_TOKEN_SECRET!);
+        } catch (err) {
+            io.to(socket.id).emit("blacklist", false);
+            return;
+        }
+
+        if (!payload2) {
+            io.to(socket.id).emit("blacklist", false);
+            return;
+        }
+
+        const payload = payload2 as Payload;
+        const user = await User.findOne({ where: {id: payload.userId} });
+
+        if (!user) {
+            io.to(socket.id).emit("blacklist", false);
+            return;
+        }
+
         if (data.name === "http://localhost:4000/myAuth" || data.name === "https://auth.gruzservices.com/myAuth") {
             io.to(socket.id).emit("blacklist", false);
             return;
         }
-        const site = await Site.findOne({ where: { sitesWebsite: data.name } });
+        const site = await Site.findOne({ where: { sitesWebsite: data.name, sitesOwner: user.usersName } });
         if (!site) {
             io.to(socket.id).emit("blacklist", false);
             return;
