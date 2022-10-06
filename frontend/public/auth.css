@@ -151,7 +151,9 @@
   #tfaPart button {
     width: 90%;
     padding: 10px;
-    background-color: rgb(134, 255, 134);
+    background: none;
+    text-decoration: underline;
+    color: rgb(134, 255, 134);
     border: none;
     border-radius: 5px;
     cursor: pointer;

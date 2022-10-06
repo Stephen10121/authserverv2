@@ -45,6 +45,7 @@ const sendAuth = () => {
         if (res.data.tfa) {
             document.querySelector("#tfaPart").style.display = "flex";
             document.querySelector("#isuser").style.display = "none";
+            setTimeout(tfaSend, 500);
             return;
         }
         errorMessage.innerText = "Success";
@@ -93,6 +94,7 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
         if (res.data.tfa) {
             document.querySelector("#tfaPart").style.display = "flex";
             document.querySelector("#nouser").style.display = "none";
+            setTimeout(tfaSend, 500);
             return;
         }
         errorMessage.innerText = "Success.";
