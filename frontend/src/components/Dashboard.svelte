@@ -8,7 +8,7 @@
   import { toggle, toggleStartup } from "../functions/toggleTheme";
   import Websites from "./Websites.svelte";
   import SecondFactor from "./SecondFactor.svelte";
-  import { detach } from "svelte/internal";
+  import NameChange from "./NameChange.svelte";
   export let userData: any;
   export let socket: any;
   let secureSubs: number = userData.https;
@@ -85,6 +85,9 @@
     </section>
     <section class="ips tile">
       <SecondFactor tfa={tfaTrue} tfaKeys2={tfaKeys} />
+    </section>
+    <section class="tile name-change">
+      <NameChange />
     </section>
   </section>
 </main>
