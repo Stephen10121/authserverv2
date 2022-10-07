@@ -20,12 +20,12 @@ authRoutes.get("/auth", async (req, res) => {
         try {
             payload2 = verify(req.cookies["G_VAR"], process.env.REFRESH_TOKEN_SECRET!);
         } catch (err) {
-            res.clearCookie("G_VAR").json({error: true, msg: "Invalid cookie."});
+            res.clearCookie("G_VAR").render("auth");
             return;
         }
 
         if (!payload2) {
-            res.clearCookie("G_VAR").json({ error: true });
+            res.clearCookie("G_VAR").render("auth");
             return;
         }
 
@@ -33,7 +33,7 @@ authRoutes.get("/auth", async (req, res) => {
         const user = await User.findOne({ where: {id: payload.userId} });
 
         if (!user) {
-            res.clearCookie("G_VAR").json({ error: true, msg: "Invalid cookie." });
+            res.clearCookie("G_VAR").render("auth");
             return;
         }
         res.render("auth", {userName: user.usersRName});
