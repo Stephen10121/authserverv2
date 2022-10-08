@@ -361,6 +361,14 @@
       grid-template-rows: 1fr 1fr 1fr 1fr;
       grid-template-areas: "meter stats stats stats" "meter stats stats stats" "chart chart date date" "password password date date" "ips websites websites ..." "... websites websites ...";
     }
+
+    header {
+      justify-content: space-between;
+    }
+
+    header h1 {
+      display: block;
+    }
   }
   @media only screen and (min-width: 1100px) {
     .main {
