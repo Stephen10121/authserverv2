@@ -2,7 +2,7 @@
     "manifest_version": 1,
     "name": "GruzAuth | Gruzservices",
     "short_name": "GruzAuth",
-    "description": "GruzAuth securly authenticate all of your websites.",
+    "description": "GruzAuth securly authenticates all of your websites.",
     "version": "1.1",
     "icons": [
         {
