@@ -1,16 +1,32 @@
 <!-- svelte-ignore missing-declaration -->
 <script lang="ts">
   import Date from "./Date.svelte";
-  // import LineChart from "./LineChart.svelte";
   import Meter from "./Meter.svelte";
   import Password from "./Password.svelte";
   import Stats from "./Stats.svelte";
   import { toggle, toggleStartup } from "../functions/toggleTheme";
   import Websites from "./Websites.svelte";
   import SecondFactor from "./SecondFactor.svelte";
-  import NameChange from "./NameChange.svelte";
+  import AskPrompt from "./AskPrompt.svelte";
+  import Notification from "./Notification.svelte";
+  import { createEventDispatcher } from "svelte";
+  const dispatch = createEventDispatcher();
   export let userData: any;
   export let socket: any;
+
+  interface PromptAsk {
+    promptPlaceholder: string;
+    promptEvent: any;
+    promptExtra: any;
+    promptShow: boolean;
+  }
+
+  interface NotificationType {
+    type: "alert" | "success" | "default";
+    slot: string;
+    show: boolean;
+  }
+
   let secureSubs: number = userData.https;
   let logins: number = userData.attemptedLogins;
   let failed: number = userData.failedLogins;
@@ -19,9 +35,67 @@
   let tfa: string = userData.tfa;
   let tfaKeys: any = userData.tfaKeys;
   let tfaTrue = tfa === "1" ? true : false;
+  let askPrompt: PromptAsk = {
+    promptPlaceholder: "",
+    promptEvent: console.log,
+    promptExtra: "",
+    promptShow: false,
+  };
+  let notification: NotificationType = {
+    show: false,
+    type: "success",
+    slot: "",
+  };
+
   toggleStartup();
+
+  const changeNameCallback = (name: any, _extra: any) => {
+    if (!name) {
+      askPrompt.promptShow = false;
+      return;
+    }
+    askPrompt.promptShow = false;
+    fetch(`/changeName?name=${name.target[0].value}`, { method: "POST" })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.error) {
+          notification.type = "alert";
+          notification.slot = `Cant change name to '${name.target[0].value}'.`;
+          notification.show = true;
+          return;
+        }
+        notification.type = "success";
+        notification.slot = `Changed name to '${name.target[0].value}'.`;
+        notification.show = true;
+        dispatch("nameChange", name.target[0].value);
+      });
+  };
+
+  const changeName = () => {
+    askPrompt = {
+      promptPlaceholder: "Change Name to",
+      promptEvent: changeNameCallback,
+      promptExtra: "",
+      promptShow: true,
+    };
+  };
 </script>
 
+{#if notification.show}
+  <Notification
+    type={notification.type}
+    on:close={() => {
+      notification.show = false;
+    }}>{notification.slot}</Notification
+  >
+{/if}
+{#if askPrompt.promptShow}
+  <AskPrompt
+    promptEvent={askPrompt.promptEvent}
+    promptExtra={askPrompt.promptExtra}
+    promptPlaceholder={askPrompt.promptPlaceholder}
+  />
+{/if}
 <main>
   <header>
     <h1>Auth Dashboard</h1>
@@ -45,6 +119,7 @@
       <Stats mostPopular={popular} {failed} {logins} {subscriptions} />
     </section>
     <section class="chart tile">
+      <button id="change-name" on:click={changeName}>Change</button>
       <h1>Hi {userData.userData.name}</h1>
     </section>
     <section class="tile websites">
@@ -85,9 +160,6 @@
     </section>
     <section class="ips tile">
       <SecondFactor tfa={tfaTrue} tfaKeys2={tfaKeys} />
-    </section>
-    <section class="tile name-change">
-      <NameChange />
     </section>
   </section>
 </main>
@@ -259,6 +331,19 @@
   .extraInfo:hover .show {
     opacity: 1;
     visibility: visible;
+  }
+
+  #change-name {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 5px 10px;
+    background-color: rgb(119, 166, 194);
+    border-radius: 100vh;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-family: "Poppins", sans-serif;
+    border: none;
   }
 
   @media only screen and (max-width: 1200px) {

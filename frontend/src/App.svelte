@@ -12,10 +12,14 @@
     userData = data;
     loggedIn = true;
   });
+
+  const changeName = ({ detail }) => {
+    userData.userData.name = detail;
+  };
 </script>
 
 {#if loggedIn}
-  <Dashboard {userData} {socket} />
+  <Dashboard {userData} {socket} on:nameChange={changeName} />
 {:else}
   <NotLogged {PROXY} {socket} />
 {/if}

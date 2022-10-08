@@ -5,6 +5,12 @@ var app = (function () {
 
     function noop() { }
     const identity = x => x;
+    function assign(tar, src) {
+        // @ts-ignore
+        for (const k in src)
+            tar[k] = src[k];
+        return tar;
+    }
     function add_location(element, file, line, column, char) {
         element.__svelte_meta = {
             loc: { file, line, column, char }
@@ -35,6 +41,52 @@ var app = (function () {
     }
     function is_empty(obj) {
         return Object.keys(obj).length === 0;
+    }
+    function create_slot(definition, ctx, $$scope, fn) {
+        if (definition) {
+            const slot_ctx = get_slot_context(definition, ctx, $$scope, fn);
+            return definition[0](slot_ctx);
+        }
+    }
+    function get_slot_context(definition, ctx, $$scope, fn) {
+        return definition[1] && fn
+            ? assign($$scope.ctx.slice(), definition[1](fn(ctx)))
+            : $$scope.ctx;
+    }
+    function get_slot_changes(definition, $$scope, dirty, fn) {
+        if (definition[2] && fn) {
+            const lets = definition[2](fn(dirty));
+            if ($$scope.dirty === undefined) {
+                return lets;
+            }
+            if (typeof lets === 'object') {
+                const merged = [];
+                const len = Math.max($$scope.dirty.length, lets.length);
+                for (let i = 0; i < len; i += 1) {
+                    merged[i] = $$scope.dirty[i] | lets[i];
+                }
+                return merged;
+            }
+            return $$scope.dirty | lets;
+        }
+        return $$scope.dirty;
+    }
+    function update_slot_base(slot, slot_definition, ctx, $$scope, slot_changes, get_slot_context_fn) {
+        if (slot_changes) {
+            const slot_context = get_slot_context(slot_definition, ctx, $$scope, get_slot_context_fn);
+            slot.p(slot_context, slot_changes);
+        }
+    }
+    function get_all_dirty_from_scope($$scope) {
+        if ($$scope.ctx.length > 32) {
+            const dirty = [];
+            const length = $$scope.ctx.length / 32;
+            for (let i = 0; i < length; i++) {
+                dirty[i] = -1;
+            }
+            return dirty;
+        }
+        return -1;
     }
     function null_to_empty(value) {
         return value == null ? '' : value;
@@ -69,6 +121,13 @@ var app = (function () {
     function listen(node, event, handler, options) {
         node.addEventListener(event, handler, options);
         return () => node.removeEventListener(event, handler, options);
+    }
+    function prevent_default(fn) {
+        return function (event) {
+            event.preventDefault();
+            // @ts-ignore
+            return fn.call(this, event);
+        };
     }
     function attr(node, attribute, value) {
         if (value == null)
@@ -482,9 +541,9 @@ var app = (function () {
     const t={};function MakeIntrinsicClass(e,t){Object.defineProperty(e.prototype,Symbol.toStringTag,{value:t,writable:!1,enumerable:!1,configurable:!0});for(const t of Object.getOwnPropertyNames(e)){const o=Object.getOwnPropertyDescriptor(e,t);o.configurable&&o.enumerable&&(o.enumerable=!1,Object.defineProperty(e,t,o));}for(const t of Object.getOwnPropertyNames(e.prototype)){const o=Object.getOwnPropertyDescriptor(e.prototype,t);o.configurable&&o.enumerable&&(o.enumerable=!1,Object.defineProperty(e.prototype,t,o));}DefineIntrinsic(t,e),DefineIntrinsic(`${t}.prototype`,e.prototype);}function DefineIntrinsic(e,o){const n=`%${e}%`;if(void 0!==t[n])throw new Error(`intrinsic ${e} already exists`);t[n]=o;}function GetIntrinsic(e){return t[e]}const o="slot-epochNanoSeconds",n="slot-timezone-identifier",r$1="slot-year",a="slot-month",i$1="slot-day",s="slot-hour",l="slot-minute",d="slot-second",m="slot-millisecond",c="slot-microsecond",h="slot-nanosecond",T="slot-calendar",u="slot-cached-instant",p="slot-time-zone",f="slot-years",y="slot-months",S="slot-weeks",g="slot-days",w="slot-hours",I="slot-minutes",G="slot-seconds",D="slot-milliseconds",v="slot-microseconds",O="slot-nanoseconds",C="slot-calendar-identifier",E=new WeakMap;function CreateSlots(e){E.set(e,Object.create(null));}function GetSlots(e){return E.get(e)}function HasSlot(e,...t){if(!e||"object"!=typeof e)return !1;const o=GetSlots(e);return !!o&&t.reduce(((e,t)=>e&&t in o),!0)}function GetSlot(e,t){const o=GetSlots(e)[t];if(void 0===o)throw new TypeError(`Missing internal slot ${t}`);return o}function SetSlot(e,t,o){GetSlots(e)[t]=o;}const b=Array.prototype.includes,R=Array.prototype.push,M=globalThis.Intl.DateTimeFormat,Z=Array.prototype.sort,F=Math.abs,Y=Math.floor,P=Object.entries,j=Object.keys,B={};class Calendar{constructor(e){if(arguments.length<1)throw new RangeError("missing argument: id is required");const t=ToString(e);if(!IsBuiltinCalendar(t))throw new RangeError(`invalid calendar identifier ${t}`);CreateSlots(this),SetSlot(this,C,t);}get id(){if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");return ToString(this)}dateFromFields(e,t){if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");if(!IsObject(e))throw new TypeError("invalid fields");const o=GetOptionsObject(t);return B[GetSlot(this,C)].dateFromFields(e,o,this)}yearMonthFromFields(e,t){if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");if(!IsObject(e))throw new TypeError("invalid fields");const o=GetOptionsObject(t);return B[GetSlot(this,C)].yearMonthFromFields(e,o,this)}monthDayFromFields(e,t){if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");if(!IsObject(e))throw new TypeError("invalid fields");const o=GetOptionsObject(t);return B[GetSlot(this,C)].monthDayFromFields(e,o,this)}fields(e){if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");const t=[],o=new Set(["year","month","monthCode","day","hour","minute","second","millisecond","microsecond","nanosecond"]);for(const n of e){if("string"!=typeof n)throw new TypeError("invalid fields");if(!o.has(n))throw new RangeError(`invalid field name ${n}`);o.delete(n),R.call(t,n);}return B[GetSlot(this,C)].fields(t)}mergeFields(e,t){if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");return B[GetSlot(this,C)].mergeFields(e,t)}dateAdd(e,t,o){if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");const n=ToTemporalDate(e),r=ToTemporalDuration(t),a=ToTemporalOverflow(GetOptionsObject(o)),{days:i}=BalanceDuration(GetSlot(r,g),GetSlot(r,w),GetSlot(r,I),GetSlot(r,G),GetSlot(r,D),GetSlot(r,v),GetSlot(r,O),"day");return B[GetSlot(this,C)].dateAdd(n,GetSlot(r,f),GetSlot(r,y),GetSlot(r,S),i,a,this)}dateUntil(e,t,o){if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");const n=ToTemporalDate(e),r=ToTemporalDate(t),a=ToLargestTemporalUnit(GetOptionsObject(o),"auto",["hour","minute","second","millisecond","microsecond","nanosecond"],"day"),{years:i,months:s,weeks:l,days:d}=B[GetSlot(this,C)].dateUntil(n,r,a);return new(GetIntrinsic("%Temporal.Duration%"))(i,s,l,d,0,0,0,0,0,0)}year(e){let t=e;if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");return IsTemporalYearMonth(t)||(t=ToTemporalDate(t)),B[GetSlot(this,C)].year(t)}month(e){let t=e;if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");if(IsTemporalMonthDay(t))throw new TypeError("use monthCode on PlainMonthDay instead");return IsTemporalYearMonth(t)||(t=ToTemporalDate(t)),B[GetSlot(this,C)].month(t)}monthCode(e){let t=e;if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");return IsTemporalYearMonth(t)||IsTemporalMonthDay(t)||(t=ToTemporalDate(t)),B[GetSlot(this,C)].monthCode(t)}day(e){let t=e;if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");return IsTemporalMonthDay(t)||(t=ToTemporalDate(t)),B[GetSlot(this,C)].day(t)}era(e){let t=e;if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");return IsTemporalYearMonth(t)||(t=ToTemporalDate(t)),B[GetSlot(this,C)].era(t)}eraYear(e){let t=e;if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");return IsTemporalYearMonth(t)||(t=ToTemporalDate(t)),B[GetSlot(this,C)].eraYear(t)}dayOfWeek(e){if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");const t=ToTemporalDate(e);return B[GetSlot(this,C)].dayOfWeek(t)}dayOfYear(e){if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");const t=ToTemporalDate(e);return B[GetSlot(this,C)].dayOfYear(t)}weekOfYear(e){if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");const t=ToTemporalDate(e);return B[GetSlot(this,C)].weekOfYear(t)}daysInWeek(e){if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");const t=ToTemporalDate(e);return B[GetSlot(this,C)].daysInWeek(t)}daysInMonth(e){let t=e;if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");return IsTemporalYearMonth(t)||(t=ToTemporalDate(t)),B[GetSlot(this,C)].daysInMonth(t)}daysInYear(e){let t=e;if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");return IsTemporalYearMonth(t)||(t=ToTemporalDate(t)),B[GetSlot(this,C)].daysInYear(t)}monthsInYear(e){let t=e;if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");return IsTemporalYearMonth(t)||(t=ToTemporalDate(t)),B[GetSlot(this,C)].monthsInYear(t)}inLeapYear(e){let t=e;if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");return IsTemporalYearMonth(t)||(t=ToTemporalDate(t)),B[GetSlot(this,C)].inLeapYear(t)}toString(){if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");return GetSlot(this,C)}toJSON(){if(!IsTemporalCalendar(this))throw new TypeError("invalid receiver");return ToString(this)}static from(e){return ToTemporalCalendar(e)}}function monthCodeNumberPart(e){if(!e.startsWith("M"))throw new RangeError(`Invalid month code: ${e}.  Month codes must start with M.`);const t=+e.slice(1);if(isNaN(t))throw new RangeError(`Invalid month code: ${e}`);return t}function buildMonthCode(e,t=!1){return `M${e.toString().padStart(2,"0")}${t?"L":""}`}function resolveNonLunisolarMonth(e,t,o=12){let{month:n,monthCode:r}=e;if(void 0===r){if(void 0===n)throw new TypeError("Either month or monthCode are required");"reject"===t&&RejectToRange(n,1,o),"constrain"===t&&(n=ConstrainToRange(n,1,o)),r=buildMonthCode(n);}else {const e=monthCodeNumberPart(r);if(void 0!==n&&n!==e)throw new RangeError(`monthCode ${r} and month ${n} must match if both are present`);if(r!==buildMonthCode(e))throw new RangeError(`Invalid month code: ${r}`);if(n=e,n<1||n>o)throw new RangeError(`Invalid monthCode: ${r}`)}return {...e,month:n,monthCode:r}}MakeIntrinsicClass(Calendar,"Temporal.Calendar"),DefineIntrinsic("Temporal.Calendar.from",Calendar.from),B.iso8601={dateFromFields(e,t,o){const n=ToTemporalOverflow(t);let r=PrepareTemporalFields(e,[["day"],["month",void 0],["monthCode",void 0],["year"]]);r=resolveNonLunisolarMonth(r);let{year:a,month:i,day:s}=r;return ({year:a,month:i,day:s}=RegulateISODate(a,i,s,n)),CreateTemporalDate(a,i,s,o)},yearMonthFromFields(e,t,o){const n=ToTemporalOverflow(t);let r=PrepareTemporalFields(e,[["month",void 0],["monthCode",void 0],["year"]]);r=resolveNonLunisolarMonth(r);let{year:a,month:i}=r;return ({year:a,month:i}=function RegulateISOYearMonth(e,t,o){let n=e,r=t;const a=1;switch(o){case"reject":RejectISODate(n,r,a);break;case"constrain":({year:n,month:r}=ConstrainISODate(n,r));}return {year:n,month:r}}(a,i,n)),CreateTemporalYearMonth(a,i,o,1)},monthDayFromFields(e,t,o){const n=ToTemporalOverflow(t);let r=PrepareTemporalFields(e,[["day"],["month",void 0],["monthCode",void 0],["year",void 0]]);if(void 0!==r.month&&void 0===r.year&&void 0===r.monthCode)throw new TypeError("either year or monthCode required with month");const a=void 0===r.monthCode;r=resolveNonLunisolarMonth(r);let{month:i,day:s,year:l}=r;return ({month:i,day:s}=RegulateISODate(a?l:1972,i,s,n)),CreateTemporalMonthDay(i,s,o,1972)},fields:e=>e,mergeFields(e,t){const o={};for(const t of j(e))"month"!==t&&"monthCode"!==t&&(o[t]=e[t]);const n=j(t);for(const e of n)o[e]=t[e];if(!b.call(n,"month")&&!b.call(n,"monthCode")){const{month:t,monthCode:n}=e;void 0!==t&&(o.month=t),void 0!==n&&(o.monthCode=n);}return o},dateAdd(e,t,o,n,s,l,d){let m=GetSlot(e,r$1),c=GetSlot(e,a),h=GetSlot(e,i$1);return ({year:m,month:c,day:h}=AddISODate(m,c,h,t,o,n,s,l)),CreateTemporalDate(m,c,h,d)},dateUntil:(e,t,o)=>DifferenceISODate(GetSlot(e,r$1),GetSlot(e,a),GetSlot(e,i$1),GetSlot(t,r$1),GetSlot(t,a),GetSlot(t,i$1),o),year:e=>GetSlot(e,r$1),era(){},eraYear(){},month:e=>GetSlot(e,a),monthCode:e=>buildMonthCode(GetSlot(e,a)),day:e=>GetSlot(e,i$1),dayOfWeek:e=>DayOfWeek(GetSlot(e,r$1),GetSlot(e,a),GetSlot(e,i$1)),dayOfYear:e=>DayOfYear(GetSlot(e,r$1),GetSlot(e,a),GetSlot(e,i$1)),weekOfYear:e=>function WeekOfYear(e,t,o){const n=DayOfYear(e,t,o),r=DayOfWeek(e,t,o)||7,a=DayOfWeek(e,1,1),i=de((n-r+10)/7);if(i<1)return 5===a||6===a&&LeapYear(e-1)?53:52;if(53===i&&(LeapYear(e)?366:365)-n<4-r)return 1;return i}(GetSlot(e,r$1),GetSlot(e,a),GetSlot(e,i$1)),daysInWeek:()=>7,daysInMonth:e=>ISODaysInMonth(GetSlot(e,r$1),GetSlot(e,a)),daysInYear(e){let t=e;return HasSlot(t,r$1)||(t=ToTemporalDate(t)),LeapYear(GetSlot(t,r$1))?366:365},monthsInYear:()=>12,inLeapYear(e){let t=e;return HasSlot(t,r$1)||(t=ToTemporalDate(t)),LeapYear(GetSlot(t,r$1))}};class OneObjectCache{constructor(e){if(this.map=new Map,this.calls=0,this.hits=0,this.misses=0,this.now=globalThis.performance?globalThis.performance.now():Date.now(),void 0!==e){let t=0;for(const o of e.map.entries()){if(++t>OneObjectCache.MAX_CACHE_ENTRIES)break;this.map.set(...o);}}}get(e){const t=this.map.get(e);return t&&(this.hits++,this.report()),this.calls++,t}set(e,t){this.map.set(e,t),this.misses++,this.report();}report(){}setObject(e){if(OneObjectCache.objectMap.get(e))throw new RangeError("object already cached");OneObjectCache.objectMap.set(e,this),this.report();}static getCacheForObject(e){let t=OneObjectCache.objectMap.get(e);return t||(t=new OneObjectCache,OneObjectCache.objectMap.set(e,t)),t}}function toUtcIsoDateString({isoYear:e,isoMonth:t,isoDay:o}){return `${ISOYearString(e)}-${ISODateTimePartString(t)}-${ISODateTimePartString(o)}T00:00Z`}function simpleDateDiff(e,t){return {years:e.year-t.year,months:e.month-t.month,days:e.day-t.day}}OneObjectCache.objectMap=new WeakMap,OneObjectCache.MAX_CACHE_ENTRIES=1e3;class HelperBase{constructor(){this.eraLength="short",this.hasEra=!0;}getFormatter(){return void 0===this.formatter&&(this.formatter=new M(`en-US-u-ca-${this.id}`,{day:"numeric",month:"numeric",year:"numeric",era:this.eraLength,timeZone:"UTC"})),this.formatter}isoToCalendarDate(e,t){const{year:o,month:n,day:r}=e,a=JSON.stringify({func:"isoToCalendarDate",isoYear:o,isoMonth:n,isoDay:r,id:this.id}),i=t.get(a);if(i)return i;const s=this.getFormatter();let l,d;try{d=toUtcIsoDateString({isoYear:o,isoMonth:n,isoDay:r}),l=s.formatToParts(new Date(d));}catch(e){throw new RangeError(`Invalid ISO date: ${JSON.stringify({isoYear:o,isoMonth:n,isoDay:r})}`)}const m={};for(let{type:e,value:t}of l){if("year"===e&&(m.eraYear=+t),"relatedYear"===e&&(m.eraYear=+t),"month"===e){const e=/^([0-9]*)(.*?)$/.exec(t);if(!e||3!=e.length||!e[1]&&!e[2])throw new RangeError(`Unexpected month: ${t}`);if(m.month=e[1]?+e[1]:1,m.month<1)throw new RangeError(`Invalid month ${t} from ${d}[u-ca-${this.id}] (probably due to https://bugs.chromium.org/p/v8/issues/detail?id=10527)`);if(m.month>13)throw new RangeError(`Invalid month ${t} from ${d}[u-ca-${this.id}] (probably due to https://bugs.chromium.org/p/v8/issues/detail?id=10529)`);e[2]&&(m.monthExtra=e[2]);}"day"===e&&(m.day=+t),this.hasEra&&"era"===e&&null!=t&&""!==t&&(t=t.split(" (")[0],m.era=t.normalize("NFD").replace(/[^-0-9 \p{L}]/gu,"").replace(" ","-").toLowerCase());}if(void 0===m.eraYear)throw new RangeError(`Intl.DateTimeFormat.formatToParts lacks relatedYear in ${this.id} calendar. Try Node 14+ or modern browsers.`);if(this.reviseIntlEra){const{era:t,eraYear:o}=this.reviseIntlEra(m,e);m.era=t,m.eraYear=o;}this.checkIcuBugs&&this.checkIcuBugs(e);const c=this.adjustCalendarDate(m,t,"constrain",!0);if(void 0===c.year)throw new RangeError(`Missing year converting ${JSON.stringify(e)}`);if(void 0===c.month)throw new RangeError(`Missing month converting ${JSON.stringify(e)}`);if(void 0===c.day)throw new RangeError(`Missing day converting ${JSON.stringify(e)}`);return t.set(a,c),["constrain","reject"].forEach((o=>{const n=JSON.stringify({func:"calendarToIsoDate",year:c.year,month:c.month,day:c.day,overflow:o,id:this.id});t.set(n,e);})),c}validateCalendarDate(e){const{era:t,month:o,year:n,day:r,eraYear:a,monthCode:i,monthExtra:s}=e;if(void 0!==s)throw new RangeError("Unexpected `monthExtra` value");if(void 0===n&&void 0===a)throw new TypeError("year or eraYear is required");if(void 0===o&&void 0===i)throw new TypeError("month or monthCode is required");if(void 0===r)throw new RangeError("Missing day");if(void 0!==i){if("string"!=typeof i)throw new RangeError("monthCode must be a string, not "+typeof i);if(!/^M([01]?\d)(L?)$/.test(i))throw new RangeError(`Invalid monthCode: ${i}`)}if(this.constantEra){if(void 0!==t&&t!==this.constantEra)throw new RangeError(`era must be ${this.constantEra}, not ${t}`);if(void 0!==a&&void 0!==n&&a!==n)throw new RangeError(`eraYear ${a} does not match year ${n}`)}}adjustCalendarDate(e,t,o="constrain",n=!1){if("lunisolar"===this.calendarType)throw new RangeError("Override required for lunisolar calendars");let r=e;if(this.validateCalendarDate(r),this.constantEra){const{year:e,eraYear:t}=r;r={...r,era:this.constantEra,year:void 0!==e?e:t,eraYear:void 0!==t?t:e};}const a=this.monthsInYear(r,t);let{month:i,monthCode:s}=r;return ({month:i,monthCode:s}=resolveNonLunisolarMonth(r,o,a)),{...r,month:i,monthCode:s}}regulateMonthDayNaive(e,t,o){const n=this.monthsInYear(e,o);let{month:r,day:a}=e;return "reject"===t?(RejectToRange(r,1,n),RejectToRange(a,1,this.maximumMonthLength(e))):(r=ConstrainToRange(r,1,n),a=ConstrainToRange(a,1,this.maximumMonthLength({...e,month:r}))),{...e,month:r,day:a}}calendarToIsoDate(e,t="constrain",o){const n=e;let r=this.adjustCalendarDate(e,o,t,!1);r=this.regulateMonthDayNaive(r,t,o);const{year:a,month:i,day:s}=r,l=JSON.stringify({func:"calendarToIsoDate",year:a,month:i,day:s,overflow:t,id:this.id});let d,m=o.get(l);if(m)return m;if(void 0!==n.year&&void 0!==n.month&&void 0!==n.day&&(n.year!==r.year||n.month!==r.month||n.day!==r.day)&&(d=JSON.stringify({func:"calendarToIsoDate",year:n.year,month:n.month,day:n.day,overflow:t,id:this.id}),m=o.get(d),m))return m;let c=this.estimateIsoDate({year:a,month:i,day:s});const calculateSameMonthResult=e=>{let n=this.addDaysIso(c,e);if(r.day>this.minimumMonthLength(r)){let e=this.isoToCalendarDate(n,o);for(;e.month!==i||e.year!==a;){if("reject"===t)throw new RangeError(`day ${s} does not exist in month ${i} of year ${a}`);n=this.addDaysIso(n,-1),e=this.isoToCalendarDate(n,o);}}return n};let h=0,T=this.isoToCalendarDate(c,o),u=simpleDateDiff(r,T);if(0!==u.years||0!==u.months||0!==u.days){const e=365*u.years+30*u.months+u.days;c=this.addDaysIso(c,e),T=this.isoToCalendarDate(c,o),u=simpleDateDiff(r,T),0===u.years&&0===u.months?c=calculateSameMonthResult(u.days):h=this.compareCalendarDates(r,T);}let p=8,f=!1;for(;h;){c=this.addDaysIso(c,h*p);const e=T;T=this.isoToCalendarDate(c,o);const a=h;if(h=this.compareCalendarDates(r,T),h)if(u=simpleDateDiff(r,T),0===u.years&&0===u.months)c=calculateSameMonthResult(u.days),h=0,f=r.day>this.minimumMonthLength(r);else if(a&&h!==a)if(p>1)p/=2;else {if("reject"===t)throw new RangeError(`Can't find ISO date from calendar date: ${JSON.stringify({...n})}`);this.compareCalendarDates(T,e)>0&&(c=this.addDaysIso(c,-1)),f=!0,h=0;}}if(o.set(l,c),d&&o.set(d,c),void 0===r.year||void 0===r.month||void 0===r.day||void 0===r.monthCode||this.hasEra&&(void 0===r.era||void 0===r.eraYear))throw new RangeError("Unexpected missing property");if(!f){const e=JSON.stringify({func:"isoToCalendarDate",isoYear:c.year,isoMonth:c.month,isoDay:c.day,id:this.id});o.set(e,r);}return c}temporalToCalendarDate(e,t){const o={year:GetSlot(e,r$1),month:GetSlot(e,a),day:GetSlot(e,i$1)};return this.isoToCalendarDate(o,t)}compareCalendarDates(e,t){const o=PrepareTemporalFields(e,[["day"],["month"],["year"]]),n=PrepareTemporalFields(t,[["day"],["month"],["year"]]);return o.year!==n.year?ComparisonResult(o.year-n.year):o.month!==n.month?ComparisonResult(o.month-n.month):o.day!==n.day?ComparisonResult(o.day-n.day):0}regulateDate(e,t="constrain",o){const n=this.calendarToIsoDate(e,t,o);return this.isoToCalendarDate(n,o)}addDaysIso(e,t){return AddISODate(e.year,e.month,e.day,0,0,0,t,"constrain")}addDaysCalendar(e,t,o){const n=this.calendarToIsoDate(e,"constrain",o),r=this.addDaysIso(n,t);return this.isoToCalendarDate(r,o)}addMonthsCalendar(e,t,o,n){let r=e;const{day:a}=r;for(let e=0,o=F(t);e<o;e++){const{month:e}=r,o=r,i=t<0?-Math.max(a,this.daysInPreviousMonth(r,n)):this.daysInMonth(r,n),s=this.calendarToIsoDate(r,"constrain",n);let l=this.addDaysIso(s,i);if(r=this.isoToCalendarDate(l,n),t>0){const t=this.monthsInYear(o,n);for(;r.month-1!=e%t;)l=this.addDaysIso(l,-1),r=this.isoToCalendarDate(l,n);}r.day!==a&&(r=this.regulateDate({...r,day:a},"constrain",n));}if("reject"===o&&r.day!==a)throw new RangeError(`Day ${a} does not exist in resulting calendar month`);return r}addCalendar(e,{years:t=0,months:o=0,weeks:n=0,days:r=0},a,i){const{year:s,month:l,day:d}=e,m=this.addMonthsCalendar({year:s+t,month:l,day:d},o,a,i),c=r+7*n;return this.addDaysCalendar(m,c,i)}untilCalendar(e,t,o,n){let r=0,a=0,i=0,s=0;switch(o){case"day":r=this.calendarDaysUntil(e,t,n);break;case"week":{const o=this.calendarDaysUntil(e,t,n);r=o%7,a=(o-r)/7;break}case"month":case"year":{const a=t.year-e.year,l=t.month-e.month,d=t.day-e.day,m=this.compareCalendarDates(t,e);if("year"===o&&a){s=l*m<0||0===l&&d*m<0?a-m:a;}let c,h=s?this.addCalendar(e,{years:s},"constrain",n):e;do{i+=m,c=h,h=this.addMonthsCalendar(c,m,"constrain",n),h.day!==e.day&&(h=this.regulateDate({...h,day:e.day},"constrain",n));}while(this.compareCalendarDates(t,h)*m>=0);i-=m;r=this.calendarDaysUntil(c,t,n);break}}return {years:s,months:i,weeks:a,days:r}}daysInMonth(e,t){const{day:o}=e,n=this.maximumMonthLength(e),r=this.minimumMonthLength(e);if(r===n)return r;const a=o<=n-r?n:r,i=this.calendarToIsoDate(e,"constrain",t),s=this.addDaysIso(i,a),l=this.isoToCalendarDate(s,t),d=this.addDaysIso(s,-l.day);return this.isoToCalendarDate(d,t).day}daysInPreviousMonth(e,t){const{day:o,month:n,year:r}=e;let a={year:n>1?r:r-1,month:n,day:1};const i=n>1?n-1:this.monthsInYear(a,t);a={...a,month:i};const s=this.minimumMonthLength(a),l=this.maximumMonthLength(a);if(s===l)return l;const d=this.calendarToIsoDate(e,"constrain",t),m=this.addDaysIso(d,-o);return this.isoToCalendarDate(m,t).day}startOfCalendarYear(e){return {year:e.year,month:1,day:1}}startOfCalendarMonth(e){return {year:e.year,month:e.month,day:1}}calendarDaysUntil(e,t,o){const n=this.calendarToIsoDate(e,"constrain",o),r=this.calendarToIsoDate(t,"constrain",o);return this.isoDaysUntil(n,r)}isoDaysUntil(e,t){return DifferenceISODate(e.year,e.month,e.day,t.year,t.month,t.day,"day").days}monthDayFromFields(e,t,o){let n,r,a,i,s,{year:l,month:d,monthCode:m,day:c,era:h,eraYear:T}=e;if(void 0===m){if(void 0===l&&(void 0===h||void 0===T))throw new TypeError("`monthCode`, `year`, or `era` and `eraYear` is required");({monthCode:m,year:l}=this.adjustCalendarDate({year:l,month:d,monthCode:m,day:c,era:h,eraYear:T},o,t));}const{year:u}=this.isoToCalendarDate({year:1972,month:1,day:1},o);for(let e=0;e<100;e++){const l=this.adjustCalendarDate({day:c,monthCode:m,year:u-e},o),d=this.calendarToIsoDate(l,"constrain",o),h=this.isoToCalendarDate(d,o);if(({year:n,month:r,day:a}=d),h.monthCode===m&&h.day===c)return {month:r,day:a,year:n};"constrain"===t&&(void 0===i||h.monthCode===i.monthCode&&h.day>i.day)&&(i=h,s=d);}if("constrain"===t&&void 0!==s)return s;throw new RangeError(`No recent ${this.id} year with monthCode ${m} and day ${c}`)}}class HebrewHelper extends HelperBase{constructor(){super(...arguments),this.id="hebrew",this.calendarType="lunisolar",this.months={Tishri:{leap:1,regular:1,monthCode:"M01",days:30},Heshvan:{leap:2,regular:2,monthCode:"M02",days:{min:29,max:30}},Kislev:{leap:3,regular:3,monthCode:"M03",days:{min:29,max:30}},Tevet:{leap:4,regular:4,monthCode:"M04",days:29},Shevat:{leap:5,regular:5,monthCode:"M05",days:30},Adar:{leap:void 0,regular:6,monthCode:"M06",days:29},"Adar I":{leap:6,regular:void 0,monthCode:"M05L",days:30},"Adar II":{leap:7,regular:void 0,monthCode:"M06",days:29},Nisan:{leap:8,regular:7,monthCode:"M07",days:30},Iyar:{leap:9,regular:8,monthCode:"M08",days:29},Sivan:{leap:10,regular:9,monthCode:"M09",days:30},Tamuz:{leap:11,regular:10,monthCode:"M10",days:29},Av:{leap:12,regular:11,monthCode:"M11",days:30},Elul:{leap:13,regular:12,monthCode:"M12",days:29}},this.hasEra=!1;}inLeapYear(e){const{year:t}=e;return (7*t+1)%19<7}monthsInYear(e){return this.inLeapYear(e)?13:12}minimumMonthLength(e){return this.minMaxMonthLength(e,"min")}maximumMonthLength(e){return this.minMaxMonthLength(e,"max")}minMaxMonthLength(e,t){const{month:o,year:n}=e,r=this.getMonthCode(n,o),a=P(this.months).find((e=>e[1].monthCode===r));if(void 0===a)throw new RangeError(`unmatched Hebrew month: ${o}`);const i=a[1].days;return "number"==typeof i?i:i[t]}estimateIsoDate(e){const{year:t}=e;return {year:t-3760,month:1,day:1}}getMonthCode(e,t){return this.inLeapYear({year:e})?6===t?buildMonthCode(5,!0):buildMonthCode(t<6?t:t-1):buildMonthCode(t)}adjustCalendarDate(e,t,o="constrain",n=!1){let{year:r,eraYear:a,month:i,monthCode:s,day:l,monthExtra:d}=e;if(void 0===r&&void 0!==a&&(r=a),void 0===a&&void 0!==r&&(a=r),n){if(d){const e=this.months[d];if(!e)throw new RangeError(`Unrecognized month from formatToParts: ${d}`);i=this.inLeapYear({year:r})?e.leap:e.regular;}s=this.getMonthCode(r,i);return {year:r,month:i,day:l,era:void 0,eraYear:a,monthCode:s}}if(this.validateCalendarDate(e),void 0===i)if(s.endsWith("L")){if("M05L"!==s)throw new RangeError(`Hebrew leap month must have monthCode M05L, not ${s}`);if(i=6,!this.inLeapYear({year:r})){if("reject"===o)throw new RangeError(`Hebrew monthCode M05L is invalid in year ${r} which is not a leap year`);i=5,l=30,s="M05";}}else {i=monthCodeNumberPart(s),this.inLeapYear({year:r})&&i>6&&i++;const e=this.monthsInYear({year:r});if(i<1||i>e)throw new RangeError(`Invalid monthCode: ${s}`)}else if("reject"===o?(RejectToRange(i,1,this.monthsInYear({year:r})),RejectToRange(l,1,this.maximumMonthLength({year:r,month:i}))):(i=ConstrainToRange(i,1,this.monthsInYear({year:r})),l=ConstrainToRange(l,1,this.maximumMonthLength({year:r,month:i}))),void 0===s)s=this.getMonthCode(r,i);else {if(this.getMonthCode(r,i)!==s)throw new RangeError(`monthCode ${s} doesn't correspond to month ${i} in Hebrew year ${r}`)}return {...e,day:l,month:i,monthCode:s,year:r,eraYear:a}}}class IslamicBaseHelper extends HelperBase{constructor(){super(...arguments),this.calendarType="lunar",this.DAYS_PER_ISLAMIC_YEAR=354+11/30,this.DAYS_PER_ISO_YEAR=365.2425,this.constantEra="ah";}inLeapYear(e,t){return 30===this.daysInMonth({year:e.year,month:12,day:1},t)}monthsInYear(){return 12}minimumMonthLength(){return 29}maximumMonthLength(){return 30}estimateIsoDate(e){const{year:t}=this.adjustCalendarDate(e);return {year:Y(t*this.DAYS_PER_ISLAMIC_YEAR/this.DAYS_PER_ISO_YEAR)+622,month:1,day:1}}}class IslamicHelper extends IslamicBaseHelper{constructor(){super(...arguments),this.id="islamic";}}class IslamicUmalquraHelper extends IslamicBaseHelper{constructor(){super(...arguments),this.id="islamic-umalqura";}}class IslamicTblaHelper extends IslamicBaseHelper{constructor(){super(...arguments),this.id="islamic-tbla";}}class IslamicCivilHelper extends IslamicBaseHelper{constructor(){super(...arguments),this.id="islamic-civil";}}class IslamicRgsaHelper extends IslamicBaseHelper{constructor(){super(...arguments),this.id="islamic-rgsa";}}class IslamicCcHelper extends IslamicBaseHelper{constructor(){super(...arguments),this.id="islamicc";}}class PersianHelper extends HelperBase{constructor(){super(...arguments),this.id="persian",this.calendarType="solar",this.constantEra="ap";}inLeapYear(e,t){return IslamicHelper.prototype.inLeapYear.call(this,e,t)}monthsInYear(){return 12}minimumMonthLength(e){const{month:t}=e;return 12===t?29:t<=6?31:30}maximumMonthLength(e){const{month:t}=e;return 12===t?30:t<=6?31:30}estimateIsoDate(e){const{year:t}=this.adjustCalendarDate(e);return {year:t+621,month:1,day:1}}}class IndianHelper extends HelperBase{constructor(){super(...arguments),this.id="indian",this.calendarType="solar",this.constantEra="saka",this.months={1:{length:30,month:3,day:22,leap:{length:31,month:3,day:21}},2:{length:31,month:4,day:21},3:{length:31,month:5,day:22},4:{length:31,month:6,day:22},5:{length:31,month:7,day:23},6:{length:31,month:8,day:23},7:{length:30,month:9,day:23},8:{length:30,month:10,day:23},9:{length:30,month:11,day:22},10:{length:30,month:12,day:22},11:{length:30,month:1,nextYear:!0,day:21},12:{length:30,month:2,nextYear:!0,day:20}},this.vulnerableToBceBug="10/11/-79 Saka"!==new Date("0000-01-01T00:00Z").toLocaleDateString("en-US-u-ca-indian",{timeZone:"UTC"});}inLeapYear(e){return isGregorianLeapYear(e.year+78)}monthsInYear(){return 12}minimumMonthLength(e){return this.getMonthInfo(e).length}maximumMonthLength(e){return this.getMonthInfo(e).length}getMonthInfo(e){const{month:t}=e;let o=this.months[t];if(void 0===o)throw new RangeError(`Invalid month: ${t}`);return this.inLeapYear(e)&&o.leap&&(o=o.leap),o}estimateIsoDate(e){const t=this.adjustCalendarDate(e),o=this.getMonthInfo(t);return AddISODate(t.year+78+(o.nextYear?1:0),o.month,o.day,0,0,0,t.day-1,"constrain")}checkIcuBugs(e){if(this.vulnerableToBceBug&&e.year<1)throw new RangeError(`calendar '${this.id}' is broken for ISO dates before 0001-01-01 (see https://bugs.chromium.org/p/v8/issues/detail?id=10529)`)}}function isGregorianLeapYear(e){return e%4==0&&(e%100!=0||e%400==0)}class GregorianBaseHelper extends HelperBase{constructor(e,t){super(),this.calendarType="solar",this.v8IsVulnerableToJulianBug=new Date("+001001-01-01T00:00Z").toLocaleDateString("en-US-u-ca-japanese",{timeZone:"UTC"}).startsWith("12"),this.calendarIsVulnerableToJulianBug=!1,this.id=e;const{eras:o,anchorEra:n}=function adjustEras(e){let t,o=e;if(0===o.length)throw new RangeError("Invalid era data: eras are required");if(1===o.length&&o[0].reverseOf)throw new RangeError("Invalid era data: anchor era cannot count years backwards");if(1===o.length&&!o[0].name)throw new RangeError("Invalid era data: at least one named era is required");if(o.filter((e=>null!=e.reverseOf)).length>1)throw new RangeError("Invalid era data: only one era can count years backwards");o.forEach((e=>{if(e.isAnchor||!e.anchorEpoch&&!e.reverseOf){if(t)throw new RangeError("Invalid era data: cannot have multiple anchor eras");t=e,e.anchorEpoch={year:e.hasYearZero?0:1};}else if(!e.name)throw new RangeError("If era name is blank, it must be the anchor era")})),o=o.filter((e=>e.name)),o.forEach((e=>{const{reverseOf:t}=e;if(t){const n=o.find((e=>e.name===t));if(void 0===n)throw new RangeError(`Invalid era data: unmatched reverseOf era: ${t}`);e.reverseOf=n,e.anchorEpoch=n.anchorEpoch,e.isoEpoch=n.isoEpoch;}void 0===e.anchorEpoch.month&&(e.anchorEpoch.month=1),void 0===e.anchorEpoch.day&&(e.anchorEpoch.day=1);})),Z.call(o,((e,t)=>{if(e.reverseOf)return 1;if(t.reverseOf)return -1;if(!e.isoEpoch||!t.isoEpoch)throw new RangeError("Invalid era data: missing ISO epoch");return t.isoEpoch.year-e.isoEpoch.year}));const n=o[o.length-1].reverseOf;if(n&&n!==o[o.length-2])throw new RangeError("Invalid era data: invalid reverse-sign era");return o.forEach(((e,t)=>{e.genericName="era"+(o.length-1-t);})),{eras:o,anchorEra:t||o[0]}}(t);this.anchorEra=n,this.eras=o;}inLeapYear(e){const{year:t}=this.estimateIsoDate({month:1,day:1,year:e.year});return isGregorianLeapYear(t)}monthsInYear(){return 12}minimumMonthLength(e){const{month:t}=e;return 2===t?this.inLeapYear(e)?29:28:[4,6,9,11].indexOf(t)>=0?30:31}maximumMonthLength(e){return this.minimumMonthLength(e)}completeEraYear(e){const checkField=(t,o)=>{const n=e[t];if(null!=n&&n!=o)throw new RangeError(`Input ${t} ${n} doesn't match calculated value ${o}`)},eraFromYear=t=>{let o;const n={...e,year:t},r=this.eras.find(((e,r)=>{if(r===this.eras.length-1){if(e.reverseOf){if(t>0)throw new RangeError(`Signed year ${t} is invalid for era ${e.name}`);return o=e.anchorEpoch.year-t,!0}return o=t-e.anchorEpoch.year+(e.hasYearZero?0:1),!0}return this.compareCalendarDates(n,e.anchorEpoch)>=0&&(o=t-e.anchorEpoch.year+(e.hasYearZero?0:1),!0)}));if(!r)throw new RangeError(`Year ${t} was not matched by any era`);return {eraYear:o,era:r.name}};let{year:t,eraYear:o,era:n}=e;if(null!=t)(({eraYear:o,era:n}=eraFromYear(t))),checkField("era",n),checkField("eraYear",o);else {if(null==o)throw new RangeError("Either `year` or `eraYear` and `era` are required");{const e=void 0===n?void 0:this.eras.find((e=>e.name===n||e.genericName===n));if(!e)throw new RangeError(`Era ${n} (ISO year ${o}) was not matched by any era`);if(o<1&&e.reverseOf)throw new RangeError(`Years in ${n} era must be positive, not ${t}`);t=e.reverseOf?e.anchorEpoch.year-o:o+e.anchorEpoch.year-(e.hasYearZero?0:1),checkField("year",t),({eraYear:o,era:n}=eraFromYear(t));}}return {...e,year:t,eraYear:o,era:n}}adjustCalendarDate(e,t,o="constrain"){let n=e;const{month:r,monthCode:a}=n;return void 0===r&&(n={...n,month:monthCodeNumberPart(a)}),this.validateCalendarDate(n),n=this.completeEraYear(n),super.adjustCalendarDate(n,t,o)}estimateIsoDate(e){const t=this.adjustCalendarDate(e),{year:o,month:n,day:r}=t,{anchorEra:a}=this;return RegulateISODate(o+a.isoEpoch.year-(a.hasYearZero?0:1),n,r,"constrain")}checkIcuBugs(e){if(this.calendarIsVulnerableToJulianBug&&this.v8IsVulnerableToJulianBug){if(CompareISODate(e.year,e.month,e.day,1582,10,15)<0)throw new RangeError(`calendar '${this.id}' is broken for ISO dates before 1582-10-15 (see https://bugs.chromium.org/p/chromium/issues/detail?id=1173158)`)}}}class OrthodoxBaseHelper extends GregorianBaseHelper{constructor(e,t){super(e,t);}inLeapYear(e){const{year:t}=e;return (t+1)%4==0}monthsInYear(){return 13}minimumMonthLength(e){const{month:t}=e;return 13===t?this.inLeapYear(e)?6:5:30}maximumMonthLength(e){return this.minimumMonthLength(e)}}class EthioaaHelper extends OrthodoxBaseHelper{constructor(){super("ethioaa",[{name:"era0",isoEpoch:{year:-5492,month:7,day:17}}]);}}class CopticHelper extends OrthodoxBaseHelper{constructor(){super("coptic",[{name:"era1",isoEpoch:{year:284,month:8,day:29}},{name:"era0",reverseOf:"era1"}]);}}class EthiopicHelper extends OrthodoxBaseHelper{constructor(){super("ethiopic",[{name:"era0",isoEpoch:{year:-5492,month:7,day:17}},{name:"era1",isoEpoch:{year:8,month:8,day:27},anchorEpoch:{year:5501}}]);}}class RocHelper extends GregorianBaseHelper{constructor(){super("roc",[{name:"minguo",isoEpoch:{year:1912,month:1,day:1}},{name:"before-roc",reverseOf:"minguo"}]),this.calendarIsVulnerableToJulianBug=!0;}}class BuddhistHelper extends GregorianBaseHelper{constructor(){super("buddhist",[{name:"be",hasYearZero:!0,isoEpoch:{year:-543,month:1,day:1}}]),this.calendarIsVulnerableToJulianBug=!0;}}class GregoryHelper extends GregorianBaseHelper{constructor(){super("gregory",[{name:"ce",isoEpoch:{year:1,month:1,day:1}},{name:"bce",reverseOf:"ce"}]);}reviseIntlEra(e){let{era:t,eraYear:o}=e;return "bc"!==t&&"b"!==t||(t="bce"),"ad"!==t&&"a"!==t||(t="ce"),{era:t,eraYear:o}}}class JapaneseHelper extends GregorianBaseHelper{constructor(){super("japanese",[{name:"reiwa",isoEpoch:{year:2019,month:5,day:1},anchorEpoch:{year:2019,month:5,day:1}},{name:"heisei",isoEpoch:{year:1989,month:1,day:8},anchorEpoch:{year:1989,month:1,day:8}},{name:"showa",isoEpoch:{year:1926,month:12,day:25},anchorEpoch:{year:1926,month:12,day:25}},{name:"taisho",isoEpoch:{year:1912,month:7,day:30},anchorEpoch:{year:1912,month:7,day:30}},{name:"meiji",isoEpoch:{year:1868,month:9,day:8},anchorEpoch:{year:1868,month:9,day:8}},{name:"ce",isoEpoch:{year:1,month:1,day:1}},{name:"bce",reverseOf:"ce"}]),this.calendarIsVulnerableToJulianBug=!0,this.eraLength="long";}reviseIntlEra(e,t){const{era:o,eraYear:n}=e,{year:r}=t;return this.eras.find((e=>e.name===o))?{era:o,eraYear:n}:r<1?{era:"bce",eraYear:1-r}:{era:"ce",eraYear:r}}}class ChineseBaseHelper extends HelperBase{constructor(){super(...arguments),this.calendarType="lunisolar",this.hasEra=!1;}inLeapYear(e,t){const o=this.getMonthList(e.year,t);return 13===P(o).length}monthsInYear(e,t){return this.inLeapYear(e,t)?13:12}minimumMonthLength(){return 29}maximumMonthLength(){return 30}getMonthList(e,t){if(void 0===e)throw new TypeError("Missing year");const o=JSON.stringify({func:"getMonthList",calendarYear:e,id:this.id}),n=t.get(o);if(n)return n;const r=this.getFormatter(),getCalendarDate=(e,t)=>{const o=toUtcIsoDateString({isoYear:e,isoMonth:2,isoDay:1}),n=new Date(o);n.setUTCDate(t+1);const a=r.formatToParts(n),i=a.find((e=>"month"===e.type)).value,s=+a.find((e=>"day"===e.type)).value;let l=a.find((e=>"relatedYear"===e.type));if(void 0===l)throw new RangeError(`Intl.DateTimeFormat.formatToParts lacks relatedYear in ${this.id} calendar. Try Node 14+ or modern browsers.`);return l=+l.value,{calendarMonthString:i,calendarDay:s,calendarYearToVerify:l}};let a=17,{calendarMonthString:i,calendarDay:s,calendarYearToVerify:l}=getCalendarDate(e,a);"1"!==i&&(a+=29,({calendarMonthString:i,calendarDay:s}=getCalendarDate(e,a))),a-=s-5;const d={};let m,c,h=1,T=!1;do{(({calendarMonthString:i,calendarDay:s,calendarYearToVerify:l}=getCalendarDate(e,a))),m&&(d[c].daysInMonth=m+30-s),l!==e?T=!0:(d[i]={monthIndex:h++},a+=30),m=s,c=i;}while(!T);return d[c].daysInMonth=m+30-s,t.set(o,d),d}estimateIsoDate(e){const{year:t,month:o}=e;return {year:t,month:o>=12?12:o+1,day:1}}adjustCalendarDate(e,t,o="constrain",n=!1){let{year:r,month:a,monthExtra:i,day:s,monthCode:l,eraYear:d}=e;if(n){if(r=d,i&&"bis"!==i)throw new RangeError(`Unexpected leap month suffix: ${i}`);const e=buildMonthCode(a,void 0!==i),o=`${a}${i||""}`,n=this.getMonthList(r,t)[o];if(void 0===n)throw new RangeError(`Unmatched month ${o} in Chinese year ${r}`);return a=n.monthIndex,{year:r,month:a,day:s,era:void 0,eraYear:d,monthCode:e}}if(this.validateCalendarDate(e),void 0===r&&(r=d),void 0===d&&(d=r),void 0===a){const e=this.getMonthList(r,t);let n=l.replace("L","bis").slice(1);"0"===n[0]&&(n=n.slice(1));let i=e[n];if(a=i&&i.monthIndex,void 0===a&&l.endsWith("L")&&!b.call(["M01L","M12L","M13L"],l)&&"constrain"===o){let t=l.slice(1,-1);"0"===t[0]&&(t=t.slice(1)),i=e[t],i&&(({daysInMonth:s,monthIndex:a}=i),l=buildMonthCode(t));}if(void 0===a)throw new RangeError(`Unmatched month ${l} in Chinese year ${r}`)}else if(void 0===l){const e=this.getMonthList(r,t),n=P(e),i=n.length;"reject"===o?(RejectToRange(a,1,i),RejectToRange(s,1,this.maximumMonthLength())):(a=ConstrainToRange(a,1,i),s=ConstrainToRange(s,1,this.maximumMonthLength()));const d=n.find((([,e])=>e.monthIndex===a));if(void 0===d)throw new RangeError(`Invalid month ${a} in Chinese year ${r}`);l=buildMonthCode(d[0].replace("bis",""),-1!==d[0].indexOf("bis"));}else {const e=this.getMonthList(r,t);let o=l.replace("L","bis").slice(1);"0"===o[0]&&(o=o.slice(1));const n=e[o];if(!n)throw new RangeError(`Unmatched monthCode ${l} in Chinese year ${r}`);if(a!==n.monthIndex)throw new RangeError(`monthCode ${l} doesn't correspond to month ${a} in Chinese year ${r}`)}return {...e,year:r,eraYear:d,month:a,monthCode:l,day:s}}}class ChineseHelper extends ChineseBaseHelper{constructor(){super(...arguments),this.id="chinese";}}class DangiHelper extends ChineseBaseHelper{constructor(){super(...arguments),this.id="dangi";}}const N={helper:void 0,dateFromFields(e,t,o){const n=ToTemporalOverflow(t),r=new OneObjectCache,a=PrepareTemporalFields(e,[["day"],["era",void 0],["eraYear",void 0],["month",void 0],["monthCode",void 0],["year",void 0]]),{year:i,month:s,day:l}=this.helper.calendarToIsoDate(a,n,r),d=CreateTemporalDate(i,s,l,o);return r.setObject(d),d},yearMonthFromFields(e,t,o){const n=ToTemporalOverflow(t),r=new OneObjectCache,a=PrepareTemporalFields(e,[["era",void 0],["eraYear",void 0],["month",void 0],["monthCode",void 0],["year",void 0]]),{year:i,month:s,day:l}=this.helper.calendarToIsoDate({...a,day:1},n,r),d=CreateTemporalYearMonth(i,s,o,l);return r.setObject(d),d},monthDayFromFields(e,t,o){const n=ToTemporalOverflow(t),r=new OneObjectCache,a=PrepareTemporalFields(e,[["day"],["era",void 0],["eraYear",void 0],["month",void 0],["monthCode",void 0],["year",void 0]]),{year:i,month:s,day:l}=this.helper.monthDayFromFields(a,n,r),d=CreateTemporalMonthDay(s,l,o,i);return r.setObject(d),d},fields(e){let t=e;return b.call(t,"year")&&(t=[...t,"era","eraYear"]),t},mergeFields(e,t){const o={...e},n={...t},{month:r,monthCode:a,year:i,era:s,eraYear:l,...d}=o,{month:m,monthCode:c,year:h,era:T,eraYear:u}=n;return void 0===m&&void 0===c&&(d.month=r,d.monthCode=a),void 0===h&&void 0===T&&void 0===u&&(d.year=i),{...d,...n}},dateAdd(e,t,o,n,r,a,i){const s=OneObjectCache.getCacheForObject(e),l=this.helper.temporalToCalendarDate(e,s),d=this.helper.addCalendar(l,{years:t,months:o,weeks:n,days:r},a,s),m=this.helper.calendarToIsoDate(d,"constrain",s),{year:c,month:h,day:T}=m,u=CreateTemporalDate(c,h,T,i);return new OneObjectCache(s).setObject(u),u},dateUntil(e,t,o){const n=OneObjectCache.getCacheForObject(e),r=OneObjectCache.getCacheForObject(t),a=this.helper.temporalToCalendarDate(e,n),i=this.helper.temporalToCalendarDate(t,r);return this.helper.untilCalendar(a,i,o,n)},year(e){const t=OneObjectCache.getCacheForObject(e);return this.helper.temporalToCalendarDate(e,t).year},month(e){const t=OneObjectCache.getCacheForObject(e);return this.helper.temporalToCalendarDate(e,t).month},day(e){const t=OneObjectCache.getCacheForObject(e);return this.helper.temporalToCalendarDate(e,t).day},era(e){if(!this.helper.hasEra)return;const t=OneObjectCache.getCacheForObject(e);return this.helper.temporalToCalendarDate(e,t).era},eraYear(e){if(!this.helper.hasEra)return;const t=OneObjectCache.getCacheForObject(e);return this.helper.temporalToCalendarDate(e,t).eraYear},monthCode(e){const t=OneObjectCache.getCacheForObject(e);return this.helper.temporalToCalendarDate(e,t).monthCode},dayOfWeek:e=>B.iso8601.dayOfWeek(e),dayOfYear(e){const t=OneObjectCache.getCacheForObject(e),o=this.helper.isoToCalendarDate(e,t),n=this.helper.startOfCalendarYear(o);return this.helper.calendarDaysUntil(n,o,t)+1},weekOfYear:e=>B.iso8601.weekOfYear(e),daysInWeek:e=>B.iso8601.daysInWeek(e),daysInMonth(e){const t=OneObjectCache.getCacheForObject(e),o=this.helper.temporalToCalendarDate(e,t),n=this.helper.maximumMonthLength(o);if(n===this.helper.minimumMonthLength(o))return n;const r=this.helper.startOfCalendarMonth(o),a=this.helper.addMonthsCalendar(r,1,"constrain",t);return this.helper.calendarDaysUntil(r,a,t)},daysInYear(e){let t=e;HasSlot(t,r$1)||(t=ToTemporalDate(t));const o=OneObjectCache.getCacheForObject(t),n=this.helper.temporalToCalendarDate(t,o),a=this.helper.startOfCalendarYear(n),i=this.helper.addCalendar(a,{years:1},"constrain",o);return this.helper.calendarDaysUntil(a,i,o)},monthsInYear(e){const t=OneObjectCache.getCacheForObject(e),o=this.helper.temporalToCalendarDate(e,t);return this.helper.monthsInYear(o,t)},inLeapYear(e){let t=e;HasSlot(t,r$1)||(t=ToTemporalDate(t));const o=OneObjectCache.getCacheForObject(t),n=this.helper.temporalToCalendarDate(t,o);return this.helper.inLeapYear(n,o)}};for(const e of [HebrewHelper,PersianHelper,EthiopicHelper,EthioaaHelper,CopticHelper,ChineseHelper,DangiHelper,RocHelper,IndianHelper,BuddhistHelper,GregoryHelper,JapaneseHelper,IslamicHelper,IslamicUmalquraHelper,IslamicTblaHelper,IslamicCivilHelper,IslamicRgsaHelper,IslamicCcHelper]){const t=new e;B[t.id]={...N,helper:t};}const $=Object.keys(B);function IsBuiltinCalendar(e){return b.call($,e)}const k=/\.[-A-Za-z_]|\.\.[-A-Za-z._]{1,12}|\.[-A-Za-z_][-A-Za-z._]{0,12}|[A-Za-z_][-A-Za-z._]{0,13}/,L=new RegExp(`(?:(?:${k.source})(?:\\/(?:${k.source}))*|Etc/GMT[-+]\\d{1,2}|${/(?:[+\u2212-][0-2][0-9](?::?[0-5][0-9](?::?[0-5][0-9](?:[.,]\d{1,9})?)?)?)/.source})`),U=/[A-Za-z0-9]{3,8}/,A=new RegExp(`(?:${U.source}(?:-${U.source})*)`),x=/(?:[+\u2212-]\d{6}|\d{4})/,H=/(?:0[1-9]|1[0-2])/,q=/(?:0[1-9]|[12]\d|3[01])/,W=new RegExp(`(${x.source})(?:-(${H.source})-(${q.source})|(${H.source})(${q.source}))`),z=/(\d{2})(?::(\d{2})(?::(\d{2})(?:[.,](\d{1,9}))?)?|(\d{2})(?:(\d{2})(?:[.,](\d{1,9}))?)?)?/,J=/([+\u2212-])([01][0-9]|2[0-3])(?::?([0-5][0-9])(?::?([0-5][0-9])(?:[.,](\d{1,9}))?)?)?/,V=new RegExp(`(?:([zZ])|(?:${J.source})?)(?:\\[(${L.source})\\])?`),_=new RegExp(`\\[u-ca=(${A.source})\\]`),X=new RegExp(`^${W.source}(?:(?:T|\\s+)${z.source})?${V.source}(?:${_.source})?$`,"i"),K=new RegExp(`^T?${z.source}(?:${V.source})?(?:${_.source})?$`,"i"),Q=new RegExp(`^(${x.source})-?(${H.source})$`),ee=new RegExp(`^(?:--)?(${H.source})-?(${q.source})$`),te=/(\d+)(?:[.,](\d{1,9}))?/,oe=new RegExp(`(?:${te.source}H)?(?:${te.source}M)?(?:${te.source}S)?`),ne=new RegExp(`^([+−-])?P${/(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?/.source}(?:T(?!$)${oe.source})?$`,"i"),re$1=Array.prototype.push,ae=globalThis.Intl.DateTimeFormat,ie=Math.min,se=Math.max,le=Math.abs,de=Math.floor,me=Math.sign,ce=Math.trunc,he=Number.isNaN,Te=Number.isFinite,ue=Number,pe=String,fe=Number.MAX_SAFE_INTEGER,ye=Object.create,Se=Object.is,ge=Reflect.apply,we=jsbiUmd.BigInt(0),Ie=jsbiUmd.BigInt(1),Ge=jsbiUmd.BigInt(60),De=jsbiUmd.BigInt(1e3),ve=jsbiUmd.BigInt(1e6),Oe=jsbiUmd.BigInt(1e9),Ce=jsbiUmd.BigInt(-1),Ee=jsbiUmd.multiply(jsbiUmd.BigInt(86400),Oe),be=jsbiUmd.multiply(jsbiUmd.BigInt(-86400),jsbiUmd.BigInt(1e17)),Re=jsbiUmd.multiply(jsbiUmd.BigInt(86400),jsbiUmd.BigInt(1e17)),Me=jsbiUmd.multiply(jsbiUmd.BigInt(-388152),jsbiUmd.BigInt(1e13)),Ze=jsbiUmd.multiply(Ee,jsbiUmd.BigInt(3660)),Fe=jsbiUmd.multiply(Ee,jsbiUmd.BigInt(366)),Ye=jsbiUmd.multiply(Ee,jsbiUmd.BigInt(14));function IsInteger(e){if("number"!=typeof e||!Te(e))return !1;const t=le(e);return de(t)===t}function IsObject(e){return "object"==typeof e&&null!==e||"function"==typeof e}function ToNumber(e){if("bigint"==typeof e)throw new TypeError("Cannot convert BigInt to number");return ue(e)}function ToInteger(e){const t=ToNumber(e);if(he(t))return 0;const o=ce(t);return 0===t?0:o}function ToString(e){if("symbol"==typeof e)throw new TypeError("Cannot convert a Symbol value to a String");return pe(e)}function ToIntegerThrowOnInfinity(e){const t=ToInteger(e);if(!Te(t))throw new RangeError("infinity is out of range");return t}function ToPositiveInteger(e,t){const o=ToInteger(e);if(!Te(o))throw new RangeError("infinity is out of range");if(o<1){if(void 0!==t)throw new RangeError(`property '${t}' cannot be a a number less than one`);throw new RangeError("Cannot convert a number less than one to a positive integer")}return o}function ToIntegerWithoutRounding(e){const t=ToNumber(e);if(he(t))return 0;if(!Te(t))throw new RangeError("infinity is out of range");if(!IsInteger(t))throw new RangeError(`unsupported fractional value ${t}`);return ToInteger(t)}function divmod(t,o){return {quotient:jsbiUmd.divide(t,o),remainder:jsbiUmd.remainder(t,o)}}function abs(t){return jsbiUmd.lessThan(t,we)?jsbiUmd.multiply(t,Ce):t}const Pe=new Map([["year",ToIntegerThrowOnInfinity],["month",ToPositiveInteger],["monthCode",ToString],["day",ToPositiveInteger],["hour",ToIntegerThrowOnInfinity],["minute",ToIntegerThrowOnInfinity],["second",ToIntegerThrowOnInfinity],["millisecond",ToIntegerThrowOnInfinity],["microsecond",ToIntegerThrowOnInfinity],["nanosecond",ToIntegerThrowOnInfinity],["years",ToIntegerWithoutRounding],["months",ToIntegerWithoutRounding],["weeks",ToIntegerWithoutRounding],["days",ToIntegerWithoutRounding],["hours",ToIntegerWithoutRounding],["minutes",ToIntegerWithoutRounding],["seconds",ToIntegerWithoutRounding],["milliseconds",ToIntegerWithoutRounding],["microseconds",ToIntegerWithoutRounding],["nanoseconds",ToIntegerWithoutRounding],["era",ToString],["eraYear",ToInteger],["offset",ToString]]),je=["year","month","week","day","hour","minute","second","millisecond","microsecond","nanosecond"],Be=[["years","year"],["months","month"],["weeks","week"],["days","day"],["hours","hour"],["minutes","minute"],["seconds","second"],["milliseconds","millisecond"],["microseconds","microsecond"],["nanoseconds","nanosecond"]],Ne=new Map;function getIntlDateTimeFormatEnUsForTimeZone(e){let t=Ne.get(e);return void 0===t&&(t=new ae("en-us",{timeZone:pe(e),hour12:!1,era:"short",year:"numeric",month:"numeric",day:"numeric",hour:"numeric",minute:"numeric",second:"numeric"}),Ne.set(e,t)),t}function IsTemporalInstant(e){return HasSlot(e,o)&&!HasSlot(e,p,T)}function IsTemporalTimeZone(e){return HasSlot(e,n)}function IsTemporalCalendar(e){return HasSlot(e,C)}function IsTemporalDuration(e){return HasSlot(e,f,y,g,w,I,G,D,v,O)}function IsTemporalDate(e){return HasSlot(e,"slot-date-brand")}function IsTemporalTime(e){return HasSlot(e,s,l,d,m,c,h)&&!HasSlot(e,r$1,a,i$1)}function IsTemporalDateTime(e){return HasSlot(e,r$1,a,i$1,s,l,d,m,c,h)}function IsTemporalYearMonth(e){return HasSlot(e,"slot-year-month-brand")}function IsTemporalMonthDay(e){return HasSlot(e,"slot-month-day-brand")}function IsTemporalZonedDateTime(e){return HasSlot(e,o,p,T)}function RejectObjectWithCalendarOrTimeZone(e){if(HasSlot(e,T)||HasSlot(e,p))throw new TypeError("with() does not support a calendar or timeZone property");if(void 0!==e.calendar)throw new TypeError("with() does not support a calendar property");if(void 0!==e.timeZone)throw new TypeError("with() does not support a timeZone property")}function ParseTemporalTimeZone(e){let{ianaName:t,offset:o,z:n}=function ParseTemporalTimeZoneString(e){try{let t=GetCanonicalTimeZoneIdentifier(e);if(t)return t=t.toString(),TestTimeZoneOffsetString(t)?{offset:t}:{ianaName:t}}catch{}try{const t=ParseISODateTime(e);if(t.z||t.offset||t.ianaName)return t}catch{}throw new RangeError(`Invalid time zone: ${e}`)}(e);return t||(n?"UTC":o)}function FormatCalendarAnnotation(e,t){return "never"===t||"auto"===t&&"iso8601"===e?"":`[u-ca=${e}]`}function ParseISODateTime(e){const t=X.exec(e);if(!t)throw new RangeError(`invalid ISO 8601 string: ${e}`);let o=t[1];if("−"===o[0]&&(o=`-${o.slice(1)}`),"-000000"===o)throw new RangeError(`invalid ISO 8601 string: ${e}`);const n=ToInteger(o),r=ToInteger(t[2]||t[4]),a=ToInteger(t[3]||t[5]),i=ToInteger(t[6]),s=void 0!==t[6],l=ToInteger(t[7]||t[10]);let d=ToInteger(t[8]||t[11]);60===d&&(d=59);const m=(t[9]||t[12])+"000000000",c=ToInteger(m.slice(0,3)),h=ToInteger(m.slice(3,6)),T=ToInteger(m.slice(6,9));let u,p=!1;if(t[13])u=void 0,p=!0;else if(t[14]&&t[15]){const e="-"===t[14]||"−"===t[14]?"-":"+",o=t[15]||"00",n=t[16]||"00",r=t[17]||"00";let a=t[18]||"0";if(u=`${e}${o}:${n}`,+a){for(;a.endsWith("0");)a=a.slice(0,-1);u+=`:${r}.${a}`;}else +r&&(u+=`:${r}`);"-00:00"===u&&(u="+00:00");}let f=t[19];if(f)try{f=GetCanonicalTimeZoneIdentifier(f).toString();}catch{}return {year:n,month:r,day:a,hasTime:s,hour:i,minute:l,second:d,millisecond:c,microsecond:h,nanosecond:T,ianaName:f,offset:u,z:p,calendar:t[20]}}function ParseTemporalYearMonthString(e){const t=Q.exec(e);let o,n,r,a;if(t){let a=t[1];if("−"===a[0]&&(a=`-${a.slice(1)}`),"-000000"===a)throw new RangeError(`invalid ISO 8601 string: ${e}`);o=ToInteger(a),n=ToInteger(t[2]),r=t[3];}else {let t;if(({year:o,month:n,calendar:r,day:a,z:t}=ParseISODateTime(e)),t)throw new RangeError("Z designator not supported for PlainYearMonth")}return {year:o,month:n,calendar:r,referenceISODay:a}}function ParseTemporalMonthDayString(e){const t=ee.exec(e);let o,n,r,a;if(t)o=ToInteger(t[1]),n=ToInteger(t[2]);else {let t;if(({month:o,day:n,calendar:r,year:a,z:t}=ParseISODateTime(e)),t)throw new RangeError("Z designator not supported for PlainMonthDay")}return {month:o,day:n,calendar:r,referenceISOYear:a}}function ParseTemporalDurationString(e){const t=ne.exec(e);if(!t)throw new RangeError(`invalid duration: ${e}`);if(t.slice(2).every((e=>void 0===e)))throw new RangeError(`invalid duration: ${e}`);const o="-"===t[1]||"−"===t[1]?-1:1,n=ToInteger(t[2])*o,r=ToInteger(t[3])*o,a=ToInteger(t[4])*o,i=ToInteger(t[5])*o,s=ToInteger(t[6])*o;let l=t[7],d=ToInteger(t[8])*o,m=t[9],c=ToInteger(t[10])*o;const h=t[11]+"000000000";let T=ToInteger(h.slice(0,3))*o,u=ToInteger(h.slice(3,6))*o,p=ToInteger(h.slice(6,9))*o;return l=l?o*ToInteger(l)/10**l.length:0,m=m?o*ToInteger(m)/10**m.length:0,({minutes:d,seconds:c,milliseconds:T,microseconds:u,nanoseconds:p}=function DurationHandleFractions(e,t,o,n,r,a,i){let s=e,l=t,d=o,m=n,c=r,h=a,T=i;if(0!==s){[l,d,m,c,h,T].forEach((e=>{if(0!==e)throw new RangeError("only the smallest unit can be fractional")}));const e=60*s;l=ce(e),d=e%1;}if(0!==d){[m,c,h,T].forEach((e=>{if(0!==e)throw new RangeError("only the smallest unit can be fractional")}));const e=60*d;m=ce(e);const t=e%1;if(0!==t){const e=1e3*t;c=ce(e);const o=e%1;if(0!==o){const e=1e3*o;h=ce(e);const t=e%1;if(0!==t){T=ce(1e3*t);}}}}return {minutes:l,seconds:m,milliseconds:c,microseconds:h,nanoseconds:T}}(l,d,m,c,T,u,p)),{years:n,months:r,weeks:a,days:i,hours:s,minutes:d,seconds:c,milliseconds:T,microseconds:u,nanoseconds:p}}function ParseTemporalInstant(t){const{year:o,month:n,day:r,hour:a,minute:i,second:s,millisecond:l,microsecond:d,nanosecond:m,offset:c,z:h}=function ParseTemporalInstantString(e){const t=ParseISODateTime(e);if(!t.z&&!t.offset)throw new RangeError("Temporal.Instant requires a time zone offset");return t}(t),T=GetEpochFromISOParts(o,n,r,a,i,s,l,d,m);if(null===T)throw new RangeError("DateTime outside of supported range");const u=h?0:ParseTimeZoneOffsetString(c);return jsbiUmd.subtract(T,jsbiUmd.BigInt(u))}function RegulateISODate(e,t,o,n){let r=e,a=t,i=o;switch(n){case"reject":RejectISODate(r,a,i);break;case"constrain":({year:r,month:a,day:i}=ConstrainISODate(r,a,i));}return {year:r,month:a,day:i}}function RegulateTime(e,t,o,n,r,a,i){let s=e,l=t,d=o,m=n,c=r,h=a;switch(i){case"reject":RejectTime(s,l,d,m,c,h);break;case"constrain":({hour:s,minute:l,second:d,millisecond:m,microsecond:c,nanosecond:h}=function ConstrainTime(e,t,o,n,r,a){const i=ConstrainToRange(e,0,23),s=ConstrainToRange(t,0,59),l=ConstrainToRange(o,0,59),d=ConstrainToRange(n,0,999),m=ConstrainToRange(r,0,999),c=ConstrainToRange(a,0,999);return {hour:i,minute:s,second:l,millisecond:d,microsecond:m,nanosecond:c}}(s,l,d,m,c,h));}return {hour:s,minute:l,second:d,millisecond:m,microsecond:c,nanosecond:h}}function ToTemporalDurationRecord(e){if(IsTemporalDuration(e))return {years:GetSlot(e,f),months:GetSlot(e,y),weeks:GetSlot(e,S),days:GetSlot(e,g),hours:GetSlot(e,w),minutes:GetSlot(e,I),seconds:GetSlot(e,G),milliseconds:GetSlot(e,D),microseconds:GetSlot(e,v),nanoseconds:GetSlot(e,O)};const t=ToPartialRecord(e,["days","hours","microseconds","milliseconds","minutes","months","nanoseconds","seconds","weeks","years"]);if(!t)throw new TypeError("invalid duration-like");const{years:o=0,months:n=0,weeks:r=0,days:a=0,hours:i=0,minutes:s=0,seconds:l=0,milliseconds:d=0,microseconds:m=0,nanoseconds:c=0}=t;return {years:o,months:n,weeks:r,days:a,hours:i,minutes:s,seconds:l,milliseconds:d,microseconds:m,nanoseconds:c}}function ToLimitedTemporalDuration(e,t=[]){let o;if(IsObject(e))o=ToTemporalDurationRecord(e);else {o=ParseTemporalDurationString(ToString(e));}const{years:n,months:r,weeks:a,days:i,hours:s,minutes:l,seconds:d,milliseconds:m,microseconds:c,nanoseconds:h}=o;RejectDuration(n,r,a,i,s,l,d,m,c,h);for(const e of t)if(0!==o[e])throw new RangeError(`Duration field ${e} not supported by Temporal.Instant. Try Temporal.ZonedDateTime instead.`);return o}function ToTemporalOverflow(e){return GetOption(e,"overflow",["constrain","reject"],"constrain")}function ToTemporalDisambiguation(e){return GetOption(e,"disambiguation",["compatible","earlier","later","reject"],"compatible")}function ToTemporalRoundingMode(e,t){return GetOption(e,"roundingMode",["ceil","floor","trunc","halfExpand"],t)}function NegateTemporalRoundingMode(e){switch(e){case"ceil":return "floor";case"floor":return "ceil";default:return e}}function ToTemporalOffset(e,t){return GetOption(e,"offset",["prefer","use","ignore","reject"],t)}function ToShowCalendarOption(e){return GetOption(e,"calendarName",["auto","always","never"],"auto")}function ToTemporalRoundingIncrement(e,t,o){let n=1/0;void 0!==t&&(n=t),o||void 0===t||(n=t>1?t-1:1);const r=function GetNumberOption(e,t,o,n,r){let a=e[t];if(void 0===a)return r;const i=ToNumber(a);if(he(i)||i<o||i>n)throw new RangeError(`${t} must be between ${o} and ${n}, not ${i}`);return de(i)}(e,"roundingIncrement",1,n,1);if(void 0!==t&&t%r!=0)throw new RangeError(`Rounding increment must divide evenly into ${t}`);return r}function ToTemporalDateTimeRoundingIncrement(e,t){return ToTemporalRoundingIncrement(e,{year:void 0,month:void 0,week:void 0,day:void 0,hour:24,minute:60,second:60,millisecond:1e3,microsecond:1e3,nanosecond:1e3}[t],!1)}function ToSecondsStringPrecision(e){switch(ToSmallestTemporalUnit(e,void 0,["year","month","week","day","hour"])){case"minute":return {precision:"minute",unit:"minute",increment:1};case"second":return {precision:0,unit:"second",increment:1};case"millisecond":return {precision:3,unit:"millisecond",increment:1};case"microsecond":return {precision:6,unit:"microsecond",increment:1};case"nanosecond":return {precision:9,unit:"nanosecond",increment:1}}let t=e.fractionalSecondDigits;if(void 0===t&&(t="auto"),"number"!=typeof t){const e=ToString(t);if("auto"===e)return {precision:"auto",unit:"nanosecond",increment:1};throw new RangeError(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${e}`)}if(he(t)||t<0||t>9)throw new RangeError(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${t}`);const o=de(t);switch(o){case 0:return {precision:o,unit:"second",increment:1};case 1:case 2:case 3:return {precision:o,unit:"millisecond",increment:10**(3-o)};case 4:case 5:case 6:return {precision:o,unit:"microsecond",increment:10**(6-o)};case 7:case 8:case 9:return {precision:o,unit:"nanosecond",increment:10**(9-o)};default:throw new RangeError(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${t}`)}}function ToLargestTemporalUnit(e,t,o=[],n){const r=new Map(Be.filter((([,e])=>!o.includes(e)))),a=new Set(je);for(const e of o)a.delete(e);const i=GetOption(e,"largestUnit",["auto",...a,...r.keys()],t);return "auto"===i&&void 0!==n?n:r.has(i)?r.get(i):i}function ToSmallestTemporalUnit(e,t,o=[]){const n=new Map(Be.filter((([,e])=>!o.includes(e)))),r=new Set(je);for(const e of o)r.delete(e);const a=GetOption(e,"smallestUnit",[...r,...n.keys()],t);return n.has(a)?n.get(a):a}function ToRelativeTemporalObject(e){const t=e.relativeTo;if(void 0===t)return t;let o,n,r,a,i,s,l,d,m,c,h,T,u="option",p=!1;if(IsObject(t)){if(IsTemporalZonedDateTime(t)||IsTemporalDate(t))return t;if(IsTemporalDateTime(t))return TemporalDateTimeToDate(t);c=GetTemporalCalendarWithISODefault(t);const e=ToTemporalDateTimeFields(t,CalendarFields(c,["day","hour","microsecond","millisecond","minute","month","monthCode","nanosecond","second","year"])),p=ye(null);p.overflow="constrain",({year:o,month:n,day:r,hour:a,minute:i,second:s,millisecond:l,microsecond:d,nanosecond:m}=InterpretTemporalDateTimeFields(c,e,p)),T=t.offset,void 0===T&&(u="wall"),h=t.timeZone;}else {let e,f;(({year:o,month:n,day:r,hour:a,minute:i,second:s,millisecond:l,microsecond:d,nanosecond:m,calendar:c,ianaName:e,offset:T,z:f}=ParseISODateTime(ToString(t)))),e&&(h=e),f?u="exact":T||(u="wall"),c||(c=GetISO8601Calendar()),c=ToTemporalCalendar(c),p=!0;}if(h){h=ToTemporalTimeZone(h);let e=0;"option"===u&&(e=ParseTimeZoneOffsetString(ToString(T)));return CreateTemporalZonedDateTime(InterpretISODateTimeOffset(o,n,r,a,i,s,l,d,m,u,e,h,"compatible","reject",p),h,c)}return CreateTemporalDate(o,n,r,c)}function ValidateTemporalUnitRange(e,t){if(je.indexOf(e)>je.indexOf(t))throw new RangeError(`largestUnit ${e} cannot be smaller than smallestUnit ${t}`)}function DefaultTemporalLargestUnit(e,t,o,n,r,a,i,s,l,d){const m=new Map(Be);for(const[c,h]of [["years",e],["months",t],["weeks",o],["days",n],["hours",r],["minutes",a],["seconds",i],["milliseconds",s],["microseconds",l],["nanoseconds",d]])if(0!==h)return m.get(c);return "nanosecond"}function LargerOfTwoTemporalUnits(e,t){return je.indexOf(e)>je.indexOf(t)?t:e}function ToPartialRecord(e,t){const o=e,n=t;let r=!1,a={};for(const e of n){const t=o[e];void 0!==t&&(r=!0,Pe.has(e)?a[e]=Pe.get(e)(t):a[e]=t);}return !!r&&a}function PrepareTemporalFields(e,t){const o=e,n=t,r={};let a=!1;for(const e of n){const[t,n]=e;let i=o[t];if(void 0===i){if(1===e.length)throw new TypeError(`required property '${t}' missing or undefined`);i=n;}else a=!0,Pe.has(t)&&(i=Pe.get(t)(i));r[t]=i;}if(!a)throw new TypeError("no supported properties found");if(void 0===r.era!=(void 0===r.eraYear))throw new RangeError("properties 'era' and 'eraYear' must be provided together");return r}function ToTemporalDateFields(e,t){const o=[["day",void 0],["month",void 0],["monthCode",void 0],["year",void 0]];return t.forEach((e=>{o.some((([t])=>t===e))||o.push([e,void 0]);})),PrepareTemporalFields(e,o)}function ToTemporalDateTimeFields(e,t){const o=[["day",void 0],["hour",0],["microsecond",0],["millisecond",0],["minute",0],["month",void 0],["monthCode",void 0],["nanosecond",0],["second",0],["year",void 0]];return t.forEach((e=>{o.some((([t])=>t===e))||o.push([e,void 0]);})),PrepareTemporalFields(e,o)}function ToTemporalMonthDayFields(e,t){const o=[["day",void 0],["month",void 0],["monthCode",void 0],["year",void 0]];return t.forEach((e=>{o.some((([t])=>t===e))||o.push([e,void 0]);})),PrepareTemporalFields(e,o)}function ToTemporalTimeRecord(e){return PrepareTemporalFields(e,[["hour",0],["microsecond",0],["millisecond",0],["minute",0],["nanosecond",0],["second",0]])}function ToTemporalYearMonthFields(e,t){const o=[["month",void 0],["monthCode",void 0],["year",void 0]];return t.forEach((e=>{o.some((([t])=>t===e))||o.push([e,void 0]);})),PrepareTemporalFields(e,o)}function ToTemporalDate(e,t=ye(null)){let o=e;if(IsObject(o)){if(IsTemporalDate(o))return o;if(IsTemporalZonedDateTime(o)&&(o=BuiltinTimeZoneGetPlainDateTimeFor(GetSlot(o,p),GetSlot(o,u),GetSlot(o,T))),IsTemporalDateTime(o))return CreateTemporalDate(GetSlot(o,r$1),GetSlot(o,a),GetSlot(o,i$1),GetSlot(o,T));const e=GetTemporalCalendarWithISODefault(o);return DateFromFields(e,ToTemporalDateFields(o,CalendarFields(e,["day","month","monthCode","year"])),t)}ToTemporalOverflow(t);const{year:n,month:s,day:l,calendar:d,z:m}=function ParseTemporalDateString(e){return ParseISODateTime(e)}(ToString(o));if(m)throw new RangeError("Z designator not supported for PlainDate");return new(GetIntrinsic("%Temporal.PlainDate%"))(n,s,l,d)}function InterpretTemporalDateTimeFields(e,t,o){let{hour:n,minute:s,second:l,millisecond:d,microsecond:m,nanosecond:c}=ToTemporalTimeRecord(t);const h=ToTemporalOverflow(o),T=DateFromFields(e,t,o),u=GetSlot(T,r$1),p=GetSlot(T,a),f=GetSlot(T,i$1);return ({hour:n,minute:s,second:l,millisecond:d,microsecond:m,nanosecond:c}=RegulateTime(n,s,l,d,m,c,h)),{year:u,month:p,day:f,hour:n,minute:s,second:l,millisecond:d,microsecond:m,nanosecond:c}}function ToTemporalDateTime(e,t=ye(null)){let o,n,s,l,d,m,c,h,f,y;if(IsObject(e)){if(IsTemporalDateTime(e))return e;if(IsTemporalZonedDateTime(e))return BuiltinTimeZoneGetPlainDateTimeFor(GetSlot(e,p),GetSlot(e,u),GetSlot(e,T));if(IsTemporalDate(e))return CreateTemporalDateTime(GetSlot(e,r$1),GetSlot(e,a),GetSlot(e,i$1),0,0,0,0,0,0,GetSlot(e,T));y=GetTemporalCalendarWithISODefault(e);const S=ToTemporalDateTimeFields(e,CalendarFields(y,["day","hour","microsecond","millisecond","minute","month","monthCode","nanosecond","second","year"]));({year:o,month:n,day:s,hour:l,minute:d,second:m,millisecond:c,microsecond:h,nanosecond:f}=InterpretTemporalDateTimeFields(y,S,t));}else {let r;if(ToTemporalOverflow(t),({year:o,month:n,day:s,hour:l,minute:d,second:m,millisecond:c,microsecond:h,nanosecond:f,calendar:y,z:r}=function ParseTemporalDateTimeString(e){return ParseISODateTime(e)}(ToString(e))),r)throw new RangeError("Z designator not supported for PlainDateTime");RejectDateTime(o,n,s,l,d,m,c,h,f),void 0===y&&(y=GetISO8601Calendar()),y=ToTemporalCalendar(y);}return CreateTemporalDateTime(o,n,s,l,d,m,c,h,f,y)}function ToTemporalDuration(e){let t,o,n,r,a,i,s,l,d,m;if(IsObject(e)){if(IsTemporalDuration(e))return e;({years:t,months:o,weeks:n,days:r,hours:a,minutes:i,seconds:s,milliseconds:l,microseconds:d,nanoseconds:m}=ToTemporalDurationRecord(e));}else ({years:t,months:o,weeks:n,days:r,hours:a,minutes:i,seconds:s,milliseconds:l,microseconds:d,nanoseconds:m}=ParseTemporalDurationString(ToString(e)));return new(GetIntrinsic("%Temporal.Duration%"))(t,o,n,r,a,i,s,l,d,m)}function ToTemporalInstant(e){if(IsTemporalInstant(e))return e;if(IsTemporalZonedDateTime(e)){return new(GetIntrinsic("%Temporal.Instant%"))(GetSlot(e,o))}const t=ParseTemporalInstant(ToString(e));return new(GetIntrinsic("%Temporal.Instant%"))(t)}function ToTemporalMonthDay(e,t=ye(null)){if(IsObject(e)){if(IsTemporalMonthDay(e))return e;let o,n;if(HasSlot(e,T))o=GetSlot(e,T),n=!1;else {let t=e.calendar;n=void 0===t,void 0===t&&(t=GetISO8601Calendar()),o=ToTemporalCalendar(t);}const r=ToTemporalMonthDayFields(e,CalendarFields(o,["day","month","monthCode","year"]));return n&&void 0!==r.month&&void 0===r.monthCode&&void 0===r.year&&(r.year=1972),MonthDayFromFields(o,r,t)}ToTemporalOverflow(t);let{month:o,day:n,referenceISOYear:r,calendar:a}=ParseTemporalMonthDayString(ToString(e)),i=a;if(void 0===i&&(i=GetISO8601Calendar()),i=ToTemporalCalendar(i),void 0===r)return RejectISODate(1972,o,n),CreateTemporalMonthDay(o,n,i);return MonthDayFromFields(i,CreateTemporalMonthDay(o,n,i,r),ye(null))}function ToTemporalTime(e,t="constrain"){let o,n,r,a,i,f,y,S=e;if(IsObject(S)){if(IsTemporalTime(S))return S;if(IsTemporalZonedDateTime(S)&&(S=BuiltinTimeZoneGetPlainDateTimeFor(GetSlot(S,p),GetSlot(S,u),GetSlot(S,T))),IsTemporalDateTime(S)){return new(GetIntrinsic("%Temporal.PlainTime%"))(GetSlot(S,s),GetSlot(S,l),GetSlot(S,d),GetSlot(S,m),GetSlot(S,c),GetSlot(S,h))}if(y=GetTemporalCalendarWithISODefault(S),"iso8601"!==ToString(y))throw new RangeError("PlainTime can only have iso8601 calendar");(({hour:o,minute:n,second:r,millisecond:a,microsecond:i,nanosecond:f}=ToTemporalTimeRecord(S))),({hour:o,minute:n,second:r,millisecond:a,microsecond:i,nanosecond:f}=RegulateTime(o,n,r,a,i,f,t));}else if(({hour:o,minute:n,second:r,millisecond:a,microsecond:i,nanosecond:f,calendar:y}=function ParseTemporalTimeString(e){const t=K.exec(e);let o,n,r,a,i,s,l;if(t){o=ToInteger(t[1]),n=ToInteger(t[2]||t[5]),r=ToInteger(t[3]||t[6]),60===r&&(r=59);const e=(t[4]||t[7])+"000000000";a=ToInteger(e.slice(0,3)),i=ToInteger(e.slice(3,6)),s=ToInteger(e.slice(6,9)),l=t[15];}else {let t,d;if(({hasTime:d,hour:o,minute:n,second:r,millisecond:a,microsecond:i,nanosecond:s,calendar:l,z:t}=ParseISODateTime(e)),!d)throw new RangeError(`time is missing in string: ${e}`);if(t)throw new RangeError("Z designator not supported for PlainTime")}if(/[tT ][0-9][0-9]/.test(e))return {hour:o,minute:n,second:r,millisecond:a,microsecond:i,nanosecond:s,calendar:l};try{const{month:t,day:o}=ParseTemporalMonthDayString(e);RejectISODate(1972,t,o);}catch{try{const{year:t,month:o}=ParseTemporalYearMonthString(e);RejectISODate(t,o,1);}catch{return {hour:o,minute:n,second:r,millisecond:a,microsecond:i,nanosecond:s,calendar:l}}}throw new RangeError(`invalid ISO 8601 time-only string ${e}; may need a T prefix`)}(ToString(S))),RejectTime(o,n,r,a,i,f),void 0!==y&&"iso8601"!==y)throw new RangeError("PlainTime can only have iso8601 calendar");return new(GetIntrinsic("%Temporal.PlainTime%"))(o,n,r,a,i,f)}function ToTemporalYearMonth(e,t=ye(null)){if(IsObject(e)){if(IsTemporalYearMonth(e))return e;const o=GetTemporalCalendarWithISODefault(e);return YearMonthFromFields(o,ToTemporalYearMonthFields(e,CalendarFields(o,["month","monthCode","year"])),t)}ToTemporalOverflow(t);let{year:o,month:n,referenceISODay:r,calendar:a}=ParseTemporalYearMonthString(ToString(e)),i=a;if(void 0===i&&(i=GetISO8601Calendar()),i=ToTemporalCalendar(i),void 0===r)return RejectISODate(o,n,1),CreateTemporalYearMonth(o,n,i);return YearMonthFromFields(i,CreateTemporalYearMonth(o,n,i,r),ye(null))}function InterpretISODateTimeOffset(t,r,a,i,s,l,d,m,c,h,T,u,p,f,y){const S=new(GetIntrinsic("%Temporal.PlainDateTime%"))(t,r,a,i,s,l,d,m,c);if("wall"===h||"ignore"===f){return GetSlot(BuiltinTimeZoneGetInstantFor(u,S,p),o)}if("exact"===h||"use"===f){const o=GetEpochFromISOParts(t,r,a,i,s,l,d,m,c);if(null===o)throw new RangeError("ZonedDateTime outside of supported range");return jsbiUmd.subtract(o,jsbiUmd.BigInt(T))}const g=GetPossibleInstantsFor(u,S);for(const t of g){const n=GetOffsetNanosecondsFor(u,t),r=jsbiUmd.toNumber(RoundNumberToIncrement(jsbiUmd.BigInt(n),6e10,"halfExpand"));if(n===T||y&&r===T)return GetSlot(t,o)}if("reject"===f){const e=FormatTimeZoneOffsetString(T),t=IsTemporalTimeZone(u)?GetSlot(u,n):"time zone";throw new RangeError(`Offset ${e} is invalid for ${S.toString()} in ${t}`)}return GetSlot(DisambiguatePossibleInstants(g,u,S,p),o)}function ToTemporalZonedDateTime(e,t=ye(null)){let o,n,r,a,i,s,l,d,m,c,h,T,u=!1,p="option";if(IsObject(e)){if(IsTemporalZonedDateTime(e))return e;T=GetTemporalCalendarWithISODefault(e);const u=function ToTemporalZonedDateTimeFields(e,t){const o=[["day",void 0],["hour",0],["microsecond",0],["millisecond",0],["minute",0],["month",void 0],["monthCode",void 0],["nanosecond",0],["second",0],["year",void 0],["offset",void 0],["timeZone"]];return t.forEach((e=>{o.some((([t])=>t===e))||o.push([e,void 0]);})),PrepareTemporalFields(e,o)}(e,CalendarFields(T,["day","hour","microsecond","millisecond","minute","month","monthCode","nanosecond","second","year"]));(({year:o,month:n,day:r,hour:a,minute:i,second:s,millisecond:l,microsecond:d,nanosecond:m}=InterpretTemporalDateTimeFields(T,u,t))),c=ToTemporalTimeZone(u.timeZone),h=u.offset,void 0===h?p="wall":h=ToString(h);}else {let f,y;if(ToTemporalOverflow(t),({year:o,month:n,day:r,hour:a,minute:i,second:s,millisecond:l,microsecond:d,nanosecond:m,ianaName:f,offset:h,z:y,calendar:T}=function ParseTemporalZonedDateTimeString(e){const t=ParseISODateTime(e);if(!t.ianaName)throw new RangeError("Temporal.ZonedDateTime requires a time zone ID in brackets");return t}(ToString(e))),!f)throw new RangeError("time zone ID required in brackets");y?p="exact":h||(p="wall");c=new(GetIntrinsic("%Temporal.TimeZone%"))(f),T||(T=GetISO8601Calendar()),T=ToTemporalCalendar(T),u=!0;}let f=0;"option"===p&&(f=ParseTimeZoneOffsetString(h));return CreateTemporalZonedDateTime(InterpretISODateTimeOffset(o,n,r,a,i,s,l,d,m,p,f,c,ToTemporalDisambiguation(t),ToTemporalOffset(t,"reject"),u),c,T)}function CreateTemporalDateSlots(e,t,o,n,s){RejectISODate(t,o,n),RejectDateRange(t,o,n),CreateSlots(e),SetSlot(e,r$1,t),SetSlot(e,a,o),SetSlot(e,i$1,n),SetSlot(e,T,s),SetSlot(e,"slot-date-brand",!0);}function CreateTemporalDate(e,t,o,n=GetISO8601Calendar()){const r=GetIntrinsic("%Temporal.PlainDate%"),a=ye(r.prototype);return CreateTemporalDateSlots(a,e,t,o,n),a}function CreateTemporalDateTimeSlots(e,t,o,n,u,p,f,y,S,g,w){RejectDateTime(t,o,n,u,p,f,y,S,g),RejectDateTimeRange(t,o,n,u,p,f,y,S,g),CreateSlots(e),SetSlot(e,r$1,t),SetSlot(e,a,o),SetSlot(e,i$1,n),SetSlot(e,s,u),SetSlot(e,l,p),SetSlot(e,d,f),SetSlot(e,m,y),SetSlot(e,c,S),SetSlot(e,h,g),SetSlot(e,T,w);}function CreateTemporalDateTime(e,t,o,n,r,a,i,s,l,d=GetISO8601Calendar()){const m=GetIntrinsic("%Temporal.PlainDateTime%"),c=ye(m.prototype);return CreateTemporalDateTimeSlots(c,e,t,o,n,r,a,i,s,l,d),c}function CreateTemporalMonthDaySlots(e,t,o,n,s){RejectISODate(s,t,o),RejectDateRange(s,t,o),CreateSlots(e),SetSlot(e,a,t),SetSlot(e,i$1,o),SetSlot(e,r$1,s),SetSlot(e,T,n),SetSlot(e,"slot-month-day-brand",!0);}function CreateTemporalMonthDay(e,t,o=GetISO8601Calendar(),n=1972){const r=GetIntrinsic("%Temporal.PlainMonthDay%"),a=ye(r.prototype);return CreateTemporalMonthDaySlots(a,e,t,o,n),a}function CreateTemporalYearMonthSlots(e,t,o,n,s){RejectISODate(t,o,s),function RejectYearMonthRange(e,t){RejectToRange(e,-271821,275760),-271821===e?RejectToRange(t,4,12):275760===e&&RejectToRange(t,1,9);}(t,o),CreateSlots(e),SetSlot(e,r$1,t),SetSlot(e,a,o),SetSlot(e,i$1,s),SetSlot(e,T,n),SetSlot(e,"slot-year-month-brand",!0);}function CreateTemporalYearMonth(e,t,o=GetISO8601Calendar(),n=1){const r=GetIntrinsic("%Temporal.PlainYearMonth%"),a=ye(r.prototype);return CreateTemporalYearMonthSlots(a,e,t,o,n),a}function CreateTemporalZonedDateTimeSlots(e,t,n,r){ValidateEpochNanoseconds(t),CreateSlots(e),SetSlot(e,o,t),SetSlot(e,p,n),SetSlot(e,T,r);const a=new(GetIntrinsic("%Temporal.Instant%"))(GetSlot(e,o));SetSlot(e,u,a);}function CreateTemporalZonedDateTime(e,t,o=GetISO8601Calendar()){const n=GetIntrinsic("%Temporal.ZonedDateTime%"),r=ye(n.prototype);return CreateTemporalZonedDateTimeSlots(r,e,t,o),r}function GetISO8601Calendar(){return new(GetIntrinsic("%Temporal.Calendar%"))("iso8601")}function CalendarFields(e,t){let o=t;e.fields&&(o=e.fields(o));const n=[];for(const e of o){if("string"!=typeof e)throw new TypeError("bad return from calendar.fields()");re$1.call(n,e);}return n}function CalendarMergeFields(e,t,o){const n=e.mergeFields;if(!n)return {...t,...o};const r=Reflect.apply(n,e,[t,o]);if(!IsObject(r))throw new TypeError("bad return from calendar.mergeFields()");return r}function CalendarDateAdd(e,t,o,n,r){let a=r;void 0===a&&(a=e.dateAdd);const i=ge(a,e,[t,o,n]);if(!IsTemporalDate(i))throw new TypeError("invalid result");return i}function CalendarDateUntil(e,t,o,n,r){let a=r;void 0===a&&(a=e.dateUntil);const i=ge(a,e,[t,o,n]);if(!IsTemporalDuration(i))throw new TypeError("invalid result");return i}function CalendarYear(e,t){const o=e.year(t);if(void 0===o)throw new RangeError("calendar year result must be an integer");return ToIntegerThrowOnInfinity(o)}function CalendarMonth(e,t){const o=e.month(t);if(void 0===o)throw new RangeError("calendar month result must be a positive integer");return ToPositiveInteger(o)}function CalendarMonthCode(e,t){const o=e.monthCode(t);if(void 0===o)throw new RangeError("calendar monthCode result must be a string");return ToString(o)}function CalendarDay(e,t){const o=e.day(t);if(void 0===o)throw new RangeError("calendar day result must be a positive integer");return ToPositiveInteger(o)}function CalendarEra(e,t){let o=e.era(t);return void 0!==o&&(o=ToString(o)),o}function CalendarEraYear(e,t){let o=e.eraYear(t);return void 0!==o&&(o=ToIntegerThrowOnInfinity(o)),o}function CalendarDayOfWeek(e,t){return e.dayOfWeek(t)}function CalendarDayOfYear(e,t){return e.dayOfYear(t)}function CalendarWeekOfYear(e,t){return e.weekOfYear(t)}function CalendarDaysInWeek(e,t){return e.daysInWeek(t)}function CalendarDaysInMonth(e,t){return e.daysInMonth(t)}function CalendarDaysInYear(e,t){return e.daysInYear(t)}function CalendarMonthsInYear(e,t){return e.monthsInYear(t)}function CalendarInLeapYear(e,t){return e.inLeapYear(t)}function ToTemporalCalendar(e){let t=e;if(IsObject(t)){if(HasSlot(t,T))return GetSlot(t,T);if(!("calendar"in t))return t;if(t=t.calendar,IsObject(t)&&!("calendar"in t))return t}const o=ToString(t),n=GetIntrinsic("%Temporal.Calendar%");if(IsBuiltinCalendar(o))return new n(o);let r;try{({calendar:r}=ParseISODateTime(o));}catch{throw new RangeError(`Invalid calendar: ${o}`)}return r||(r="iso8601"),new n(r)}function GetTemporalCalendarWithISODefault(e){if(HasSlot(e,T))return GetSlot(e,T);const{calendar:t}=e;return void 0===t?GetISO8601Calendar():ToTemporalCalendar(t)}function CalendarEquals(e,t){if(e===t)return !0;return ToString(e)===ToString(t)}function ConsolidateCalendars(e,t){if(e===t)return t;const o=ToString(e),n=ToString(t);if(o===n||"iso8601"===o)return t;if("iso8601"===n)return e;throw new RangeError("irreconcilable calendars")}function DateFromFields(e,t,o){const n=e.dateFromFields(t,o);if(!IsTemporalDate(n))throw new TypeError("invalid result");return n}function YearMonthFromFields(e,t,o){const n=e.yearMonthFromFields(t,o);if(!IsTemporalYearMonth(n))throw new TypeError("invalid result");return n}function MonthDayFromFields(e,t,o){const n=e.monthDayFromFields(t,o);if(!IsTemporalMonthDay(n))throw new TypeError("invalid result");return n}function ToTemporalTimeZone(e){let t=e;if(IsObject(t)){if(IsTemporalZonedDateTime(t))return GetSlot(t,p);if(!("timeZone"in t))return t;if(t=t.timeZone,IsObject(t)&&!("timeZone"in t))return t}const o=ParseTemporalTimeZone(ToString(t));return new(GetIntrinsic("%Temporal.TimeZone%"))(o)}function TimeZoneEquals(e,t){if(e===t)return !0;return ToString(e)===ToString(t)}function TemporalDateTimeToDate(e){return CreateTemporalDate(GetSlot(e,r$1),GetSlot(e,a),GetSlot(e,i$1),GetSlot(e,T))}function TemporalDateTimeToTime(e){return new(GetIntrinsic("%Temporal.PlainTime%"))(GetSlot(e,s),GetSlot(e,l),GetSlot(e,d),GetSlot(e,m),GetSlot(e,c),GetSlot(e,h))}function GetOffsetNanosecondsFor(e,t){let o=e.getOffsetNanosecondsFor;if("function"!=typeof o)throw new TypeError("getOffsetNanosecondsFor not callable");const n=Reflect.apply(o,e,[t]);if("number"!=typeof n)throw new TypeError("bad return from getOffsetNanosecondsFor");if(!IsInteger(n)||le(n)>864e11)throw new RangeError("out-of-range return from getOffsetNanosecondsFor");return n}function BuiltinTimeZoneGetOffsetStringFor(e,t){return FormatTimeZoneOffsetString(GetOffsetNanosecondsFor(e,t))}function BuiltinTimeZoneGetPlainDateTimeFor(e,t,n){const r=GetSlot(t,o),a=GetOffsetNanosecondsFor(e,t);let{year:i,month:s,day:l,hour:d,minute:m,second:c,millisecond:h,microsecond:T,nanosecond:u}=GetISOPartsFromEpoch(r);return ({year:i,month:s,day:l,hour:d,minute:m,second:c,millisecond:h,microsecond:T,nanosecond:u}=BalanceISODateTime(i,s,l,d,m,c,h,T,u+a)),CreateTemporalDateTime(i,s,l,d,m,c,h,T,u,n)}function BuiltinTimeZoneGetInstantFor(e,t,o){return DisambiguatePossibleInstants(GetPossibleInstantsFor(e,t),e,t,o)}function DisambiguatePossibleInstants(t,o,n,u){const p=GetIntrinsic("%Temporal.Instant%"),f=t.length;if(1===f)return t[0];if(f)switch(u){case"compatible":case"earlier":return t[0];case"later":return t[f-1];case"reject":throw new RangeError("multiple instants found")}const y=GetSlot(n,r$1),S=GetSlot(n,a),g=GetSlot(n,i$1),w=GetSlot(n,s),I=GetSlot(n,l),G=GetSlot(n,d),D=GetSlot(n,m),v=GetSlot(n,c),O=GetSlot(n,h),C=GetEpochFromISOParts(y,S,g,w,I,G,D,v,O);if(null===C)throw new RangeError("DateTime outside of supported range");const E=new p(jsbiUmd.subtract(C,Ee)),b=new p(jsbiUmd.add(C,Ee)),R=GetOffsetNanosecondsFor(o,E),M=GetOffsetNanosecondsFor(o,b)-R;switch(u){case"earlier":{const e=GetSlot(n,T),t=GetIntrinsic("%Temporal.PlainDateTime%"),r=AddDateTime(y,S,g,w,I,G,D,v,O,e,0,0,0,0,0,0,0,0,0,-M,void 0);return GetPossibleInstantsFor(o,new t(r.year,r.month,r.day,r.hour,r.minute,r.second,r.millisecond,r.microsecond,r.nanosecond,e))[0]}case"compatible":case"later":{const e=GetSlot(n,T),t=GetIntrinsic("%Temporal.PlainDateTime%"),r=AddDateTime(y,S,g,w,I,G,D,v,O,e,0,0,0,0,0,0,0,0,0,M,void 0),a=GetPossibleInstantsFor(o,new t(r.year,r.month,r.day,r.hour,r.minute,r.second,r.millisecond,r.microsecond,r.nanosecond,e));return a[a.length-1]}case"reject":throw new RangeError("no such instant found")}}function GetPossibleInstantsFor(e,t){const o=e.getPossibleInstantsFor(t),n=[];for(const e of o){if(!IsTemporalInstant(e))throw new TypeError("bad return from getPossibleInstantsFor");re$1.call(n,e);}return n}function ISOYearString(e){let t;if(e<1e3||e>9999){t=(e<0?"-":"+")+`000000${le(e)}`.slice(-6);}else t=`${e}`;return t}function ISODateTimePartString(e){return `00${e}`.slice(-2)}function FormatSecondsStringPart(e,t,o,n,r){if("minute"===r)return "";const a=`:${ISODateTimePartString(e)}`;let i,s=1e6*t+1e3*o+n;if("auto"===r){if(0===s)return a;for(i=`${s}`.padStart(9,"0");"0"===i[i.length-1];)i=i.slice(0,-1);}else {if(0===r)return a;i=`${s}`.padStart(9,"0").slice(0,r);}return `${a}.${i}`}function TemporalInstantToString(e,t,o){let n=t;if(void 0===n){n=new(GetIntrinsic("%Temporal.TimeZone%"))("UTC");}const T=BuiltinTimeZoneGetPlainDateTimeFor(n,e,GetISO8601Calendar()),u=ISOYearString(GetSlot(T,r$1)),p=ISODateTimePartString(GetSlot(T,a)),f=ISODateTimePartString(GetSlot(T,i$1)),y=ISODateTimePartString(GetSlot(T,s)),S=ISODateTimePartString(GetSlot(T,l)),g=FormatSecondsStringPart(GetSlot(T,d),GetSlot(T,m),GetSlot(T,c),GetSlot(T,h),o);let w="Z";if(void 0!==t){w=FormatISOTimeZoneOffsetString(GetOffsetNanosecondsFor(n,e));}return `${u}-${p}-${f}T${y}:${S}${g}${w}`}function TemporalDurationToString(t,o="auto",n){function formatNumber(t){return t<=fe?t.toString(10):jsbiUmd.BigInt(t).toString(10)}const r=GetSlot(t,f),a=GetSlot(t,y),i=GetSlot(t,S),s=GetSlot(t,g),l=GetSlot(t,w),d=GetSlot(t,I);let m=GetSlot(t,G),c=GetSlot(t,D),h=GetSlot(t,v),T=GetSlot(t,O);const u=DurationSign(r,a,i,s,l,d,m,c,h,T);if(n){const{unit:e,increment:t,roundingMode:o}=n;({seconds:m,milliseconds:c,microseconds:h,nanoseconds:T}=RoundDuration(0,0,0,0,0,0,m,c,h,T,t,e,o));}const p=[];r&&p.push(`${formatNumber(le(r))}Y`),a&&p.push(`${formatNumber(le(a))}M`),i&&p.push(`${formatNumber(le(i))}W`),s&&p.push(`${formatNumber(le(s))}D`);const C=[];l&&C.push(`${formatNumber(le(l))}H`),d&&C.push(`${formatNumber(le(d))}M`);const E=[];let b,R,M,Z,F=TotalDurationNanoseconds(0,0,0,m,c,h,T,0);(({quotient:F,remainder:b}=divmod(F,De))),({quotient:F,remainder:R}=divmod(F,De)),({quotient:Z,remainder:M}=divmod(F,De));const Y=1e6*le(jsbiUmd.toNumber(M))+1e3*le(jsbiUmd.toNumber(R))+le(jsbiUmd.toNumber(b));let P;if("auto"===o){if(0!==Y)for(P=`${Y}`.padStart(9,"0");"0"===P[P.length-1];)P=P.slice(0,-1);}else 0!==o&&(P=`${Y}`.padStart(9,"0").slice(0,o));return P&&E.unshift(".",P),jsbiUmd.equal(Z,we)&&!E.length&&"auto"===o||E.unshift(abs(Z).toString()),E.length&&C.push(`${E.join("")}S`),C.length&&C.unshift("T"),p.length||C.length?`${u<0?"-":""}P${p.join("")}${C.join("")}`:"PT0S"}function TemporalDateToString(e,t="auto"){return `${ISOYearString(GetSlot(e,r$1))}-${ISODateTimePartString(GetSlot(e,a))}-${ISODateTimePartString(GetSlot(e,i$1))}${FormatCalendarAnnotation(ToString(GetSlot(e,T)),t)}`}function TemporalDateTimeToString(e,t,o="auto",n){let u=GetSlot(e,r$1),p=GetSlot(e,a),f=GetSlot(e,i$1),y=GetSlot(e,s),S=GetSlot(e,l),g=GetSlot(e,d),w=GetSlot(e,m),I=GetSlot(e,c),G=GetSlot(e,h);if(n){const{unit:e,increment:t,roundingMode:o}=n;({year:u,month:p,day:f,hour:y,minute:S,second:g,millisecond:w,microsecond:I,nanosecond:G}=RoundISODateTime(u,p,f,y,S,g,w,I,G,t,e,o));}return `${ISOYearString(u)}-${ISODateTimePartString(p)}-${ISODateTimePartString(f)}T${ISODateTimePartString(y)}:${ISODateTimePartString(S)}${FormatSecondsStringPart(g,w,I,G,t)}${FormatCalendarAnnotation(ToString(GetSlot(e,T)),o)}`}function TemporalMonthDayToString(e,t="auto"){let o=`${ISODateTimePartString(GetSlot(e,a))}-${ISODateTimePartString(GetSlot(e,i$1))}`;const n=ToString(GetSlot(e,T));if("iso8601"!==n){o=`${ISOYearString(GetSlot(e,r$1))}-${o}`;}const s=FormatCalendarAnnotation(n,t);return s&&(o+=s),o}function TemporalYearMonthToString(e,t="auto"){let o=`${ISOYearString(GetSlot(e,r$1))}-${ISODateTimePartString(GetSlot(e,a))}`;const n=ToString(GetSlot(e,T));if("iso8601"!==n){o+=`-${ISODateTimePartString(GetSlot(e,i$1))}`;}const s=FormatCalendarAnnotation(n,t);return s&&(o+=s),o}function TemporalZonedDateTimeToString(e,t,n="auto",f="auto",y="auto",S){let g=GetSlot(e,u);if(S){const{unit:t,increment:n,roundingMode:r}=S,a=RoundInstant(GetSlot(e,o),n,t,r);g=new(GetIntrinsic("%Temporal.Instant%"))(a);}const w=GetSlot(e,p),I=BuiltinTimeZoneGetPlainDateTimeFor(w,g,GetISO8601Calendar());let G=`${ISOYearString(GetSlot(I,r$1))}-${ISODateTimePartString(GetSlot(I,a))}-${ISODateTimePartString(GetSlot(I,i$1))}T${ISODateTimePartString(GetSlot(I,s))}:${ISODateTimePartString(GetSlot(I,l))}${FormatSecondsStringPart(GetSlot(I,d),GetSlot(I,m),GetSlot(I,c),GetSlot(I,h),t)}`;if("never"!==y){G+=FormatISOTimeZoneOffsetString(GetOffsetNanosecondsFor(w,g));}"never"!==f&&(G+=`[${w}]`);return G+=FormatCalendarAnnotation(ToString(GetSlot(e,T)),n),G}function TestTimeZoneOffsetString(e){return ke.test(pe(e))}function ParseTimeZoneOffsetString(e){const t=ke.exec(pe(e));if(!t)throw new RangeError(`invalid time zone offset: ${e}`);return ("-"===t[1]||"−"===t[1]?-1:1)*(1e9*(60*(60*+t[2]+ +(t[3]||0))+ +(t[4]||0))+ +((t[5]||0)+"000000000").slice(0,9))}function GetCanonicalTimeZoneIdentifier(e){if(TestTimeZoneOffsetString(e)){return FormatTimeZoneOffsetString(ParseTimeZoneOffsetString(e))}return getIntlDateTimeFormatEnUsForTimeZone(pe(e)).resolvedOptions().timeZone}function GetIANATimeZoneOffsetNanoseconds(t,o){const{year:n,month:r,day:a,hour:i,minute:s,second:l,millisecond:d,microsecond:m,nanosecond:c}=GetIANATimeZoneDateTimeParts(t,o),h=GetEpochFromISOParts(n,r,a,i,s,l,d,m,c);if(null===h)throw new RangeError("Date outside of supported range");return jsbiUmd.toNumber(jsbiUmd.subtract(h,t))}function FormatTimeZoneOffsetString(e){const t=e<0?"-":"+",o=le(e),n=o%1e9,r=de(o/1e9)%60,a=de(o/6e10)%60,i=ISODateTimePartString(de(o/36e11)),s=ISODateTimePartString(a),l=ISODateTimePartString(r);let d="";if(n){let e=`${n}`.padStart(9,"0");for(;"0"===e[e.length-1];)e=e.slice(0,-1);d=`:${l}.${e}`;}else r&&(d=`:${l}`);return `${t}${i}:${s}${d}`}function FormatISOTimeZoneOffsetString(t){let o=jsbiUmd.toNumber(RoundNumberToIncrement(jsbiUmd.BigInt(t),6e10,"halfExpand"));const n=o<0?"-":"+";o=le(o);const r=o/6e10%60;return `${n}${ISODateTimePartString(de(o/36e11))}:${ISODateTimePartString(r)}`}function GetEpochFromISOParts(t,o,n,r,a,i,s,l,d){const m=new Date;m.setUTCHours(r,a,i,s),m.setUTCFullYear(t,o-1,n);const c=m.getTime();if(he(c))return null;let h=jsbiUmd.multiply(jsbiUmd.BigInt(c),ve);return h=jsbiUmd.add(h,jsbiUmd.multiply(jsbiUmd.BigInt(l),De)),h=jsbiUmd.add(h,jsbiUmd.BigInt(d)),jsbiUmd.lessThan(h,be)||jsbiUmd.greaterThan(h,Re)?null:h}function GetISOPartsFromEpoch(t){const{quotient:o,remainder:n}=divmod(t,ve);let r=jsbiUmd.toNumber(o),a=jsbiUmd.toNumber(n);a<0&&(a+=1e6,r-=1);const i=de(a/1e3)%1e3,s=a%1e3,l=new Date(r);return {epochMilliseconds:r,year:l.getUTCFullYear(),month:l.getUTCMonth()+1,day:l.getUTCDate(),hour:l.getUTCHours(),minute:l.getUTCMinutes(),second:l.getUTCSeconds(),millisecond:l.getUTCMilliseconds(),microsecond:i,nanosecond:s}}function GetIANATimeZoneDateTimeParts(e,t){const{epochMilliseconds:o,millisecond:n,microsecond:r,nanosecond:a}=GetISOPartsFromEpoch(e),{year:i,month:s,day:l,hour:d,minute:m,second:c}=function GetFormatterParts(e,t){const o=getIntlDateTimeFormatEnUsForTimeZone(e);return function parseFromEnUsFormat(e){const t=e.split(/[^\w]+/);if(7!==t.length)throw new RangeError(`expected 7 parts in "${e}`);const o=+t[0],n=+t[1];let r=+t[2];const a=t[3].toUpperCase();if("B"===a||"BC"===a)r=1-r;else if("A"!==a&&"AD"!==a)throw new RangeError(`Unknown era ${a} in "${e}`);let i=+t[4];24===i&&(i=0);const s=+t[5],l=+t[6];if(!(Te(r)&&Te(o)&&Te(n)&&Te(i)&&Te(s)&&Te(l)))throw new RangeError(`Invalid number in "${e}`);return {year:r,month:o,day:n,hour:i,minute:s,second:l}}(o.format(new Date(t)))}(t,o);return BalanceISODateTime(i,s,l,d,m,c,n,r,a)}function maxJSBI(t,o){return jsbiUmd.lessThan(t,o)?o:t}function afterLatestPossibleTzdbRuleChange(){return jsbiUmd.add($e(),Ze)}function GetIANATimeZonePreviousTransition(t,o){const n=afterLatestPossibleTzdbRuleChange(),r=jsbiUmd.greaterThan(t,n),a=r?jsbiUmd.subtract(t,Fe):Me;let i=jsbiUmd.subtract(t,Ie);const s=GetIANATimeZoneOffsetNanoseconds(i,o);let l=i,d=s;for(;s===d&&jsbiUmd.greaterThan(i,a);)l=jsbiUmd.subtract(i,Ye),d=GetIANATimeZoneOffsetNanoseconds(l,o),s===d&&(i=l);if(s===d){if(r){return GetIANATimeZonePreviousTransition(jsbiUmd.subtract(n,Ee),o)}return null}return bisect((e=>GetIANATimeZoneOffsetNanoseconds(e,o)),l,i,d,s)}function LeapYear(e){if(void 0===e)return !1;return e%4==0&&(!(e%100==0)||e%400==0)}function ISODaysInMonth(e,t){return {standard:[31,28,31,30,31,30,31,31,30,31,30,31],leapyear:[31,29,31,30,31,30,31,31,30,31,30,31]}[LeapYear(e)?"leapyear":"standard"][t-1]}function DayOfWeek(e,t,o){const n=t+(t<3?10:-2),r=e-(t<3?1:0),a=de(r/100),i=r-100*a,s=(o+de(2.6*n-.2)+(i+de(i/4))+(de(a/4)-2*a))%7;return s+(s<=0?7:0)}function DayOfYear(e,t,o){let n=o;for(let o=t-1;o>0;o--)n+=ISODaysInMonth(e,o);return n}function DurationSign(e,t,o,n,r,a,i,s,l,d){for(const m of [e,t,o,n,r,a,i,s,l,d])if(0!==m)return m<0?-1:1;return 0}function BalanceISOYearMonth(e,t){let o=e,n=t;if(!Te(o)||!Te(n))throw new RangeError("infinity is out of range");return n-=1,o+=de(n/12),n%=12,n<0&&(n+=12),n+=1,{year:o,month:n}}function BalanceISODate(e,t,o){let n=e,r=t,a=o;if(!Te(a))throw new RangeError("infinity is out of range");({year:n,month:r}=BalanceISOYearMonth(n,r));let i=0,s=r>2?n:n-1;for(;i=LeapYear(s)?366:365,a<-i;)n-=1,s-=1,a+=i;for(s+=1;i=LeapYear(s)?366:365,a>i;)n+=1,s+=1,a-=i;for(;a<1;)(({year:n,month:r}=BalanceISOYearMonth(n,r-1))),a+=ISODaysInMonth(n,r);for(;a>ISODaysInMonth(n,r);)a-=ISODaysInMonth(n,r),({year:n,month:r}=BalanceISOYearMonth(n,r+1));return {year:n,month:r,day:a}}function BalanceISODateTime(e,t,o,n,r,a,i,s,l){const{deltaDays:d,hour:m,minute:c,second:h,millisecond:T,microsecond:u,nanosecond:p}=BalanceTime(n,r,a,i,s,l),{year:f,month:y,day:S}=BalanceISODate(e,t,o+d);return {year:f,month:y,day:S,hour:m,minute:c,second:h,millisecond:T,microsecond:u,nanosecond:p}}function BalanceTime(e,t,o,n,r,a){let i=e,s=t,l=o,d=n,m=r,c=a;if(!(Te(i)&&Te(s)&&Te(l)&&Te(d)&&Te(m)&&Te(c)))throw new RangeError("infinity is out of range");m+=de(c/1e3),c=NonNegativeModulo(c,1e3),d+=de(m/1e3),m=NonNegativeModulo(m,1e3),l+=de(d/1e3),d=NonNegativeModulo(d,1e3),s+=de(l/60),l=NonNegativeModulo(l,60),i+=de(s/60),s=NonNegativeModulo(s,60);const h=de(i/24);return i=NonNegativeModulo(i,24),{deltaDays:h,hour:i,minute:s,second:l,millisecond:d,microsecond:m,nanosecond:c}}function TotalDurationNanoseconds(t,o,n,r,a,i,s,l){const d=jsbiUmd.BigInt(t);let m=jsbiUmd.BigInt(s);0!==t&&(m=jsbiUmd.subtract(jsbiUmd.BigInt(s),jsbiUmd.BigInt(l)));const c=jsbiUmd.add(jsbiUmd.BigInt(o),jsbiUmd.multiply(d,jsbiUmd.BigInt(24))),h=jsbiUmd.add(jsbiUmd.BigInt(n),jsbiUmd.multiply(c,Ge)),T=jsbiUmd.add(jsbiUmd.BigInt(r),jsbiUmd.multiply(h,Ge)),u=jsbiUmd.add(jsbiUmd.BigInt(a),jsbiUmd.multiply(T,De)),p=jsbiUmd.add(jsbiUmd.BigInt(i),jsbiUmd.multiply(u,De));return jsbiUmd.add(jsbiUmd.BigInt(m),jsbiUmd.multiply(p,De))}function NanosecondsToDays(t,n){const f=GetIntrinsic("%Temporal.Instant%"),y=me(jsbiUmd.toNumber(t));let S=jsbiUmd.BigInt(t),g=864e11;if(0===y)return {days:0,nanoseconds:we,dayLengthNs:g};if(!IsTemporalZonedDateTime(n)){let t;return ({quotient:t,remainder:S}=divmod(S,jsbiUmd.BigInt(g))),{days:jsbiUmd.toNumber(t),nanoseconds:S,dayLengthNs:g}}const w=GetSlot(n,o),I=GetSlot(n,u),G=jsbiUmd.add(w,S),D=new f(G),v=GetSlot(n,p),O=GetSlot(n,T),C=BuiltinTimeZoneGetPlainDateTimeFor(v,I,O),E=BuiltinTimeZoneGetPlainDateTimeFor(v,D,O);let{days:b}=DifferenceISODateTime(GetSlot(C,r$1),GetSlot(C,a),GetSlot(C,i$1),GetSlot(C,s),GetSlot(C,l),GetSlot(C,d),GetSlot(C,m),GetSlot(C,c),GetSlot(C,h),GetSlot(E,r$1),GetSlot(E,a),GetSlot(E,i$1),GetSlot(E,s),GetSlot(E,l),GetSlot(E,d),GetSlot(E,m),GetSlot(E,c),GetSlot(E,h),O,"day"),R=AddZonedDateTime(I,v,O,0,0,0,b,0,0,0,0,0,0);if(1===y)for(;b>0&&jsbiUmd.greaterThan(R,G);)--b,R=AddZonedDateTime(I,v,O,0,0,0,b,0,0,0,0,0,0);S=jsbiUmd.subtract(G,R);let M=!1,Z=new f(R);do{const t=AddZonedDateTime(Z,v,O,0,0,0,y,0,0,0,0,0,0),n=GetSlot(Z,o);g=jsbiUmd.toNumber(jsbiUmd.subtract(t,n)),M=jsbiUmd.greaterThan(jsbiUmd.multiply(jsbiUmd.subtract(S,jsbiUmd.BigInt(g)),jsbiUmd.BigInt(y)),we),M&&(S=jsbiUmd.subtract(S,jsbiUmd.BigInt(g)),Z=new f(t),b+=y);}while(M);return {days:b,nanoseconds:S,dayLengthNs:le(g)}}function BalanceDuration(t,n,r,a,i,s,l,d,m){let c,h,f,y,S,g,w=t;if(IsTemporalZonedDateTime(m)){const t=AddZonedDateTime(GetSlot(m,u),GetSlot(m,p),GetSlot(m,T),0,0,0,w,n,r,a,i,s,l),d=GetSlot(m,o);c=jsbiUmd.subtract(t,d);}else c=TotalDurationNanoseconds(w,n,r,a,i,s,l,0);"year"===d||"month"===d||"week"===d||"day"===d?({days:w,nanoseconds:c}=NanosecondsToDays(c,m)):w=0;const I=jsbiUmd.lessThan(c,we)?-1:1;switch(c=abs(c),h=f=y=S=g=we,d){case"year":case"month":case"week":case"day":case"hour":(({quotient:h,remainder:c}=divmod(c,De))),({quotient:f,remainder:h}=divmod(h,De)),({quotient:y,remainder:f}=divmod(f,De)),({quotient:S,remainder:y}=divmod(y,Ge)),({quotient:g,remainder:S}=divmod(S,Ge));break;case"minute":(({quotient:h,remainder:c}=divmod(c,De))),({quotient:f,remainder:h}=divmod(h,De)),({quotient:y,remainder:f}=divmod(f,De)),({quotient:S,remainder:y}=divmod(y,Ge));break;case"second":(({quotient:h,remainder:c}=divmod(c,De))),({quotient:f,remainder:h}=divmod(h,De)),({quotient:y,remainder:f}=divmod(f,De));break;case"millisecond":(({quotient:h,remainder:c}=divmod(c,De))),({quotient:f,remainder:h}=divmod(h,De));break;case"microsecond":({quotient:h,remainder:c}=divmod(c,De));break;case"nanosecond":break;default:throw new Error("assert not reached")}return {days:w,hours:jsbiUmd.toNumber(g)*I,minutes:jsbiUmd.toNumber(S)*I,seconds:jsbiUmd.toNumber(y)*I,milliseconds:jsbiUmd.toNumber(f)*I,microseconds:jsbiUmd.toNumber(h)*I,nanoseconds:jsbiUmd.toNumber(c)*I}}function UnbalanceDurationRelative(e,t,o,n,r,a){let i=e,s=t,l=o,d=n;const m=GetIntrinsic("%Temporal.Duration%"),c=DurationSign(i,s,l,d,0,0,0,0,0,0);let h,u;a&&(u=ToTemporalDate(a),h=GetSlot(u,T));const p=new m(c),f=new m(0,c),S=new m(0,0,c);switch(r){case"year":break;case"month":{if(!h)throw new RangeError("a starting point is required for months balancing");const e=h.dateAdd,t=h.dateUntil;let o=u;for(;le(i)>0;){const n=CalendarDateAdd(h,o,p,ye(null),e),r=ye(null);r.largestUnit="month";const a=GetSlot(CalendarDateUntil(h,o,n,r,t),y);o=n,s+=a,i-=c;}}break;case"week":if(!h)throw new RangeError("a starting point is required for weeks balancing");for(;le(i)>0;){let e;(({relativeTo:u,days:e}=MoveRelativeDate(h,u,p))),d+=e,i-=c;}for(;le(s)>0;){let e;(({relativeTo:u,days:e}=MoveRelativeDate(h,u,f))),d+=e,s-=c;}break;default:for(;le(i)>0;){if(!h)throw new RangeError("a starting point is required for balancing calendar units");let e;(({relativeTo:u,days:e}=MoveRelativeDate(h,u,p))),d+=e,i-=c;}for(;le(s)>0;){if(!h)throw new RangeError("a starting point is required for balancing calendar units");let e;(({relativeTo:u,days:e}=MoveRelativeDate(h,u,f))),d+=e,s-=c;}for(;le(l)>0;){if(!h)throw new RangeError("a starting point is required for balancing calendar units");let e;(({relativeTo:u,days:e}=MoveRelativeDate(h,u,S))),d+=e,l-=c;}}return {years:i,months:s,weeks:l,days:d}}function CalculateOffsetShift(e,t,o,n,r,a,i,s,l,d,m){if(IsTemporalZonedDateTime(e)){const c=GetSlot(e,u),h=GetSlot(e,p),f=GetSlot(e,T),y=GetOffsetNanosecondsFor(h,c),S=AddZonedDateTime(c,h,f,t,o,n,r,a,i,s,l,d,m);return GetOffsetNanosecondsFor(h,new(GetIntrinsic("%Temporal.Instant%"))(S))-y}return 0}function CreateNegatedTemporalDuration(e){return new(GetIntrinsic("%Temporal.Duration%"))(-GetSlot(e,f),-GetSlot(e,y),-GetSlot(e,S),-GetSlot(e,g),-GetSlot(e,w),-GetSlot(e,I),-GetSlot(e,G),-GetSlot(e,D),-GetSlot(e,v),-GetSlot(e,O))}function ConstrainToRange(e,t,o){return ie(o,se(t,e))}function ConstrainISODate(e,t,o){const n=ConstrainToRange(t,1,12);return {year:e,month:n,day:ConstrainToRange(o,1,ISODaysInMonth(e,n))}}function RejectToRange(e,t,o){if(e<t||e>o)throw new RangeError(`value out of range: ${t} <= ${e} <= ${o}`)}function RejectISODate(e,t,o){RejectToRange(t,1,12),RejectToRange(o,1,ISODaysInMonth(e,t));}function RejectDateRange(e,t,o){RejectDateTimeRange(e,t,o,12,0,0,0,0,0);}function RejectTime(e,t,o,n,r,a){RejectToRange(e,0,23),RejectToRange(t,0,59),RejectToRange(o,0,59),RejectToRange(n,0,999),RejectToRange(r,0,999),RejectToRange(a,0,999);}function RejectDateTime(e,t,o,n,r,a,i,s,l){RejectISODate(e,t,o),RejectTime(n,r,a,i,s,l);}function RejectDateTimeRange(e,t,o,n,r,a,i,s,l){if(RejectToRange(e,-271821,275760),-271821===e&&null==GetEpochFromISOParts(e,t,o+1,n,r,a,i,s,l-1)||275760===e&&null==GetEpochFromISOParts(e,t,o-1,n,r,a,i,s,l+1))throw new RangeError("DateTime outside of supported range")}function ValidateEpochNanoseconds(t){if(jsbiUmd.lessThan(t,be)||jsbiUmd.greaterThan(t,Re))throw new RangeError("Instant outside of supported range")}function RejectDuration(e,t,o,n,r,a,i,s,l,d){const m=DurationSign(e,t,o,n,r,a,i,s,l,d);for(const c of [e,t,o,n,r,a,i,s,l,d]){if(!Te(c))throw new RangeError("infinite values not allowed as duration fields");const e=me(c);if(0!==e&&e!==m)throw new RangeError("mixed-sign values not allowed as duration fields")}}function DifferenceISODate(e,t,o,n,r,a,i){switch(i){case"year":case"month":{const s=-CompareISODate(e,t,o,n,r,a);if(0===s)return {years:0,months:0,weeks:0,days:0};const l={year:e,month:t,day:o},d={year:n,month:r,day:a};let m=d.year-l.year,c=AddISODate(e,t,o,m,0,0,0,"constrain"),h=-CompareISODate(c.year,c.month,c.day,n,r,a);if(0===h)return "year"===i?{years:m,months:0,weeks:0,days:0}:{years:0,months:12*m,weeks:0,days:0};let T=d.month-l.month;if(h!==s&&(m-=s,T+=12*s),c=AddISODate(e,t,o,m,T,0,0,"constrain"),h=-CompareISODate(c.year,c.month,c.day,n,r,a),0===h)return "year"===i?{years:m,months:T,weeks:0,days:0}:{years:0,months:T+12*m,weeks:0,days:0};h!==s&&(T-=s,T===-s&&(m-=s,T=11*s),c=AddISODate(e,t,o,m,T,0,0,"constrain"),h=-CompareISODate(e,t,o,c.year,c.month,c.day));let u=0;return u=c.month===d.month?d.day-c.day:s<0?-c.day-(ISODaysInMonth(d.year,d.month)-d.day):d.day+(ISODaysInMonth(c.year,c.month)-c.day),"month"===i&&(T+=12*m,m=0),{years:m,months:T,weeks:0,days:u}}case"week":case"day":{let s,l,d;CompareISODate(e,t,o,n,r,a)<0?(l={year:e,month:t,day:o},s={year:n,month:r,day:a},d=1):(l={year:n,month:r,day:a},s={year:e,month:t,day:o},d=-1);let m=DayOfYear(s.year,s.month,s.day)-DayOfYear(l.year,l.month,l.day);for(let e=l.year;e<s.year;++e)m+=LeapYear(e)?366:365;let c=0;return "week"===i&&(c=de(m/7),m%=7),c*=d,m*=d,{years:0,months:0,weeks:c,days:m}}default:throw new Error("assert not reached")}}function DifferenceTime(e,t,o,n,r,a,i,s,l,d,m,c){let h=i-e,T=s-t,u=l-o,p=d-n,f=m-r,y=c-a;const S=DurationSign(0,0,0,0,h,T,u,p,f,y);h*=S,T*=S,u*=S,p*=S,f*=S,y*=S;let g=0;return ({deltaDays:g,hour:h,minute:T,second:u,millisecond:p,microsecond:f,nanosecond:y}=BalanceTime(h,T,u,p,f,y)),g*=S,h*=S,T*=S,u*=S,p*=S,f*=S,y*=S,{deltaDays:g,hours:h,minutes:T,seconds:u,milliseconds:p,microseconds:f,nanoseconds:y}}function DifferenceInstant(t,o,n,r,a){const i=jsbiUmd.subtract(o,t),s=jsbiUmd.remainder(i,jsbiUmd.BigInt(864e11)),l=jsbiUmd.subtract(i,s),d=RoundNumberToIncrement(s,Le[r]*n,a),m=jsbiUmd.add(l,d),c=jsbiUmd.toNumber(jsbiUmd.remainder(m,De)),h=jsbiUmd.toNumber(jsbiUmd.remainder(jsbiUmd.divide(m,De),De)),T=jsbiUmd.toNumber(jsbiUmd.remainder(jsbiUmd.divide(m,ve),De));return {seconds:jsbiUmd.toNumber(jsbiUmd.divide(m,Oe)),milliseconds:T,microseconds:h,nanoseconds:c}}function DifferenceISODateTime(e,t,o,n,r,a,i,s,l,d,m,c,h,T,u,p,f,y,S,g,w=ye(null)){let I=e,G=t,D=o,{deltaDays:v,hours:O,minutes:C,seconds:E,milliseconds:b,microseconds:R,nanoseconds:M}=DifferenceTime(n,r,a,i,s,l,h,T,u,p,f,y);const Z=DurationSign(0,0,0,v,O,C,E,b,R,M);({year:I,month:G,day:D}=BalanceISODate(I,G,D+v));CompareISODate(d,m,c,I,G,D)===-Z&&(({year:I,month:G,day:D}=BalanceISODate(I,G,D-Z)),({hours:O,minutes:C,seconds:E,milliseconds:b,microseconds:R,nanoseconds:M}=BalanceDuration(-Z,O,C,E,b,R,M,g)));const F=CreateTemporalDate(I,G,D,S),Y=CreateTemporalDate(d,m,c,S),P={...w,largestUnit:LargerOfTwoTemporalUnits("day",g)};let{years:j,months:B,weeks:N,days:$}=CalendarDateUntil(S,F,Y,P);return ({days:$,hours:O,minutes:C,seconds:E,milliseconds:b,microseconds:R,nanoseconds:M}=BalanceDuration($,O,C,E,b,R,M,g)),{years:j,months:B,weeks:N,days:$,hours:O,minutes:C,seconds:E,milliseconds:b,microseconds:R,nanoseconds:M}}function DifferenceZonedDateTime(t,o,n,T,u,p){const f=jsbiUmd.subtract(o,t);if(jsbiUmd.equal(f,we))return {years:0,months:0,weeks:0,days:0,hours:0,minutes:0,seconds:0,milliseconds:0,microseconds:0,nanoseconds:0};const y=GetIntrinsic("%Temporal.Instant%"),S=new y(t),g=new y(o),w=BuiltinTimeZoneGetPlainDateTimeFor(n,S,T),I=BuiltinTimeZoneGetPlainDateTimeFor(n,g,T);let{years:G,months:D,weeks:v,days:O}=DifferenceISODateTime(GetSlot(w,r$1),GetSlot(w,a),GetSlot(w,i$1),GetSlot(w,s),GetSlot(w,l),GetSlot(w,d),GetSlot(w,m),GetSlot(w,c),GetSlot(w,h),GetSlot(I,r$1),GetSlot(I,a),GetSlot(I,i$1),GetSlot(I,s),GetSlot(I,l),GetSlot(I,d),GetSlot(I,m),GetSlot(I,c),GetSlot(I,h),T,u,p);const C=AddZonedDateTime(S,n,T,G,D,v,0,0,0,0,0,0,0);let E=jsbiUmd.subtract(o,C);const b=CreateTemporalZonedDateTime(C,n,T);({nanoseconds:E,days:O}=NanosecondsToDays(E,b));const{hours:R,minutes:M,seconds:Z,milliseconds:F,microseconds:Y,nanoseconds:P}=BalanceDuration(0,0,0,0,0,0,jsbiUmd.toNumber(E),"hour");return {years:G,months:D,weeks:v,days:O,hours:R,minutes:M,seconds:Z,milliseconds:F,microseconds:Y,nanoseconds:P}}function AddISODate(e,t,o,n,r,a,i,s){let l=e,d=t,m=o,c=a,h=i;return l+=n,d+=r,({year:l,month:d}=BalanceISOYearMonth(l,d)),({year:l,month:d,day:m}=RegulateISODate(l,d,m,s)),h+=7*c,m+=h,({year:l,month:d,day:m}=BalanceISODate(l,d,m)),{year:l,month:d,day:m}}function AddTime(e,t,o,n,r,a,i,s,l,d,m,c){let h=e,T=t,u=o,p=n,f=r,y=a;h+=i,T+=s,u+=l,p+=d,f+=m,y+=c;let S=0;return ({deltaDays:S,hour:h,minute:T,second:u,millisecond:p,microsecond:f,nanosecond:y}=BalanceTime(h,T,u,p,f,y)),{deltaDays:S,hour:h,minute:T,second:u,millisecond:p,microsecond:f,nanosecond:y}}function AddDuration(e,t,n,r,a,i,s,l,d,m,c,h,f,y,S,g,w,I,G,D,v){const O=LargerOfTwoTemporalUnits(DefaultTemporalLargestUnit(e,t,n,r,a,i,s,l,d,m),DefaultTemporalLargestUnit(c,h,f,y,S,g,w,I,G,D));let C,E,b,R,M,Z,F,Y,P,j;if(v)if(IsTemporalDate(v)){const o=GetIntrinsic("%Temporal.Duration%"),u=GetSlot(v,T),p=new o(e,t,n,r,0,0,0,0,0,0),B=new o(c,h,f,y,0,0,0,0,0,0),N=u.dateAdd,$=CalendarDateAdd(u,v,p,ye(null),N),k=CalendarDateAdd(u,$,B,ye(null),N),L=LargerOfTwoTemporalUnits("day",O),U=ye(null);U.largestUnit=L,({years:C,months:E,weeks:b,days:R}=CalendarDateUntil(u,v,k,U)),({days:R,hours:M,minutes:Z,seconds:F,milliseconds:Y,microseconds:P,nanoseconds:j}=BalanceDuration(R,a+S,i+g,s+w,l+I,d+G,m+D,O));}else {const B=GetIntrinsic("%Temporal.Instant%"),N=GetSlot(v,p),$=GetSlot(v,T),k=AddZonedDateTime(GetSlot(v,u),N,$,e,t,n,r,a,i,s,l,d,m),L=AddZonedDateTime(new B(k),N,$,c,h,f,y,S,g,w,I,G,D);"year"!==O&&"month"!==O&&"week"!==O&&"day"!==O?(C=0,E=0,b=0,R=0,({seconds:F,milliseconds:Y,microseconds:P,nanoseconds:j}=DifferenceInstant(GetSlot(v,o),L,1,"nanosecond","halfExpand")),({hours:M,minutes:Z,seconds:F,milliseconds:Y,microseconds:P,nanoseconds:j}=BalanceDuration(0,0,0,F,Y,P,j,O))):({years:C,months:E,weeks:b,days:R,hours:M,minutes:Z,seconds:F,milliseconds:Y,microseconds:P,nanoseconds:j}=DifferenceZonedDateTime(GetSlot(v,o),L,N,$,O));}else {if("year"===O||"month"===O||"week"===O)throw new RangeError("relativeTo is required for years, months, or weeks arithmetic");C=E=b=0,({days:R,hours:M,minutes:Z,seconds:F,milliseconds:Y,microseconds:P,nanoseconds:j}=BalanceDuration(r+y,a+S,i+g,s+w,l+I,d+G,m+D,O));}return RejectDuration(C,E,b,R,M,Z,F,Y,P,j),{years:C,months:E,weeks:b,days:R,hours:M,minutes:Z,seconds:F,milliseconds:Y,microseconds:P,nanoseconds:j}}function AddInstant(t,o,n,r,a,i,s){let l=we;l=jsbiUmd.add(l,jsbiUmd.BigInt(s)),l=jsbiUmd.add(l,jsbiUmd.multiply(jsbiUmd.BigInt(i),De)),l=jsbiUmd.add(l,jsbiUmd.multiply(jsbiUmd.BigInt(a),ve)),l=jsbiUmd.add(l,jsbiUmd.multiply(jsbiUmd.BigInt(r),Oe)),l=jsbiUmd.add(l,jsbiUmd.multiply(jsbiUmd.BigInt(n),jsbiUmd.BigInt(6e10))),l=jsbiUmd.add(l,jsbiUmd.multiply(jsbiUmd.BigInt(o),jsbiUmd.BigInt(36e11)));const d=jsbiUmd.add(t,l);return ValidateEpochNanoseconds(d),d}function AddDateTime(e,t,o,n,s,l,d,m,c,h,T,u,p,f,y,S,g,w,I,G,D){let v=f,{deltaDays:O,hour:C,minute:E,second:b,millisecond:R,microsecond:M,nanosecond:Z}=AddTime(n,s,l,d,m,c,y,S,g,w,I,G);v+=O;const F=GetIntrinsic("%Temporal.Duration%"),Y=CalendarDateAdd(h,CreateTemporalDate(e,t,o,h),new F(T,u,p,v,0,0,0,0,0,0),D);return {year:GetSlot(Y,r$1),month:GetSlot(Y,a),day:GetSlot(Y,i$1),hour:C,minute:E,second:b,millisecond:R,microsecond:M,nanosecond:Z}}function AddZonedDateTime(e,t,n,T,u,p,f,y,S,g,w,I,G,D){const v=GetIntrinsic("%Temporal.Duration%");if(0===DurationSign(T,u,p,f,0,0,0,0,0,0))return AddInstant(GetSlot(e,o),y,S,g,w,I,G);const O=BuiltinTimeZoneGetPlainDateTimeFor(t,e,n),C=CalendarDateAdd(n,CreateTemporalDate(GetSlot(O,r$1),GetSlot(O,a),GetSlot(O,i$1),n),new v(T,u,p,f,0,0,0,0,0,0),D),E=CreateTemporalDateTime(GetSlot(C,r$1),GetSlot(C,a),GetSlot(C,i$1),GetSlot(O,s),GetSlot(O,l),GetSlot(O,d),GetSlot(O,m),GetSlot(O,c),GetSlot(O,h),n);return AddInstant(GetSlot(BuiltinTimeZoneGetInstantFor(t,E,"compatible"),o),y,S,g,w,I,G)}function RoundNumberToIncrement(t,o,n){if(1===o)return t;let{quotient:r,remainder:a}=divmod(t,jsbiUmd.BigInt(o));if(jsbiUmd.equal(a,we))return t;const i=jsbiUmd.lessThan(a,we)?-1:1;switch(n){case"ceil":i>0&&(r=jsbiUmd.add(r,jsbiUmd.BigInt(i)));break;case"floor":i<0&&(r=jsbiUmd.add(r,jsbiUmd.BigInt(i)));break;case"trunc":break;case"halfExpand":jsbiUmd.toNumber(abs(jsbiUmd.multiply(a,jsbiUmd.BigInt(2))))>=o&&(r=jsbiUmd.add(r,jsbiUmd.BigInt(i)));}return jsbiUmd.multiply(r,jsbiUmd.BigInt(o))}function RoundInstant(t,o,n,r){let a=jsbiUmd.remainder(t,jsbiUmd.BigInt(864e11));jsbiUmd.lessThan(a,we)&&(a=jsbiUmd.add(a,jsbiUmd.BigInt(864e11)));const i=jsbiUmd.subtract(t,a),s=RoundNumberToIncrement(a,Le[n]*o,r);return jsbiUmd.add(i,s)}function RoundISODateTime(e,t,o,n,r,a,i,s,l,d,m,c,h=864e11){const{deltaDays:T,hour:u,minute:p,second:f,millisecond:y,microsecond:S,nanosecond:g}=RoundTime(n,r,a,i,s,l,d,m,c,h),{year:w,month:I,day:G}=BalanceISODate(e,t,o+T);return {year:w,month:I,day:G,hour:u,minute:p,second:f,millisecond:y,microsecond:S,nanosecond:g}}function RoundTime(t,o,n,r,a,i,s,l,d,m=864e11){let c=we;switch(l){case"day":case"hour":c=jsbiUmd.BigInt(t);case"minute":c=jsbiUmd.add(jsbiUmd.multiply(c,Ge),jsbiUmd.BigInt(o));case"second":c=jsbiUmd.add(jsbiUmd.multiply(c,Ge),jsbiUmd.BigInt(n));case"millisecond":c=jsbiUmd.add(jsbiUmd.multiply(c,De),jsbiUmd.BigInt(r));case"microsecond":c=jsbiUmd.add(jsbiUmd.multiply(c,De),jsbiUmd.BigInt(a));case"nanosecond":c=jsbiUmd.add(jsbiUmd.multiply(c,De),jsbiUmd.BigInt(i));}const h="day"===l?m:Le[l],T=RoundNumberToIncrement(c,h*s,d),u=jsbiUmd.toNumber(jsbiUmd.divide(T,jsbiUmd.BigInt(h)));switch(l){case"day":return {deltaDays:u,hour:0,minute:0,second:0,millisecond:0,microsecond:0,nanosecond:0};case"hour":return BalanceTime(u,0,0,0,0,0);case"minute":return BalanceTime(t,u,0,0,0,0);case"second":return BalanceTime(t,o,u,0,0,0);case"millisecond":return BalanceTime(t,o,n,u,0,0);case"microsecond":return BalanceTime(t,o,n,r,u,0);case"nanosecond":return BalanceTime(t,o,n,r,a,u);default:throw new Error(`Invalid unit ${l}`)}}function DaysUntil(e,t){return DifferenceISODate(GetSlot(e,r$1),GetSlot(e,a),GetSlot(e,i$1),GetSlot(t,r$1),GetSlot(t,a),GetSlot(t,i$1),"day").days}function MoveRelativeDate(e,t,o){const n=CalendarDateAdd(e,t,o,ye(null));return {relativeTo:n,days:DaysUntil(t,n)}}function MoveRelativeZonedDateTime(e,t,o,n,r){const a=GetSlot(e,p),i=GetSlot(e,T);return CreateTemporalZonedDateTime(AddZonedDateTime(GetSlot(e,u),a,i,t,o,n,r,0,0,0,0,0,0),a,i)}function AdjustRoundedDurationDays(t,o,n,r,a,i,s,l,d,m,c,h,f,y){let S=t,g=o,w=n,I=r,G=a,D=i,v=s,O=l,C=d,E=m;if(!IsTemporalZonedDateTime(y)||"year"===h||"month"===h||"week"===h||"day"===h||"nanosecond"===h&&1===c)return {years:S,months:g,weeks:w,days:I,hours:G,minutes:D,seconds:v,milliseconds:O,microseconds:C,nanoseconds:E};let b=TotalDurationNanoseconds(0,G,D,v,O,C,E,0);const R=me(jsbiUmd.toNumber(b)),M=GetSlot(y,p),Z=GetSlot(y,T),F=AddZonedDateTime(GetSlot(y,u),M,Z,S,g,w,I,0,0,0,0,0,0),Y=AddZonedDateTime(new(GetIntrinsic("%Temporal.Instant%"))(F),M,Z,0,0,0,R,0,0,0,0,0,0),P=jsbiUmd.subtract(Y,F);return jsbiUmd.greaterThanOrEqual(jsbiUmd.multiply(jsbiUmd.subtract(b,P),jsbiUmd.BigInt(R)),we)&&(({years:S,months:g,weeks:w,days:I}=AddDuration(S,g,w,I,0,0,0,0,0,0,0,0,0,R,0,0,0,0,0,0,y)),b=RoundInstant(jsbiUmd.subtract(b,P),c,h,f),({hours:G,minutes:D,seconds:v,milliseconds:O,microseconds:C,nanoseconds:E}=BalanceDuration(0,0,0,0,0,0,jsbiUmd.toNumber(b),"hour"))),{years:S,months:g,weeks:w,days:I,hours:G,minutes:D,seconds:v,milliseconds:O,microseconds:C,nanoseconds:E}}function RoundDuration(t,o,n,r,a,i,s,l,d,m,c,h,u,p){let f=t,y=o,S=n,g=r,w=a,I=i,G=s,D=l,v=d,O=jsbiUmd.BigInt(m);const C=GetIntrinsic("%Temporal.Duration%");let E,b,R,M,Z=p;if(Z){if(IsTemporalZonedDateTime(Z))b=Z,Z=ToTemporalDate(Z);else if(!IsTemporalDate(Z))throw new TypeError("starting point must be PlainDate or ZonedDateTime");E=GetSlot(Z,T);}if("year"===h||"month"===h||"week"===h||"day"===h){let t,o,n;O=TotalDurationNanoseconds(0,w,I,G,D,v,m,0),b&&(t=MoveRelativeZonedDateTime(b,f,y,S,g)),({days:o,nanoseconds:O,dayLengthNs:n}=NanosecondsToDays(O,t)),R=jsbiUmd.BigInt(n),g+=o,w=I=G=D=v=0;}switch(h){case"year":{if(!E)throw new RangeError("A starting point is required for years rounding");const t=new C(f),o=E.dateAdd,n=CalendarDateAdd(E,Z,t,ye(null),o),r=CalendarDateAdd(E,Z,new C(f,y,S),ye(null),o);Z=n,g+=DaysUntil(n,r);const a=CalendarDateAdd(E,Z,{days:g},ye(null),o),i=ye(null);i.largestUnit="year";const s=CalendarDateUntil(E,Z,a,i).years;f+=s;const l=Z;Z=CalendarDateAdd(E,Z,{years:s},ye(null),o);g-=DaysUntil(l,Z);const d=new C(g<0?-1:1);let{days:m}=MoveRelativeDate(E,Z,d);m=le(m);const h=jsbiUmd.multiply(jsbiUmd.BigInt(m),R);O=jsbiUmd.add(jsbiUmd.add(jsbiUmd.multiply(h,jsbiUmd.BigInt(f)),jsbiUmd.multiply(jsbiUmd.BigInt(g),R)),O);const T=RoundNumberToIncrement(O,jsbiUmd.toNumber(jsbiUmd.multiply(h,jsbiUmd.BigInt(c))),u);M=jsbiUmd.toNumber(O)/jsbiUmd.toNumber(h),f=jsbiUmd.toNumber(jsbiUmd.divide(T,h)),O=we,y=S=g=0;break}case"month":{if(!E)throw new RangeError("A starting point is required for months rounding");const t=new C(f,y),o=E.dateAdd,n=CalendarDateAdd(E,Z,t,ye(null),o),r=CalendarDateAdd(E,Z,new C(f,y,S),ye(null),o);Z=n,g+=DaysUntil(n,r);const a=me(g),i=new C(0,g<0?-1:1);let s;for(({relativeTo:Z,days:s}=MoveRelativeDate(E,Z,i));le(g)>=le(s);)y+=a,g-=s,({relativeTo:Z,days:s}=MoveRelativeDate(E,Z,i));s=le(s);const l=jsbiUmd.multiply(jsbiUmd.BigInt(s),R);O=jsbiUmd.add(jsbiUmd.add(jsbiUmd.multiply(l,jsbiUmd.BigInt(y)),jsbiUmd.multiply(jsbiUmd.BigInt(g),R)),O);const d=RoundNumberToIncrement(O,jsbiUmd.toNumber(jsbiUmd.multiply(l,jsbiUmd.BigInt(c))),u);M=jsbiUmd.toNumber(O)/jsbiUmd.toNumber(l),y=jsbiUmd.toNumber(jsbiUmd.divide(d,l)),O=we,S=g=0;break}case"week":{if(!E)throw new RangeError("A starting point is required for weeks rounding");const t=me(g),o=new C(0,0,g<0?-1:1);let n;for(({relativeTo:Z,days:n}=MoveRelativeDate(E,Z,o));le(g)>=le(n);)S+=t,g-=n,({relativeTo:Z,days:n}=MoveRelativeDate(E,Z,o));n=le(n);const r=jsbiUmd.multiply(jsbiUmd.BigInt(n),R);O=jsbiUmd.add(jsbiUmd.add(jsbiUmd.multiply(r,jsbiUmd.BigInt(S)),jsbiUmd.multiply(jsbiUmd.BigInt(g),R)),O);const a=RoundNumberToIncrement(O,jsbiUmd.toNumber(jsbiUmd.multiply(r,jsbiUmd.BigInt(c))),u);M=jsbiUmd.toNumber(O)/jsbiUmd.toNumber(r),S=jsbiUmd.toNumber(jsbiUmd.divide(a,r)),O=we,g=0;break}case"day":{const t=R;O=jsbiUmd.add(jsbiUmd.multiply(t,jsbiUmd.BigInt(g)),O);const o=RoundNumberToIncrement(O,jsbiUmd.toNumber(jsbiUmd.multiply(t,jsbiUmd.BigInt(c))),u);M=jsbiUmd.toNumber(O)/jsbiUmd.toNumber(t),g=jsbiUmd.toNumber(jsbiUmd.divide(o,t)),O=we;break}case"hour":{const t=36e11;let o=jsbiUmd.multiply(jsbiUmd.BigInt(w),jsbiUmd.BigInt(36e11));o=jsbiUmd.add(o,jsbiUmd.multiply(jsbiUmd.BigInt(I),jsbiUmd.BigInt(6e10))),o=jsbiUmd.add(o,jsbiUmd.multiply(jsbiUmd.BigInt(G),Oe)),o=jsbiUmd.add(o,jsbiUmd.multiply(jsbiUmd.BigInt(D),ve)),o=jsbiUmd.add(o,jsbiUmd.multiply(jsbiUmd.BigInt(v),De)),o=jsbiUmd.add(o,O),M=jsbiUmd.toNumber(o)/t;const n=RoundNumberToIncrement(o,t*c,u);w=jsbiUmd.toNumber(jsbiUmd.divide(n,jsbiUmd.BigInt(t))),O=we,I=G=D=v=0;break}case"minute":{const t=6e10;let o=jsbiUmd.multiply(jsbiUmd.BigInt(I),jsbiUmd.BigInt(6e10));o=jsbiUmd.add(o,jsbiUmd.multiply(jsbiUmd.BigInt(G),Oe)),o=jsbiUmd.add(o,jsbiUmd.multiply(jsbiUmd.BigInt(D),ve)),o=jsbiUmd.add(o,jsbiUmd.multiply(jsbiUmd.BigInt(v),De)),o=jsbiUmd.add(o,O),M=jsbiUmd.toNumber(o)/t;const n=RoundNumberToIncrement(o,t*c,u);I=jsbiUmd.toNumber(jsbiUmd.divide(n,jsbiUmd.BigInt(t))),O=we,G=D=v=0;break}case"second":{const t=1e9;let o=jsbiUmd.multiply(jsbiUmd.BigInt(G),Oe);o=jsbiUmd.add(o,jsbiUmd.multiply(jsbiUmd.BigInt(D),ve)),o=jsbiUmd.add(o,jsbiUmd.multiply(jsbiUmd.BigInt(v),De)),o=jsbiUmd.add(o,O),M=jsbiUmd.toNumber(o)/t;const n=RoundNumberToIncrement(o,t*c,u);G=jsbiUmd.toNumber(jsbiUmd.divide(n,jsbiUmd.BigInt(t))),O=we,D=v=0;break}case"millisecond":{const t=1e6;let o=jsbiUmd.multiply(jsbiUmd.BigInt(D),ve);o=jsbiUmd.add(o,jsbiUmd.multiply(jsbiUmd.BigInt(v),De)),o=jsbiUmd.add(o,O),M=jsbiUmd.toNumber(o)/t;const n=RoundNumberToIncrement(o,t*c,u);D=jsbiUmd.toNumber(jsbiUmd.divide(n,jsbiUmd.BigInt(t))),O=we,v=0;break}case"microsecond":{const t=1e3;let o=jsbiUmd.multiply(jsbiUmd.BigInt(v),De);o=jsbiUmd.add(o,O),M=jsbiUmd.toNumber(o)/t;const n=RoundNumberToIncrement(o,t*c,u);v=jsbiUmd.toNumber(jsbiUmd.divide(n,jsbiUmd.BigInt(t))),O=we;break}case"nanosecond":M=jsbiUmd.toNumber(O),O=RoundNumberToIncrement(O,c,u);}return {years:f,months:y,weeks:S,days:g,hours:w,minutes:I,seconds:G,milliseconds:D,microseconds:v,nanoseconds:jsbiUmd.toNumber(O),total:M}}function CompareISODate(e,t,o,n,r,a){for(const[i,s]of [[e,n],[t,r],[o,a]])if(i!==s)return ComparisonResult(i-s);return 0}function NonNegativeModulo(e,t){let o=e%t;return Se(o,-0)?0:(o<0&&(o+=t),o)}function ToBigIntExternal(e){const t=ToBigInt(e);return void 0!==globalThis.BigInt?globalThis.BigInt(t.toString(10)):t}function ToBigInt(t){if(t instanceof jsbiUmd)return t;let o=t;if("object"==typeof t){const e=t[Symbol.toPrimitive];e&&"function"==typeof e&&(o=ge(e,t,["number"]));}switch(typeof o){case"undefined":case"object":case"number":case"symbol":default:throw new TypeError(`cannot convert ${typeof t} to bigint`);case"string":if(!o.match(/^\s*(?:[+-]?\d+\s*)?$/))throw new SyntaxError("invalid BigInt syntax");case"bigint":try{return jsbiUmd.BigInt(o.toString())}catch(e){if(e instanceof Error&&e.message.startsWith("Invalid integer"))throw new SyntaxError(e.message);throw e}case"boolean":return o?Ie:we}}const $e=(()=>{let t=jsbiUmd.BigInt(Date.now()%1e6);return ()=>{const o=jsbiUmd.BigInt(Date.now()),n=jsbiUmd.add(jsbiUmd.multiply(o,ve),t);return t=jsbiUmd.divide(o,ve),jsbiUmd.greaterThan(n,Re)?Re:jsbiUmd.lessThan(n,be)?be:n}})();function ComparisonResult(e){return e<0?-1:e>0?1:e}function GetOptionsObject(e){if(void 0===e)return ye(null);if(IsObject(e)&&null!==e)return e;throw new TypeError("Options parameter must be an object, not "+(null===e?"null":""+typeof e))}function CreateOnePropObject(e,t){const o=ye(null);return o[e]=t,o}function GetOption(e,t,o,n){let r=e[t];if(void 0!==r){if(r=ToString(r),!o.includes(r))throw new RangeError(`${t} must be one of ${o.join(", ")}, not ${r}`);return r}return n}const ke=new RegExp(`^${J.source}$`);function bisect(t,o,n,r=t(o),a=t(n)){let i=jsbiUmd.BigInt(o),s=jsbiUmd.BigInt(n),l=r,d=a;for(;jsbiUmd.greaterThan(jsbiUmd.subtract(s,i),Ie);){const o=jsbiUmd.divide(jsbiUmd.add(i,s),jsbiUmd.BigInt(2)),n=t(o);if(n===l)i=o,l=n;else {if(n!==d)throw new Error(`invalid state in bisection ${l} - ${n} - ${d}`);s=o,d=n;}}return s}const Le={hour:36e11,minute:6e10,second:1e9,millisecond:1e6,microsecond:1e3,nanosecond:1},Ue=Symbol("date"),Ae=Symbol("ym"),xe=Symbol("md"),He=Symbol("time"),qe=Symbol("datetime"),We=Symbol("zoneddatetime"),ze=Symbol("instant"),Je=Symbol("original"),Ve=Symbol("timezone"),_e=Symbol("timezone-id-given"),Xe=Symbol("calendar-id"),Ke=Symbol("locale"),Qe=Symbol("options"),descriptor=e=>({value:e,enumerable:!0,writable:!1,configurable:!0}),et=globalThis.Intl.DateTimeFormat,tt=Object.assign,ot=Object.prototype.hasOwnProperty,nt=Reflect.apply;function getPropLazy(e,t){let o=e[t];return "function"==typeof o&&(o=new et(e[Ke],o(e[Qe])),e[t]=o),o}function getResolvedTimeZoneLazy(e){let t=e[Ve];return "string"==typeof t&&(t=ToTemporalTimeZone(t),e[Ve]=t),t}function DateTimeFormatImpl(e,t={}){if(!(this instanceof DateTimeFormatImpl))return new DateTimeFormatImpl(e,t);const o=void 0!==t,n=o?tt({},t):{},r=new et(e,n),a=r.resolvedOptions();if(o){const e=tt({},a);for(const t in e)nt(ot,n,[t])||delete e[t];this[Qe]=e;}else this[Qe]=n;this[_e]=n.timeZone?n.timeZone:null,this[Ke]=a.locale,this[Je]=r,this[Ve]=a.timeZone,this[Xe]=a.calendar,this[Ue]=dateAmend,this[Ae]=yearMonthAmend,this[xe]=monthDayAmend,this[He]=timeAmend,this[qe]=datetimeAmend,this[We]=zonedDateTimeAmend,this[ze]=instantAmend;}Object.defineProperty(DateTimeFormatImpl,"name",{writable:!0,value:"DateTimeFormat"}),DateTimeFormatImpl.supportedLocalesOf=function(e,t){return et.supportedLocalesOf(e,t)};const rt={resolvedOptions:descriptor((function resolvedOptions(){return this[Je].resolvedOptions()})),format:descriptor((function format(e,...t){let{instant:o,formatter:n,timeZone:r}=extractOverrides(e,this);if(o&&n)return n=adjustFormatterTimeZone(n,r),n.format(o.epochMilliseconds);return this[Je].format(e,...t)})),formatRange:descriptor((function formatRange(e,t){if(isTemporalObject(e)||isTemporalObject(t)){if(!sameTemporalType(e,t))throw new TypeError("Intl.DateTimeFormat.formatRange accepts two values of the same type");const{instant:o,formatter:n,timeZone:r}=extractOverrides(e,this),{instant:a,formatter:i,timeZone:s}=extractOverrides(t,this);if(r&&s&&r!==s)throw new RangeError("cannot format range between different time zones");if(o&&a&&n&&i&&n===i){return adjustFormatterTimeZone(n,r).formatRange(o.epochMilliseconds,a.epochMilliseconds)}}return this[Je].formatRange(e,t)}))};"formatToParts"in et.prototype&&(rt.formatToParts=descriptor((function formatToParts(e,...t){let{instant:o,formatter:n,timeZone:r}=extractOverrides(e,this);if(o&&n)return n=adjustFormatterTimeZone(n,r),n.formatToParts(o.epochMilliseconds);return this[Je].formatToParts(e,...t)}))),"formatRangeToParts"in et.prototype&&(rt.formatRangeToParts=descriptor((function formatRangeToParts(e,t){if(isTemporalObject(e)||isTemporalObject(t)){if(!sameTemporalType(e,t))throw new TypeError("Intl.DateTimeFormat.formatRangeToParts accepts two values of the same type");const{instant:o,formatter:n,timeZone:r}=extractOverrides(e,this),{instant:a,formatter:i,timeZone:s}=extractOverrides(t,this);if(r&&s&&r!==s)throw new RangeError("cannot format range between different time zones");if(o&&a&&n&&i&&n===i){return adjustFormatterTimeZone(n,r).formatRangeToParts(o.epochMilliseconds,a.epochMilliseconds)}}return this[Je].formatRangeToParts(e,t)}))),DateTimeFormatImpl.prototype=Object.create(et.prototype,rt),Object.defineProperty(DateTimeFormatImpl,"prototype",{writable:!1,enumerable:!1,configurable:!1});const at=DateTimeFormatImpl;function adjustFormatterTimeZone(e,t){if(!t)return e;const o=e.resolvedOptions();return o.timeZone===t?e:((o.dateStyle||o.timeStyle)&&(delete o.weekday,delete o.era,delete o.year,delete o.month,delete o.day,delete o.hour,delete o.minute,delete o.second,delete o.timeZoneName,delete o.hourCycle,delete o.hour12,delete o.dayPeriod),new et(o.locale,{...o,timeZone:t}))}function amend(e={},t={}){const o=tt({},e);for(const e of ["year","month","day","hour","minute","second","weekday","dayPeriod","timeZoneName","dateStyle","timeStyle"])o[e]=e in t?t[e]:o[e],!1!==o[e]&&void 0!==o[e]||delete o[e];return o}function timeAmend(e){let t=amend(e,{year:!1,month:!1,day:!1,weekday:!1,timeZoneName:!1,dateStyle:!1});return hasTimeOptions(t)||(t=tt({},t,{hour:"numeric",minute:"numeric",second:"numeric"})),t}function yearMonthAmend(e){let t=amend(e,{day:!1,hour:!1,minute:!1,second:!1,weekday:!1,dayPeriod:!1,timeZoneName:!1,dateStyle:!1,timeStyle:!1});return "year"in t||"month"in t||(t=tt(t,{year:"numeric",month:"numeric"})),t}function monthDayAmend(e){let t=amend(e,{year:!1,hour:!1,minute:!1,second:!1,weekday:!1,dayPeriod:!1,timeZoneName:!1,dateStyle:!1,timeStyle:!1});return "month"in t||"day"in t||(t=tt({},t,{month:"numeric",day:"numeric"})),t}function dateAmend(e){let t=amend(e,{hour:!1,minute:!1,second:!1,dayPeriod:!1,timeZoneName:!1,timeStyle:!1});return hasDateOptions(t)||(t=tt({},t,{year:"numeric",month:"numeric",day:"numeric"})),t}function datetimeAmend(e){let t=amend(e,{timeZoneName:!1});return hasTimeOptions(t)||hasDateOptions(t)||(t=tt({},t,{year:"numeric",month:"numeric",day:"numeric",hour:"numeric",minute:"numeric",second:"numeric"})),t}function zonedDateTimeAmend(e){let t=e;return hasTimeOptions(t)||hasDateOptions(t)||(t=tt({},t,{year:"numeric",month:"numeric",day:"numeric",hour:"numeric",minute:"numeric",second:"numeric"}),void 0===t.timeZoneName&&(t.timeZoneName="short")),t}function instantAmend(e){let t=e;return hasTimeOptions(t)||hasDateOptions(t)||(t=tt({},t,{year:"numeric",month:"numeric",day:"numeric",hour:"numeric",minute:"numeric",second:"numeric"})),t}function hasDateOptions(e){return "year"in e||"month"in e||"day"in e||"weekday"in e||"dateStyle"in e}function hasTimeOptions(e){return "hour"in e||"minute"in e||"second"in e||"timeStyle"in e||"dayPeriod"in e}function isTemporalObject(e){return IsTemporalDate(e)||IsTemporalTime(e)||IsTemporalDateTime(e)||IsTemporalZonedDateTime(e)||IsTemporalYearMonth(e)||IsTemporalMonthDay(e)||IsTemporalInstant(e)}function sameTemporalType(e,t){return !(!isTemporalObject(e)||!isTemporalObject(t))&&(!(IsTemporalTime(e)&&!IsTemporalTime(t))&&(!(IsTemporalDate(e)&&!IsTemporalDate(t))&&(!(IsTemporalDateTime(e)&&!IsTemporalDateTime(t))&&(!(IsTemporalZonedDateTime(e)&&!IsTemporalZonedDateTime(t))&&(!(IsTemporalYearMonth(e)&&!IsTemporalYearMonth(t))&&(!(IsTemporalMonthDay(e)&&!IsTemporalMonthDay(t))&&!(IsTemporalInstant(e)&&!IsTemporalInstant(t))))))))}function extractOverrides(e,t){const o=GetIntrinsic("%Temporal.PlainDateTime%");if(IsTemporalTime(e)){const n=new o(1970,1,1,GetSlot(e,s),GetSlot(e,l),GetSlot(e,d),GetSlot(e,m),GetSlot(e,c),GetSlot(e,h),t[Xe]);return {instant:BuiltinTimeZoneGetInstantFor(getResolvedTimeZoneLazy(t),n,"compatible"),formatter:getPropLazy(t,He)}}if(IsTemporalYearMonth(e)){const n=GetSlot(e,r$1),s=GetSlot(e,a),l=GetSlot(e,i$1),d=ToString(GetSlot(e,T));if(d!==t[Xe])throw new RangeError(`cannot format PlainYearMonth with calendar ${d} in locale with calendar ${t[Xe]}`);const m=new o(n,s,l,12,0,0,0,0,0,d);return {instant:BuiltinTimeZoneGetInstantFor(getResolvedTimeZoneLazy(t),m,"compatible"),formatter:getPropLazy(t,Ae)}}if(IsTemporalMonthDay(e)){const n=GetSlot(e,r$1),s=GetSlot(e,a),l=GetSlot(e,i$1),d=ToString(GetSlot(e,T));if(d!==t[Xe])throw new RangeError(`cannot format PlainMonthDay with calendar ${d} in locale with calendar ${t[Xe]}`);const m=new o(n,s,l,12,0,0,0,0,0,d);return {instant:BuiltinTimeZoneGetInstantFor(getResolvedTimeZoneLazy(t),m,"compatible"),formatter:getPropLazy(t,xe)}}if(IsTemporalDate(e)){const n=GetSlot(e,r$1),s=GetSlot(e,a),l=GetSlot(e,i$1),d=ToString(GetSlot(e,T));if("iso8601"!==d&&d!==t[Xe])throw new RangeError(`cannot format PlainDate with calendar ${d} in locale with calendar ${t[Xe]}`);const m=new o(n,s,l,12,0,0,0,0,0,t[Xe]);return {instant:BuiltinTimeZoneGetInstantFor(getResolvedTimeZoneLazy(t),m,"compatible"),formatter:getPropLazy(t,Ue)}}if(IsTemporalDateTime(e)){const n=GetSlot(e,r$1),u=GetSlot(e,a),p=GetSlot(e,i$1),f=GetSlot(e,s),y=GetSlot(e,l),S=GetSlot(e,d),g=GetSlot(e,m),w=GetSlot(e,c),I=GetSlot(e,h),G=ToString(GetSlot(e,T));if("iso8601"!==G&&G!==t[Xe])throw new RangeError(`cannot format PlainDateTime with calendar ${G} in locale with calendar ${t[Xe]}`);let D=e;return "iso8601"===G&&(D=new o(n,u,p,f,y,S,g,w,I,t[Xe])),{instant:BuiltinTimeZoneGetInstantFor(getResolvedTimeZoneLazy(t),D,"compatible"),formatter:getPropLazy(t,qe)}}if(IsTemporalZonedDateTime(e)){const o=ToString(GetSlot(e,T));if("iso8601"!==o&&o!==t[Xe])throw new RangeError(`cannot format ZonedDateTime with calendar ${o} in locale with calendar ${t[Xe]}`);const n=ToString(GetSlot(e,p));if(t[_e]&&t[_e]!==n)throw new RangeError(`timeZone option ${t[_e]} doesn't match actual time zone ${n}`);return {instant:GetSlot(e,u),formatter:getPropLazy(t,We),timeZone:n}}return IsTemporalInstant(e)?{instant:e,formatter:getPropLazy(t,ze)}:{}}Object.freeze({__proto__:null,DateTimeFormat:at});const st=["year","month","week","day"],lt={hour:24,minute:60,second:60,millisecond:1e3,microsecond:1e3,nanosecond:1e3};class Instant{constructor(e){if(arguments.length<1)throw new TypeError("missing argument: epochNanoseconds is required");const t=ToBigInt(e);ValidateEpochNanoseconds(t),CreateSlots(this),SetSlot(this,o,t);}get epochSeconds(){if(!IsTemporalInstant(this))throw new TypeError("invalid receiver");const t=GetSlot(this,o);return jsbiUmd.toNumber(jsbiUmd.divide(t,Oe))}get epochMilliseconds(){if(!IsTemporalInstant(this))throw new TypeError("invalid receiver");const t=jsbiUmd.BigInt(GetSlot(this,o));return jsbiUmd.toNumber(jsbiUmd.divide(t,ve))}get epochMicroseconds(){if(!IsTemporalInstant(this))throw new TypeError("invalid receiver");const t=jsbiUmd.BigInt(GetSlot(this,o));return ToBigIntExternal(jsbiUmd.divide(t,De))}get epochNanoseconds(){if(!IsTemporalInstant(this))throw new TypeError("invalid receiver");return ToBigIntExternal(jsbiUmd.BigInt(GetSlot(this,o)))}add(e){if(!IsTemporalInstant(this))throw new TypeError("invalid receiver");const{hours:t,minutes:n,seconds:r,milliseconds:a,microseconds:i,nanoseconds:s}=ToLimitedTemporalDuration(e,["years","months","weeks","days"]),l=AddInstant(GetSlot(this,o),t,n,r,a,i,s);return new Instant(l)}subtract(e){if(!IsTemporalInstant(this))throw new TypeError("invalid receiver");const{hours:t,minutes:n,seconds:r,milliseconds:a,microseconds:i,nanoseconds:s}=ToLimitedTemporalDuration(e,["years","months","weeks","days"]),l=AddInstant(GetSlot(this,o),-t,-n,-r,-a,-i,-s);return new Instant(l)}until(e,t){if(!IsTemporalInstant(this))throw new TypeError("invalid receiver");const n=ToTemporalInstant(e),r=GetOptionsObject(t),a=ToSmallestTemporalUnit(r,"nanosecond",st),i=LargerOfTwoTemporalUnits("second",a),s=ToLargestTemporalUnit(r,"auto",st,i);ValidateTemporalUnitRange(s,a);const l=ToTemporalRoundingMode(r,"trunc"),d=ToTemporalRoundingIncrement(r,lt[a],!1),m=GetSlot(this,o),c=GetSlot(n,o);let h,T,{seconds:u,milliseconds:p,microseconds:f,nanoseconds:y}=DifferenceInstant(m,c,d,a,l);({hours:h,minutes:T,seconds:u,milliseconds:p,microseconds:f,nanoseconds:y}=BalanceDuration(0,0,0,u,p,f,y,s));return new(GetIntrinsic("%Temporal.Duration%"))(0,0,0,0,h,T,u,p,f,y)}since(e,t){if(!IsTemporalInstant(this))throw new TypeError("invalid receiver");const n=ToTemporalInstant(e),r=GetOptionsObject(t),a=ToSmallestTemporalUnit(r,"nanosecond",st),i=LargerOfTwoTemporalUnits("second",a),s=ToLargestTemporalUnit(r,"auto",st,i);ValidateTemporalUnitRange(s,a);const l=ToTemporalRoundingMode(r,"trunc"),d=ToTemporalRoundingIncrement(r,lt[a],!1),m=GetSlot(n,o),c=GetSlot(this,o);let h,T,{seconds:u,milliseconds:p,microseconds:f,nanoseconds:y}=DifferenceInstant(m,c,d,a,l);({hours:h,minutes:T,seconds:u,milliseconds:p,microseconds:f,nanoseconds:y}=BalanceDuration(0,0,0,u,p,f,y,s));return new(GetIntrinsic("%Temporal.Duration%"))(0,0,0,0,h,T,u,p,f,y)}round(e){if(!IsTemporalInstant(this))throw new TypeError("invalid receiver");if(void 0===e)throw new TypeError("options parameter is required");const t="string"==typeof e?CreateOnePropObject("smallestUnit",e):GetOptionsObject(e),n=ToSmallestTemporalUnit(t,void 0,st);if(void 0===n)throw new RangeError("smallestUnit is required");const r=ToTemporalRoundingMode(t,"halfExpand"),a=ToTemporalRoundingIncrement(t,{hour:24,minute:1440,second:86400,millisecond:864e5,microsecond:864e8,nanosecond:864e11}[n],!0),i=RoundInstant(GetSlot(this,o),a,n,r);return new Instant(i)}equals(t){if(!IsTemporalInstant(this))throw new TypeError("invalid receiver");const n=ToTemporalInstant(t),r=GetSlot(this,o),a=GetSlot(n,o);return jsbiUmd.equal(jsbiUmd.BigInt(r),jsbiUmd.BigInt(a))}toString(e){if(!IsTemporalInstant(this))throw new TypeError("invalid receiver");const t=GetOptionsObject(e);let n=t.timeZone;void 0!==n&&(n=ToTemporalTimeZone(n));const{precision:r,unit:a,increment:i}=ToSecondsStringPrecision(t),s=ToTemporalRoundingMode(t,"trunc"),l=RoundInstant(GetSlot(this,o),i,a,s);return TemporalInstantToString(new Instant(l),n,r)}toJSON(){if(!IsTemporalInstant(this))throw new TypeError("invalid receiver");return TemporalInstantToString(this,void 0,"auto")}toLocaleString(e,t){if(!IsTemporalInstant(this))throw new TypeError("invalid receiver");return new at(e,t).format(this)}valueOf(){throw new TypeError("use compare() or equals() to compare Temporal.Instant")}toZonedDateTime(e){if(!IsTemporalInstant(this))throw new TypeError("invalid receiver");if(!IsObject(e))throw new TypeError("invalid argument in toZonedDateTime");const t=e.calendar;if(void 0===t)throw new TypeError("missing calendar property in toZonedDateTime");const n=ToTemporalCalendar(t),r=e.timeZone;if(void 0===r)throw new TypeError("missing timeZone property in toZonedDateTime");const a=ToTemporalTimeZone(r);return CreateTemporalZonedDateTime(GetSlot(this,o),a,n)}toZonedDateTimeISO(e){let t=e;if(!IsTemporalInstant(this))throw new TypeError("invalid receiver");if(IsObject(t)){const e=t.timeZone;void 0!==e&&(t=e);}const n=ToTemporalTimeZone(t),r=GetISO8601Calendar();return CreateTemporalZonedDateTime(GetSlot(this,o),n,r)}static fromEpochSeconds(t){const o=ToNumber(t),n=jsbiUmd.multiply(jsbiUmd.BigInt(o),Oe);return ValidateEpochNanoseconds(n),new Instant(n)}static fromEpochMilliseconds(t){const o=ToNumber(t),n=jsbiUmd.multiply(jsbiUmd.BigInt(o),ve);return ValidateEpochNanoseconds(n),new Instant(n)}static fromEpochMicroseconds(t){const o=ToBigInt(t),n=jsbiUmd.multiply(o,De);return ValidateEpochNanoseconds(n),new Instant(n)}static fromEpochNanoseconds(e){const t=ToBigInt(e);return ValidateEpochNanoseconds(t),new Instant(t)}static from(e){return IsTemporalInstant(e)?new Instant(GetSlot(e,o)):ToTemporalInstant(e)}static compare(t,n){const r=ToTemporalInstant(t),a=ToTemporalInstant(n),i=GetSlot(r,o),s=GetSlot(a,o);return jsbiUmd.lessThan(i,s)?-1:jsbiUmd.greaterThan(i,s)?1:0}}MakeIntrinsicClass(Instant,"Temporal.Instant");const dt=["hour","minute","second","millisecond","microsecond","nanosecond"];class PlainDate{constructor(e,t,o,n=GetISO8601Calendar()){const r=ToIntegerThrowOnInfinity(e),a=ToIntegerThrowOnInfinity(t),i=ToIntegerThrowOnInfinity(o),s=ToTemporalCalendar(n);if(arguments.length<3)throw new RangeError("missing argument: isoYear, isoMonth and isoDay are required");CreateTemporalDateSlots(this,r,a,i,s);}get calendar(){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");return GetSlot(this,T)}get era(){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");return CalendarEra(GetSlot(this,T),this)}get eraYear(){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");return CalendarEraYear(GetSlot(this,T),this)}get year(){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");return CalendarYear(GetSlot(this,T),this)}get month(){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");return CalendarMonth(GetSlot(this,T),this)}get monthCode(){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");return CalendarMonthCode(GetSlot(this,T),this)}get day(){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");return CalendarDay(GetSlot(this,T),this)}get dayOfWeek(){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");return CalendarDayOfWeek(GetSlot(this,T),this)}get dayOfYear(){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");return CalendarDayOfYear(GetSlot(this,T),this)}get weekOfYear(){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");return CalendarWeekOfYear(GetSlot(this,T),this)}get daysInWeek(){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");return CalendarDaysInWeek(GetSlot(this,T),this)}get daysInMonth(){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");return CalendarDaysInMonth(GetSlot(this,T),this)}get daysInYear(){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");return CalendarDaysInYear(GetSlot(this,T),this)}get monthsInYear(){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");return CalendarMonthsInYear(GetSlot(this,T),this)}get inLeapYear(){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");return CalendarInLeapYear(GetSlot(this,T),this)}with(e,t){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");if(!IsObject(e))throw new TypeError("invalid argument");RejectObjectWithCalendarOrTimeZone(e);const o=GetSlot(this,T),n=CalendarFields(o,["day","month","monthCode","year"]),r=ToPartialRecord(e,n);if(!r)throw new TypeError("invalid date-like");let a=ToTemporalDateFields(this,n);a=CalendarMergeFields(o,a,r),a=ToTemporalDateFields(a,n);return DateFromFields(o,a,GetOptionsObject(t))}withCalendar(e){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");const t=ToTemporalCalendar(e);return new PlainDate(GetSlot(this,r$1),GetSlot(this,a),GetSlot(this,i$1),t)}add(e,t){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");const o=ToTemporalDuration(e),n=GetOptionsObject(t);return CalendarDateAdd(GetSlot(this,T),this,o,n)}subtract(e,t){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");const o=CreateNegatedTemporalDuration(ToTemporalDuration(e)),n=GetOptionsObject(t);return CalendarDateAdd(GetSlot(this,T),this,o,n)}until(e,t){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");const o=ToTemporalDate(e),n=GetSlot(this,T),r=GetSlot(o,T),a=ToString(n),i=ToString(r);if(a!==i)throw new RangeError(`cannot compute difference between dates of ${a} and ${i} calendars`);const s=GetOptionsObject(t),l=ToSmallestTemporalUnit(s,"day",dt),d=LargerOfTwoTemporalUnits("day",l),m=ToLargestTemporalUnit(s,"auto",dt,d);ValidateTemporalUnitRange(m,l);const c=ToTemporalRoundingMode(s,"trunc"),h=ToTemporalRoundingIncrement(s,void 0,!1),u=CalendarDateUntil(n,this,o,{...s,largestUnit:m});if("day"===l&&1===h)return u;let{years:p,months:f,weeks:y,days:S}=u;({years:p,months:f,weeks:y,days:S}=RoundDuration(p,f,y,S,0,0,0,0,0,0,h,l,c,this));return new(GetIntrinsic("%Temporal.Duration%"))(p,f,y,S,0,0,0,0,0,0)}since(e,t){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");const o=ToTemporalDate(e),n=GetSlot(this,T),r=GetSlot(o,T),a=ToString(n),i=ToString(r);if(a!==i)throw new RangeError(`cannot compute difference between dates of ${a} and ${i} calendars`);const s=GetOptionsObject(t),l=ToSmallestTemporalUnit(s,"day",dt),d=LargerOfTwoTemporalUnits("day",l),m=ToLargestTemporalUnit(s,"auto",dt,d);ValidateTemporalUnitRange(m,l);const c=ToTemporalRoundingMode(s,"trunc"),h=ToTemporalRoundingIncrement(s,void 0,!1),u={...s,largestUnit:m};let{years:p,months:f,weeks:y,days:S}=CalendarDateUntil(n,this,o,u);const g=GetIntrinsic("%Temporal.Duration%");return "day"===l&&1===h||({years:p,months:f,weeks:y,days:S}=RoundDuration(p,f,y,S,0,0,0,0,0,0,h,l,NegateTemporalRoundingMode(c),this)),new g(-p,-f,-y,-S,0,0,0,0,0,0)}equals(e){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");const t=ToTemporalDate(e);for(const e of [r$1,a,i$1]){if(GetSlot(this,e)!==GetSlot(t,e))return !1}return CalendarEquals(GetSlot(this,T),GetSlot(t,T))}toString(e){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");return TemporalDateToString(this,ToShowCalendarOption(GetOptionsObject(e)))}toJSON(){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");return TemporalDateToString(this)}toLocaleString(e,t){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");return new at(e,t).format(this)}valueOf(){throw new TypeError("use compare() or equals() to compare Temporal.PlainDate")}toPlainDateTime(e){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");const t=GetSlot(this,r$1),o=GetSlot(this,a),n=GetSlot(this,i$1),u=GetSlot(this,T);if(void 0===e)return CreateTemporalDateTime(t,o,n,0,0,0,0,0,0,u);const p=ToTemporalTime(e);return CreateTemporalDateTime(t,o,n,GetSlot(p,s),GetSlot(p,l),GetSlot(p,d),GetSlot(p,m),GetSlot(p,c),GetSlot(p,h),u)}toZonedDateTime(e){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");let t,n;if(IsObject(e)){const o=e.timeZone;void 0===o?t=ToTemporalTimeZone(e):(t=ToTemporalTimeZone(o),n=e.plainTime);}else t=ToTemporalTimeZone(e);const u=GetSlot(this,r$1),p=GetSlot(this,a),f=GetSlot(this,i$1),y=GetSlot(this,T);let S=0,g=0,w=0,I=0,G=0,D=0;void 0!==n&&(n=ToTemporalTime(n),S=GetSlot(n,s),g=GetSlot(n,l),w=GetSlot(n,d),I=GetSlot(n,m),G=GetSlot(n,c),D=GetSlot(n,h));return CreateTemporalZonedDateTime(GetSlot(BuiltinTimeZoneGetInstantFor(t,CreateTemporalDateTime(u,p,f,S,g,w,I,G,D,y),"compatible"),o),t,y)}toPlainYearMonth(){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");const e=GetSlot(this,T);return YearMonthFromFields(e,ToTemporalYearMonthFields(this,CalendarFields(e,["monthCode","year"])))}toPlainMonthDay(){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");const e=GetSlot(this,T);return MonthDayFromFields(e,ToTemporalMonthDayFields(this,CalendarFields(e,["day","monthCode"])))}getISOFields(){if(!IsTemporalDate(this))throw new TypeError("invalid receiver");return {calendar:GetSlot(this,T),isoDay:GetSlot(this,i$1),isoMonth:GetSlot(this,a),isoYear:GetSlot(this,r$1)}}static from(e,t){const o=GetOptionsObject(t);return IsTemporalDate(e)?(ToTemporalOverflow(o),CreateTemporalDate(GetSlot(e,r$1),GetSlot(e,a),GetSlot(e,i$1),GetSlot(e,T))):ToTemporalDate(e,o)}static compare(e,t){const o=ToTemporalDate(e),n=ToTemporalDate(t);return CompareISODate(GetSlot(o,r$1),GetSlot(o,a),GetSlot(o,i$1),GetSlot(n,r$1),GetSlot(n,a),GetSlot(n,i$1))}}MakeIntrinsicClass(PlainDate,"Temporal.PlainDate");class PlainDateTime{constructor(e,t,o,n=0,r=0,a=0,i=0,s=0,l=0,d=GetISO8601Calendar()){const m=ToIntegerThrowOnInfinity(e),c=ToIntegerThrowOnInfinity(t),h=ToIntegerThrowOnInfinity(o),T=ToIntegerThrowOnInfinity(n),u=ToIntegerThrowOnInfinity(r),p=ToIntegerThrowOnInfinity(a),f=ToIntegerThrowOnInfinity(i),y=ToIntegerThrowOnInfinity(s),S=ToIntegerThrowOnInfinity(l),g=ToTemporalCalendar(d);if(arguments.length<3)throw new RangeError("missing argument: isoYear, isoMonth and isoDay are required");CreateTemporalDateTimeSlots(this,m,c,h,T,u,p,f,y,S,g);}get calendar(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return GetSlot(this,T)}get year(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return CalendarYear(GetSlot(this,T),this)}get month(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return CalendarMonth(GetSlot(this,T),this)}get monthCode(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return CalendarMonthCode(GetSlot(this,T),this)}get day(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return CalendarDay(GetSlot(this,T),this)}get hour(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return GetSlot(this,s)}get minute(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return GetSlot(this,l)}get second(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return GetSlot(this,d)}get millisecond(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return GetSlot(this,m)}get microsecond(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return GetSlot(this,c)}get nanosecond(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return GetSlot(this,h)}get era(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return CalendarEra(GetSlot(this,T),this)}get eraYear(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return CalendarEraYear(GetSlot(this,T),this)}get dayOfWeek(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return CalendarDayOfWeek(GetSlot(this,T),this)}get dayOfYear(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return CalendarDayOfYear(GetSlot(this,T),this)}get weekOfYear(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return CalendarWeekOfYear(GetSlot(this,T),this)}get daysInWeek(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return CalendarDaysInWeek(GetSlot(this,T),this)}get daysInYear(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return CalendarDaysInYear(GetSlot(this,T),this)}get daysInMonth(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return CalendarDaysInMonth(GetSlot(this,T),this)}get monthsInYear(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return CalendarMonthsInYear(GetSlot(this,T),this)}get inLeapYear(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return CalendarInLeapYear(GetSlot(this,T),this)}with(e,t){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");if(!IsObject(e))throw new TypeError("invalid argument");RejectObjectWithCalendarOrTimeZone(e);const o=GetOptionsObject(t),n=GetSlot(this,T),r=CalendarFields(n,["day","hour","microsecond","millisecond","minute","month","monthCode","nanosecond","second","year"]),a=ToPartialRecord(e,r);if(!a)throw new TypeError("invalid date-time-like");let i=ToTemporalDateTimeFields(this,r);i=CalendarMergeFields(n,i,a),i=ToTemporalDateTimeFields(i,r);const{year:s,month:l,day:d,hour:m,minute:c,second:h,millisecond:u,microsecond:p,nanosecond:f}=InterpretTemporalDateTimeFields(n,i,o);return CreateTemporalDateTime(s,l,d,m,c,h,u,p,f,n)}withPlainTime(e){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");const t=GetSlot(this,r$1),o=GetSlot(this,a),n=GetSlot(this,i$1),u=GetSlot(this,T);if(void 0===e)return CreateTemporalDateTime(t,o,n,0,0,0,0,0,0,u);const p=ToTemporalTime(e);return CreateTemporalDateTime(t,o,n,GetSlot(p,s),GetSlot(p,l),GetSlot(p,d),GetSlot(p,m),GetSlot(p,c),GetSlot(p,h),u)}withPlainDate(e){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");const t=ToTemporalDate(e),o=GetSlot(t,r$1),n=GetSlot(t,a),u=GetSlot(t,i$1);let p=GetSlot(t,T);const f=GetSlot(this,s),y=GetSlot(this,l),S=GetSlot(this,d),g=GetSlot(this,m),w=GetSlot(this,c),I=GetSlot(this,h);return p=ConsolidateCalendars(GetSlot(this,T),p),CreateTemporalDateTime(o,n,u,f,y,S,g,w,I,p)}withCalendar(e){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");const t=ToTemporalCalendar(e);return new PlainDateTime(GetSlot(this,r$1),GetSlot(this,a),GetSlot(this,i$1),GetSlot(this,s),GetSlot(this,l),GetSlot(this,d),GetSlot(this,m),GetSlot(this,c),GetSlot(this,h),t)}add(e,t){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");const o=ToLimitedTemporalDuration(e),{years:n,months:u,weeks:p,days:f,hours:y,minutes:S,seconds:g,milliseconds:w,microseconds:I,nanoseconds:G}=o,D=GetOptionsObject(t),v=GetSlot(this,T),{year:O,month:C,day:E,hour:b,minute:R,second:M,millisecond:Z,microsecond:F,nanosecond:Y}=AddDateTime(GetSlot(this,r$1),GetSlot(this,a),GetSlot(this,i$1),GetSlot(this,s),GetSlot(this,l),GetSlot(this,d),GetSlot(this,m),GetSlot(this,c),GetSlot(this,h),v,n,u,p,f,y,S,g,w,I,G,D);return CreateTemporalDateTime(O,C,E,b,R,M,Z,F,Y,v)}subtract(e,t){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");const o=ToLimitedTemporalDuration(e),{years:n,months:u,weeks:p,days:f,hours:y,minutes:S,seconds:g,milliseconds:w,microseconds:I,nanoseconds:G}=o,D=GetOptionsObject(t),v=GetSlot(this,T),{year:O,month:C,day:E,hour:b,minute:R,second:M,millisecond:Z,microsecond:F,nanosecond:Y}=AddDateTime(GetSlot(this,r$1),GetSlot(this,a),GetSlot(this,i$1),GetSlot(this,s),GetSlot(this,l),GetSlot(this,d),GetSlot(this,m),GetSlot(this,c),GetSlot(this,h),v,-n,-u,-p,-f,-y,-S,-g,-w,-I,-G,D);return CreateTemporalDateTime(O,C,E,b,R,M,Z,F,Y,v)}until(e,t){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");const o=ToTemporalDateTime(e),n=GetSlot(this,T),u=GetSlot(o,T),p=ToString(n),f=ToString(u);if(p!==f)throw new RangeError(`cannot compute difference between dates of ${p} and ${f} calendars`);const y=GetOptionsObject(t),S=ToSmallestTemporalUnit(y,"nanosecond"),g=ToLargestTemporalUnit(y,"auto",[],LargerOfTwoTemporalUnits("day",S));ValidateTemporalUnitRange(g,S);const w=ToTemporalRoundingMode(y,"trunc"),I=ToTemporalDateTimeRoundingIncrement(y,S);let{years:G,months:D,weeks:v,days:O,hours:C,minutes:E,seconds:b,milliseconds:R,microseconds:M,nanoseconds:Z}=DifferenceISODateTime(GetSlot(this,r$1),GetSlot(this,a),GetSlot(this,i$1),GetSlot(this,s),GetSlot(this,l),GetSlot(this,d),GetSlot(this,m),GetSlot(this,c),GetSlot(this,h),GetSlot(o,r$1),GetSlot(o,a),GetSlot(o,i$1),GetSlot(o,s),GetSlot(o,l),GetSlot(o,d),GetSlot(o,m),GetSlot(o,c),GetSlot(o,h),n,g,y);const F=TemporalDateTimeToDate(this);(({years:G,months:D,weeks:v,days:O,hours:C,minutes:E,seconds:b,milliseconds:R,microseconds:M,nanoseconds:Z}=RoundDuration(G,D,v,O,C,E,b,R,M,Z,I,S,w,F))),({days:O,hours:C,minutes:E,seconds:b,milliseconds:R,microseconds:M,nanoseconds:Z}=BalanceDuration(O,C,E,b,R,M,Z,g));return new(GetIntrinsic("%Temporal.Duration%"))(G,D,v,O,C,E,b,R,M,Z)}since(e,t){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");const o=ToTemporalDateTime(e),n=GetSlot(this,T),u=GetSlot(o,T),p=ToString(n),f=ToString(u);if(p!==f)throw new RangeError(`cannot compute difference between dates of ${p} and ${f} calendars`);const y=GetOptionsObject(t),S=ToSmallestTemporalUnit(y,"nanosecond"),g=ToLargestTemporalUnit(y,"auto",[],LargerOfTwoTemporalUnits("day",S));ValidateTemporalUnitRange(g,S);const w=ToTemporalRoundingMode(y,"trunc"),I=ToTemporalDateTimeRoundingIncrement(y,S);let{years:G,months:D,weeks:v,days:O,hours:C,minutes:E,seconds:b,milliseconds:R,microseconds:M,nanoseconds:Z}=DifferenceISODateTime(GetSlot(this,r$1),GetSlot(this,a),GetSlot(this,i$1),GetSlot(this,s),GetSlot(this,l),GetSlot(this,d),GetSlot(this,m),GetSlot(this,c),GetSlot(this,h),GetSlot(o,r$1),GetSlot(o,a),GetSlot(o,i$1),GetSlot(o,s),GetSlot(o,l),GetSlot(o,d),GetSlot(o,m),GetSlot(o,c),GetSlot(o,h),n,g,y);const F=TemporalDateTimeToDate(this);(({years:G,months:D,weeks:v,days:O,hours:C,minutes:E,seconds:b,milliseconds:R,microseconds:M,nanoseconds:Z}=RoundDuration(G,D,v,O,C,E,b,R,M,Z,I,S,NegateTemporalRoundingMode(w),F))),({days:O,hours:C,minutes:E,seconds:b,milliseconds:R,microseconds:M,nanoseconds:Z}=BalanceDuration(O,C,E,b,R,M,Z,g));return new(GetIntrinsic("%Temporal.Duration%"))(-G,-D,-v,-O,-C,-E,-b,-R,-M,-Z)}round(e){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");if(void 0===e)throw new TypeError("options parameter is required");const t="string"==typeof e?CreateOnePropObject("smallestUnit",e):GetOptionsObject(e),o=ToSmallestTemporalUnit(t,void 0,["year","month","week"]);if(void 0===o)throw new RangeError("smallestUnit is required");const n=ToTemporalRoundingMode(t,"halfExpand"),u=ToTemporalRoundingIncrement(t,{day:1,hour:24,minute:60,second:60,millisecond:1e3,microsecond:1e3,nanosecond:1e3}[o],!1);let p=GetSlot(this,r$1),f=GetSlot(this,a),y=GetSlot(this,i$1),S=GetSlot(this,s),g=GetSlot(this,l),w=GetSlot(this,d),I=GetSlot(this,m),G=GetSlot(this,c),D=GetSlot(this,h);return ({year:p,month:f,day:y,hour:S,minute:g,second:w,millisecond:I,microsecond:G,nanosecond:D}=RoundISODateTime(p,f,y,S,g,w,I,G,D,u,o,n)),CreateTemporalDateTime(p,f,y,S,g,w,I,G,D,GetSlot(this,T))}equals(e){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");const t=ToTemporalDateTime(e);for(const e of [r$1,a,i$1,s,l,d,m,c,h]){if(GetSlot(this,e)!==GetSlot(t,e))return !1}return CalendarEquals(GetSlot(this,T),GetSlot(t,T))}toString(e){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");const t=GetOptionsObject(e),{precision:o,unit:n,increment:r}=ToSecondsStringPrecision(t);return TemporalDateTimeToString(this,o,ToShowCalendarOption(t),{unit:n,increment:r,roundingMode:ToTemporalRoundingMode(t,"trunc")})}toJSON(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return TemporalDateTimeToString(this,"auto")}toLocaleString(e,t){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return new at(e,t).format(this)}valueOf(){throw new TypeError("use compare() or equals() to compare Temporal.PlainDateTime")}toZonedDateTime(e,t){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");const n=ToTemporalTimeZone(e);return CreateTemporalZonedDateTime(GetSlot(BuiltinTimeZoneGetInstantFor(n,this,ToTemporalDisambiguation(GetOptionsObject(t))),o),n,GetSlot(this,T))}toPlainDate(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return TemporalDateTimeToDate(this)}toPlainYearMonth(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");const e=GetSlot(this,T);return YearMonthFromFields(e,ToTemporalYearMonthFields(this,CalendarFields(e,["monthCode","year"])))}toPlainMonthDay(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");const e=GetSlot(this,T);return MonthDayFromFields(e,ToTemporalMonthDayFields(this,CalendarFields(e,["day","monthCode"])))}toPlainTime(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return TemporalDateTimeToTime(this)}getISOFields(){if(!IsTemporalDateTime(this))throw new TypeError("invalid receiver");return {calendar:GetSlot(this,T),isoDay:GetSlot(this,i$1),isoHour:GetSlot(this,s),isoMicrosecond:GetSlot(this,c),isoMillisecond:GetSlot(this,m),isoMinute:GetSlot(this,l),isoMonth:GetSlot(this,a),isoNanosecond:GetSlot(this,h),isoSecond:GetSlot(this,d),isoYear:GetSlot(this,r$1)}}static from(e,t){const o=GetOptionsObject(t);return IsTemporalDateTime(e)?(ToTemporalOverflow(o),CreateTemporalDateTime(GetSlot(e,r$1),GetSlot(e,a),GetSlot(e,i$1),GetSlot(e,s),GetSlot(e,l),GetSlot(e,d),GetSlot(e,m),GetSlot(e,c),GetSlot(e,h),GetSlot(e,T))):ToTemporalDateTime(e,o)}static compare(e,t){const o=ToTemporalDateTime(e),n=ToTemporalDateTime(t);for(const e of [r$1,a,i$1,s,l,d,m,c,h]){const t=GetSlot(o,e),r=GetSlot(n,e);if(t!==r)return ComparisonResult(t-r)}return 0}}MakeIntrinsicClass(PlainDateTime,"Temporal.PlainDateTime");class Duration{constructor(e=0,t=0,o=0,n=0,r=0,a=0,i=0,s=0,l=0,d=0){const m=ToIntegerWithoutRounding(e),c=ToIntegerWithoutRounding(t),h=ToIntegerWithoutRounding(o),T=ToIntegerWithoutRounding(n),u=ToIntegerWithoutRounding(r),p=ToIntegerWithoutRounding(a),C=ToIntegerWithoutRounding(i),E=ToIntegerWithoutRounding(s),b=ToIntegerWithoutRounding(l),R=ToIntegerWithoutRounding(d),M=DurationSign(m,c,h,T,u,p,C,E,b,R);for(const e of [m,c,h,T,u,p,C,E,b,R]){if(!Number.isFinite(e))throw new RangeError("infinite values not allowed as duration fields");const t=Math.sign(e);if(0!==t&&t!==M)throw new RangeError("mixed-sign values not allowed as duration fields")}CreateSlots(this),SetSlot(this,f,m),SetSlot(this,y,c),SetSlot(this,S,h),SetSlot(this,g,T),SetSlot(this,w,u),SetSlot(this,I,p),SetSlot(this,G,C),SetSlot(this,D,E),SetSlot(this,v,b),SetSlot(this,O,R);}get years(){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");return GetSlot(this,f)}get months(){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");return GetSlot(this,y)}get weeks(){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");return GetSlot(this,S)}get days(){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");return GetSlot(this,g)}get hours(){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");return GetSlot(this,w)}get minutes(){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");return GetSlot(this,I)}get seconds(){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");return GetSlot(this,G)}get milliseconds(){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");return GetSlot(this,D)}get microseconds(){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");return GetSlot(this,v)}get nanoseconds(){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");return GetSlot(this,O)}get sign(){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");return DurationSign(GetSlot(this,f),GetSlot(this,y),GetSlot(this,S),GetSlot(this,g),GetSlot(this,w),GetSlot(this,I),GetSlot(this,G),GetSlot(this,D),GetSlot(this,v),GetSlot(this,O))}get blank(){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");return 0===DurationSign(GetSlot(this,f),GetSlot(this,y),GetSlot(this,S),GetSlot(this,g),GetSlot(this,w),GetSlot(this,I),GetSlot(this,G),GetSlot(this,D),GetSlot(this,v),GetSlot(this,O))}with(e){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");const t=ToPartialRecord(e,["days","hours","microseconds","milliseconds","minutes","months","nanoseconds","seconds","weeks","years"]);if(!t)throw new TypeError("invalid duration-like");const{years:o=GetSlot(this,f),months:n=GetSlot(this,y),weeks:r=GetSlot(this,S),days:a=GetSlot(this,g),hours:i=GetSlot(this,w),minutes:s=GetSlot(this,I),seconds:l=GetSlot(this,G),milliseconds:d=GetSlot(this,D),microseconds:m=GetSlot(this,v),nanoseconds:c=GetSlot(this,O)}=t;return new Duration(o,n,r,a,i,s,l,d,m,c)}negated(){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");return CreateNegatedTemporalDuration(this)}abs(){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");return new Duration(Math.abs(GetSlot(this,f)),Math.abs(GetSlot(this,y)),Math.abs(GetSlot(this,S)),Math.abs(GetSlot(this,g)),Math.abs(GetSlot(this,w)),Math.abs(GetSlot(this,I)),Math.abs(GetSlot(this,G)),Math.abs(GetSlot(this,D)),Math.abs(GetSlot(this,v)),Math.abs(GetSlot(this,O)))}add(e,t){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");let{years:o,months:n,weeks:r,days:a,hours:i,minutes:s,seconds:l,milliseconds:d,microseconds:m,nanoseconds:c}=ToLimitedTemporalDuration(e);const h=ToRelativeTemporalObject(GetOptionsObject(t));return ({years:o,months:n,weeks:r,days:a,hours:i,minutes:s,seconds:l,milliseconds:d,microseconds:m,nanoseconds:c}=AddDuration(GetSlot(this,f),GetSlot(this,y),GetSlot(this,S),GetSlot(this,g),GetSlot(this,w),GetSlot(this,I),GetSlot(this,G),GetSlot(this,D),GetSlot(this,v),GetSlot(this,O),o,n,r,a,i,s,l,d,m,c,h)),new Duration(o,n,r,a,i,s,l,d,m,c)}subtract(e,t){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");let{years:o,months:n,weeks:r,days:a,hours:i,minutes:s,seconds:l,milliseconds:d,microseconds:m,nanoseconds:c}=ToLimitedTemporalDuration(e);const h=ToRelativeTemporalObject(GetOptionsObject(t));return ({years:o,months:n,weeks:r,days:a,hours:i,minutes:s,seconds:l,milliseconds:d,microseconds:m,nanoseconds:c}=AddDuration(GetSlot(this,f),GetSlot(this,y),GetSlot(this,S),GetSlot(this,g),GetSlot(this,w),GetSlot(this,I),GetSlot(this,G),GetSlot(this,D),GetSlot(this,v),GetSlot(this,O),-o,-n,-r,-a,-i,-s,-l,-d,-m,-c,h)),new Duration(o,n,r,a,i,s,l,d,m,c)}round(e){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");if(void 0===e)throw new TypeError("options parameter is required");let t=GetSlot(this,f),o=GetSlot(this,y),n=GetSlot(this,S),r=GetSlot(this,g),a=GetSlot(this,w),i=GetSlot(this,I),s=GetSlot(this,G),l=GetSlot(this,D),d=GetSlot(this,v),m=GetSlot(this,O),c=DefaultTemporalLargestUnit(t,o,n,r,a,i,s,l,d,m);const h="string"==typeof e?CreateOnePropObject("smallestUnit",e):GetOptionsObject(e);let u=ToSmallestTemporalUnit(h,void 0),p=!0;u||(p=!1,u="nanosecond"),c=LargerOfTwoTemporalUnits(c,u);let C=ToLargestTemporalUnit(h,void 0),E=!0;if(C||(E=!1,C=c),"auto"===C&&(C=c),!p&&!E)throw new RangeError("at least one of smallestUnit or largestUnit is required");ValidateTemporalUnitRange(C,u);const b=ToTemporalRoundingMode(h,"halfExpand"),R=ToTemporalDateTimeRoundingIncrement(h,u);let M=ToRelativeTemporalObject(h);return ({years:t,months:o,weeks:n,days:r}=UnbalanceDurationRelative(t,o,n,r,C,M)),({years:t,months:o,weeks:n,days:r,hours:a,minutes:i,seconds:s,milliseconds:l,microseconds:d,nanoseconds:m}=RoundDuration(t,o,n,r,a,i,s,l,d,m,R,u,b,M)),({years:t,months:o,weeks:n,days:r,hours:a,minutes:i,seconds:s,milliseconds:l,microseconds:d,nanoseconds:m}=AdjustRoundedDurationDays(t,o,n,r,a,i,s,l,d,m,R,u,b,M)),({years:t,months:o,weeks:n,days:r}=function BalanceDurationRelative(e,t,o,n,r,a){let i=e,s=t,l=o,d=n;const m=GetIntrinsic("%Temporal.Duration%"),c=DurationSign(i,s,l,d,0,0,0,0,0,0);if(0===c)return {years:i,months:s,weeks:l,days:d};let h,u;a&&(u=ToTemporalDate(a),h=GetSlot(u,T));const p=new m(c),f=new m(0,c),S=new m(0,0,c);switch(r){case"year":{if(!h)throw new RangeError("a starting point is required for years balancing");let e,t,o;for(({relativeTo:e,days:t}=MoveRelativeDate(h,u,p));le(d)>=le(t);)d-=t,i+=c,u=e,({relativeTo:e,days:t}=MoveRelativeDate(h,u,p));for(({relativeTo:e,days:o}=MoveRelativeDate(h,u,f));le(d)>=le(o);)d-=o,s+=c,u=e,({relativeTo:e,days:o}=MoveRelativeDate(h,u,f));const n=h.dateAdd;e=CalendarDateAdd(h,u,p,ye(null),n);const r=h.dateUntil,a=ye(null);a.largestUnit="month";let l=CalendarDateUntil(h,u,e,a,r),m=GetSlot(l,y);for(;le(s)>=le(m);){s-=m,i+=c,u=e,e=CalendarDateAdd(h,u,p,ye(null),n);const t=ye(null);t.largestUnit="month",l=CalendarDateUntil(h,u,e,t,r),m=GetSlot(l,y);}break}case"month":{if(!h)throw new RangeError("a starting point is required for months balancing");let e,t;for(({relativeTo:e,days:t}=MoveRelativeDate(h,u,f));le(d)>=le(t);)d-=t,s+=c,u=e,({relativeTo:e,days:t}=MoveRelativeDate(h,u,f));break}case"week":{if(!h)throw new RangeError("a starting point is required for weeks balancing");let e,t;for(({relativeTo:e,days:t}=MoveRelativeDate(h,u,S));le(d)>=le(t);)d-=t,l+=c,u=e,({relativeTo:e,days:t}=MoveRelativeDate(h,u,S));break}}return {years:i,months:s,weeks:l,days:d}}(t,o,n,r,C,M)),IsTemporalZonedDateTime(M)&&(M=MoveRelativeZonedDateTime(M,t,o,n,0)),({days:r,hours:a,minutes:i,seconds:s,milliseconds:l,microseconds:d,nanoseconds:m}=BalanceDuration(r,a,i,s,l,d,m,C,M)),new Duration(t,o,n,r,a,i,s,l,d,m)}total(e){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");let t=GetSlot(this,f),o=GetSlot(this,y),n=GetSlot(this,S),r=GetSlot(this,g),a=GetSlot(this,w),i=GetSlot(this,I),s=GetSlot(this,G),l=GetSlot(this,D),d=GetSlot(this,v),m=GetSlot(this,O);if(void 0===e)throw new TypeError("options argument is required");const c="string"==typeof e?CreateOnePropObject("unit",e):GetOptionsObject(e),h=function ToTemporalDurationTotalUnit(e){const t=new Map(Be),o=GetOption(e,"unit",[...t.values(),...t.keys()],void 0);return t.has(o)?t.get(o):o}(c);if(void 0===h)throw new RangeError("unit option is required");const T=ToRelativeTemporalObject(c);let u;(({years:t,months:o,weeks:n,days:r}=UnbalanceDurationRelative(t,o,n,r,h,T))),IsTemporalZonedDateTime(T)&&(u=MoveRelativeZonedDateTime(T,t,o,n,0)),({days:r,hours:a,minutes:i,seconds:s,milliseconds:l,microseconds:d,nanoseconds:m}=BalanceDuration(r,a,i,s,l,d,m,h,u));const{total:p}=RoundDuration(t,o,n,r,a,i,s,l,d,m,1,h,"trunc",T);return p}toString(e){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");const t=GetOptionsObject(e),{precision:o,unit:n,increment:r}=ToSecondsStringPrecision(t);if("minute"===o)throw new RangeError('smallestUnit must not be "minute"');return TemporalDurationToString(this,o,{unit:n,increment:r,roundingMode:ToTemporalRoundingMode(t,"trunc")})}toJSON(){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");return TemporalDurationToString(this)}toLocaleString(e,t){if(!IsTemporalDuration(this))throw new TypeError("invalid receiver");return "undefined"!=typeof Intl&&void 0!==Intl.DurationFormat?new Intl.DurationFormat(e,t).format(this):(console.warn("Temporal.Duration.prototype.toLocaleString() requires Intl.DurationFormat."),TemporalDurationToString(this))}valueOf(){throw new TypeError("use compare() to compare Temporal.Duration")}static from(e){return IsTemporalDuration(e)?new Duration(GetSlot(e,f),GetSlot(e,y),GetSlot(e,S),GetSlot(e,g),GetSlot(e,w),GetSlot(e,I),GetSlot(e,G),GetSlot(e,D),GetSlot(e,v),GetSlot(e,O)):ToTemporalDuration(e)}static compare(t,o,n){const r=ToTemporalDuration(t),a=ToTemporalDuration(o),i=ToRelativeTemporalObject(GetOptionsObject(n)),s=GetSlot(r,f),l=GetSlot(r,y),d=GetSlot(r,S);let m=GetSlot(r,g);const c=GetSlot(r,w),h=GetSlot(r,I),T=GetSlot(r,G),u=GetSlot(r,D),p=GetSlot(r,v);let C=GetSlot(r,O);const E=GetSlot(a,f),b=GetSlot(a,y),R=GetSlot(a,S);let M=GetSlot(a,g);const Z=GetSlot(a,w),F=GetSlot(a,I),Y=GetSlot(a,G),P=GetSlot(a,D),j=GetSlot(a,v);let B=GetSlot(a,O);const N=CalculateOffsetShift(i,s,l,d,m,c,h,T,u,p,C),$=CalculateOffsetShift(i,E,b,R,M,Z,F,Y,P,j,B);0===s&&0===E&&0===l&&0===b&&0===d&&0===R||(({days:m}=UnbalanceDurationRelative(s,l,d,m,"day",i)),({days:M}=UnbalanceDurationRelative(E,b,R,M,"day",i)));const k=TotalDurationNanoseconds(m,c,h,T,u,p,C,N),L=TotalDurationNanoseconds(M,Z,F,Y,P,j,B,$);return ComparisonResult(jsbiUmd.toNumber(jsbiUmd.subtract(k,L)))}}MakeIntrinsicClass(Duration,"Temporal.Duration");const mt=Object.create;class PlainMonthDay{constructor(e,t,o=GetISO8601Calendar(),n=1972){const r=ToIntegerThrowOnInfinity(e),a=ToIntegerThrowOnInfinity(t),i=ToTemporalCalendar(o),s=ToIntegerThrowOnInfinity(n);if(arguments.length<2)throw new RangeError("missing argument: isoMonth and isoDay are required");CreateTemporalMonthDaySlots(this,r,a,i,s);}get monthCode(){if(!IsTemporalMonthDay(this))throw new TypeError("invalid receiver");return CalendarMonthCode(GetSlot(this,T),this)}get day(){if(!IsTemporalMonthDay(this))throw new TypeError("invalid receiver");return CalendarDay(GetSlot(this,T),this)}get calendar(){if(!IsTemporalMonthDay(this))throw new TypeError("invalid receiver");return GetSlot(this,T)}with(e,t){if(!IsTemporalMonthDay(this))throw new TypeError("invalid receiver");if(!IsObject(e))throw new TypeError("invalid argument");RejectObjectWithCalendarOrTimeZone(e);const o=GetSlot(this,T),n=CalendarFields(o,["day","month","monthCode","year"]),r=ToPartialRecord(e,n);if(!r)throw new TypeError("invalid month-day-like");let a=ToTemporalMonthDayFields(this,n);a=CalendarMergeFields(o,a,r),a=ToTemporalMonthDayFields(a,n);return MonthDayFromFields(o,a,GetOptionsObject(t))}equals(e){if(!IsTemporalMonthDay(this))throw new TypeError("invalid receiver");const t=ToTemporalMonthDay(e);for(const e of [a,i$1,r$1]){if(GetSlot(this,e)!==GetSlot(t,e))return !1}return CalendarEquals(GetSlot(this,T),GetSlot(t,T))}toString(e){if(!IsTemporalMonthDay(this))throw new TypeError("invalid receiver");return TemporalMonthDayToString(this,ToShowCalendarOption(GetOptionsObject(e)))}toJSON(){if(!IsTemporalMonthDay(this))throw new TypeError("invalid receiver");return TemporalMonthDayToString(this)}toLocaleString(e,t){if(!IsTemporalMonthDay(this))throw new TypeError("invalid receiver");return new at(e,t).format(this)}valueOf(){throw new TypeError("use equals() to compare Temporal.PlainMonthDay")}toPlainDate(e){if(!IsTemporalMonthDay(this))throw new TypeError("invalid receiver");if(!IsObject(e))throw new TypeError("argument should be an object");const t=GetSlot(this,T),o=CalendarFields(t,["day","monthCode"]),n=ToTemporalMonthDayFields(this,o),r=CalendarFields(t,["year"]),a=[["year",void 0]];r.forEach((e=>{a.some((([t])=>t===e))||a.push([e,void 0]);}));let i=CalendarMergeFields(t,n,PrepareTemporalFields(e,a));const s=[...new Set([...o,...r])],l=[];s.forEach((e=>{l.some((([t])=>t===e))||l.push([e,void 0]);})),i=PrepareTemporalFields(i,l);const d=mt(null);return d.overflow="reject",DateFromFields(t,i,d)}getISOFields(){if(!IsTemporalMonthDay(this))throw new TypeError("invalid receiver");return {calendar:GetSlot(this,T),isoDay:GetSlot(this,i$1),isoMonth:GetSlot(this,a),isoYear:GetSlot(this,r$1)}}static from(e,t){const o=GetOptionsObject(t);return IsTemporalMonthDay(e)?(ToTemporalOverflow(o),CreateTemporalMonthDay(GetSlot(e,a),GetSlot(e,i$1),GetSlot(e,T),GetSlot(e,r$1))):ToTemporalMonthDay(e,o)}}MakeIntrinsicClass(PlainMonthDay,"Temporal.PlainMonthDay");const instant=()=>new(GetIntrinsic("%Temporal.Instant%"))($e()),plainDateTime=(e,t=timeZone())=>{const o=ToTemporalTimeZone(t),n=ToTemporalCalendar(e);return BuiltinTimeZoneGetPlainDateTimeFor(o,instant(),n)},plainDateTimeISO=(e=timeZone())=>{const t=ToTemporalTimeZone(e),o=GetISO8601Calendar();return BuiltinTimeZoneGetPlainDateTimeFor(t,instant(),o)},zonedDateTime=(e,t=timeZone())=>{const o=ToTemporalTimeZone(t),n=ToTemporalCalendar(e);return CreateTemporalZonedDateTime($e(),o,n)},timeZone=()=>function SystemTimeZone(){const e=new ae("en-us");return new(GetIntrinsic("%Temporal.TimeZone%"))(ParseTemporalTimeZone(e.resolvedOptions().timeZone))}(),ct={instant,plainDateTime,plainDateTimeISO,plainDate:(e,t=timeZone())=>TemporalDateTimeToDate(plainDateTime(e,t)),plainDateISO:(e=timeZone())=>TemporalDateTimeToDate(plainDateTimeISO(e)),plainTimeISO:(e=timeZone())=>TemporalDateTimeToTime(plainDateTimeISO(e)),timeZone,zonedDateTime,zonedDateTimeISO:(e=timeZone())=>zonedDateTime(GetISO8601Calendar(),e),[Symbol.toStringTag]:"Temporal.Now"};Object.defineProperty(ct,Symbol.toStringTag,{value:"Temporal.Now",writable:!1,enumerable:!1,configurable:!0});const ht=Object.assign,Tt=["year","month","week","day"],ut={hour:24,minute:60,second:60,millisecond:1e3,microsecond:1e3,nanosecond:1e3};function TemporalTimeToString(e,t,o){let n=GetSlot(e,s),r=GetSlot(e,l),a=GetSlot(e,d),i=GetSlot(e,m),T=GetSlot(e,c),u=GetSlot(e,h);if(o){const{unit:e,increment:t,roundingMode:s}=o;({hour:n,minute:r,second:a,millisecond:i,microsecond:T,nanosecond:u}=RoundTime(n,r,a,i,T,u,t,e,s));}return `${ISODateTimePartString(n)}:${ISODateTimePartString(r)}${FormatSecondsStringPart(a,i,T,u,t)}`}class PlainTime{constructor(e=0,t=0,o=0,n=0,r=0,a=0){const i=ToIntegerThrowOnInfinity(e),u=ToIntegerThrowOnInfinity(t),p=ToIntegerThrowOnInfinity(o),f=ToIntegerThrowOnInfinity(n),y=ToIntegerThrowOnInfinity(r),S=ToIntegerThrowOnInfinity(a);RejectTime(i,u,p,f,y,S),CreateSlots(this),SetSlot(this,s,i),SetSlot(this,l,u),SetSlot(this,d,p),SetSlot(this,m,f),SetSlot(this,c,y),SetSlot(this,h,S),SetSlot(this,T,GetISO8601Calendar());}get calendar(){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");return GetSlot(this,T)}get hour(){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");return GetSlot(this,s)}get minute(){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");return GetSlot(this,l)}get second(){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");return GetSlot(this,d)}get millisecond(){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");return GetSlot(this,m)}get microsecond(){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");return GetSlot(this,c)}get nanosecond(){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");return GetSlot(this,h)}with(e,t){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");if(!IsObject(e))throw new TypeError("invalid argument");RejectObjectWithCalendarOrTimeZone(e);const o=ToTemporalOverflow(GetOptionsObject(t)),n=ToPartialRecord(e,["hour","microsecond","millisecond","minute","nanosecond","second"]);if(!n)throw new TypeError("invalid time-like");const r=ToTemporalTimeRecord(this);let{hour:a,minute:i,second:s,millisecond:l,microsecond:d,nanosecond:m}=ht(r,n);return ({hour:a,minute:i,second:s,millisecond:l,microsecond:d,nanosecond:m}=RegulateTime(a,i,s,l,d,m,o)),new PlainTime(a,i,s,l,d,m)}add(e){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");const t=ToLimitedTemporalDuration(e),{hours:o,minutes:n,seconds:r,milliseconds:a,microseconds:i,nanoseconds:T}=t;let u=GetSlot(this,s),p=GetSlot(this,l),f=GetSlot(this,d),y=GetSlot(this,m),S=GetSlot(this,c),g=GetSlot(this,h);return ({hour:u,minute:p,second:f,millisecond:y,microsecond:S,nanosecond:g}=AddTime(u,p,f,y,S,g,o,n,r,a,i,T)),({hour:u,minute:p,second:f,millisecond:y,microsecond:S,nanosecond:g}=RegulateTime(u,p,f,y,S,g,"reject")),new PlainTime(u,p,f,y,S,g)}subtract(e){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");const t=ToLimitedTemporalDuration(e),{hours:o,minutes:n,seconds:r,milliseconds:a,microseconds:i,nanoseconds:T}=t;let u=GetSlot(this,s),p=GetSlot(this,l),f=GetSlot(this,d),y=GetSlot(this,m),S=GetSlot(this,c),g=GetSlot(this,h);return ({hour:u,minute:p,second:f,millisecond:y,microsecond:S,nanosecond:g}=AddTime(u,p,f,y,S,g,-o,-n,-r,-a,-i,-T)),({hour:u,minute:p,second:f,millisecond:y,microsecond:S,nanosecond:g}=RegulateTime(u,p,f,y,S,g,"reject")),new PlainTime(u,p,f,y,S,g)}until(e,t){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");const o=ToTemporalTime(e),n=GetOptionsObject(t),r=ToLargestTemporalUnit(n,"auto",Tt,"hour"),a=ToSmallestTemporalUnit(n,"nanosecond",Tt);ValidateTemporalUnitRange(r,a);const i=ToTemporalRoundingMode(n,"trunc"),T=ToTemporalRoundingIncrement(n,ut[a],!1);let{hours:u,minutes:p,seconds:f,milliseconds:y,microseconds:S,nanoseconds:g}=DifferenceTime(GetSlot(this,s),GetSlot(this,l),GetSlot(this,d),GetSlot(this,m),GetSlot(this,c),GetSlot(this,h),GetSlot(o,s),GetSlot(o,l),GetSlot(o,d),GetSlot(o,m),GetSlot(o,c),GetSlot(o,h));(({hours:u,minutes:p,seconds:f,milliseconds:y,microseconds:S,nanoseconds:g}=RoundDuration(0,0,0,0,u,p,f,y,S,g,T,a,i))),({hours:u,minutes:p,seconds:f,milliseconds:y,microseconds:S,nanoseconds:g}=BalanceDuration(0,u,p,f,y,S,g,r));return new(GetIntrinsic("%Temporal.Duration%"))(0,0,0,0,u,p,f,y,S,g)}since(e,t){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");const o=ToTemporalTime(e),n=GetOptionsObject(t),r=ToLargestTemporalUnit(n,"auto",Tt,"hour"),a=ToSmallestTemporalUnit(n,"nanosecond",Tt);ValidateTemporalUnitRange(r,a);const i=ToTemporalRoundingMode(n,"trunc"),T=ToTemporalRoundingIncrement(n,ut[a],!1);let{hours:u,minutes:p,seconds:f,milliseconds:y,microseconds:S,nanoseconds:g}=DifferenceTime(GetSlot(o,s),GetSlot(o,l),GetSlot(o,d),GetSlot(o,m),GetSlot(o,c),GetSlot(o,h),GetSlot(this,s),GetSlot(this,l),GetSlot(this,d),GetSlot(this,m),GetSlot(this,c),GetSlot(this,h));(({hours:u,minutes:p,seconds:f,milliseconds:y,microseconds:S,nanoseconds:g}=RoundDuration(0,0,0,0,-u,-p,-f,-y,-S,-g,T,a,NegateTemporalRoundingMode(i)))),u=-u,p=-p,f=-f,y=-y,S=-S,g=-g,({hours:u,minutes:p,seconds:f,milliseconds:y,microseconds:S,nanoseconds:g}=BalanceDuration(0,u,p,f,y,S,g,r));return new(GetIntrinsic("%Temporal.Duration%"))(0,0,0,0,u,p,f,y,S,g)}round(e){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");if(void 0===e)throw new TypeError("options parameter is required");const t="string"==typeof e?CreateOnePropObject("smallestUnit",e):GetOptionsObject(e),o=ToSmallestTemporalUnit(t,void 0,Tt);if(void 0===o)throw new RangeError("smallestUnit is required");const n=ToTemporalRoundingMode(t,"halfExpand"),r=ToTemporalRoundingIncrement(t,ut[o],!1);let a=GetSlot(this,s),i=GetSlot(this,l),T=GetSlot(this,d),u=GetSlot(this,m),p=GetSlot(this,c),f=GetSlot(this,h);return ({hour:a,minute:i,second:T,millisecond:u,microsecond:p,nanosecond:f}=RoundTime(a,i,T,u,p,f,r,o,n)),new PlainTime(a,i,T,u,p,f)}equals(e){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");const t=ToTemporalTime(e);for(const e of [s,l,d,m,c,h]){if(GetSlot(this,e)!==GetSlot(t,e))return !1}return !0}toString(e){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");const t=GetOptionsObject(e),{precision:o,unit:n,increment:r}=ToSecondsStringPrecision(t);return TemporalTimeToString(this,o,{unit:n,increment:r,roundingMode:ToTemporalRoundingMode(t,"trunc")})}toJSON(){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");return TemporalTimeToString(this,"auto")}toLocaleString(e,t){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");return new at(e,t).format(this)}valueOf(){throw new TypeError("use compare() or equals() to compare Temporal.PlainTime")}toPlainDateTime(e){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");const t=ToTemporalDate(e),o=GetSlot(t,r$1),n=GetSlot(t,a),u=GetSlot(t,i$1),p=GetSlot(t,T);return CreateTemporalDateTime(o,n,u,GetSlot(this,s),GetSlot(this,l),GetSlot(this,d),GetSlot(this,m),GetSlot(this,c),GetSlot(this,h),p)}toZonedDateTime(e){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");if(!IsObject(e))throw new TypeError("invalid argument");const t=e.plainDate;if(void 0===t)throw new TypeError("missing date property");const n=ToTemporalDate(t),u=e.timeZone;if(void 0===u)throw new TypeError("missing timeZone property");const p=ToTemporalTimeZone(u),f=GetSlot(n,r$1),y=GetSlot(n,a),S=GetSlot(n,i$1),g=GetSlot(n,T),w=GetSlot(this,s),I=GetSlot(this,l),G=GetSlot(this,d),D=GetSlot(this,m),v=GetSlot(this,c),O=GetSlot(this,h);return CreateTemporalZonedDateTime(GetSlot(BuiltinTimeZoneGetInstantFor(p,new(GetIntrinsic("%Temporal.PlainDateTime%"))(f,y,S,w,I,G,D,v,O,g),"compatible"),o),p,g)}getISOFields(){if(!IsTemporalTime(this))throw new TypeError("invalid receiver");return {calendar:GetSlot(this,T),isoHour:GetSlot(this,s),isoMicrosecond:GetSlot(this,c),isoMillisecond:GetSlot(this,m),isoMinute:GetSlot(this,l),isoNanosecond:GetSlot(this,h),isoSecond:GetSlot(this,d)}}static from(e,t){const o=ToTemporalOverflow(GetOptionsObject(t));return IsTemporalTime(e)?new PlainTime(GetSlot(e,s),GetSlot(e,l),GetSlot(e,d),GetSlot(e,m),GetSlot(e,c),GetSlot(e,h)):ToTemporalTime(e,o)}static compare(e,t){const o=ToTemporalTime(e),n=ToTemporalTime(t);for(const e of [s,l,d,m,c,h]){const t=GetSlot(o,e),r=GetSlot(n,e);if(t!==r)return ComparisonResult(t-r)}return 0}}MakeIntrinsicClass(PlainTime,"Temporal.PlainTime");class TimeZone{constructor(e){if(arguments.length<1)throw new RangeError("missing argument: identifier is required");const t=GetCanonicalTimeZoneIdentifier(e);CreateSlots(this),SetSlot(this,n,t);}get id(){if(!IsTemporalTimeZone(this))throw new TypeError("invalid receiver");return ToString(this)}getOffsetNanosecondsFor(e){if(!IsTemporalTimeZone(this))throw new TypeError("invalid receiver");const t=ToTemporalInstant(e),r=GetSlot(this,n);return TestTimeZoneOffsetString(r)?ParseTimeZoneOffsetString(r):GetIANATimeZoneOffsetNanoseconds(GetSlot(t,o),r)}getOffsetStringFor(e){if(!IsTemporalTimeZone(this))throw new TypeError("invalid receiver");return BuiltinTimeZoneGetOffsetStringFor(this,ToTemporalInstant(e))}getPlainDateTimeFor(e,t=GetISO8601Calendar()){return BuiltinTimeZoneGetPlainDateTimeFor(this,ToTemporalInstant(e),ToTemporalCalendar(t))}getInstantFor(e,t){if(!IsTemporalTimeZone(this))throw new TypeError("invalid receiver");return BuiltinTimeZoneGetInstantFor(this,ToTemporalDateTime(e),ToTemporalDisambiguation(GetOptionsObject(t)))}getPossibleInstantsFor(t){if(!IsTemporalTimeZone(this))throw new TypeError("invalid receiver");const o=ToTemporalDateTime(t),T=GetIntrinsic("%Temporal.Instant%"),u=GetSlot(this,n);if(TestTimeZoneOffsetString(u)){const t=GetEpochFromISOParts(GetSlot(o,r$1),GetSlot(o,a),GetSlot(o,i$1),GetSlot(o,s),GetSlot(o,l),GetSlot(o,d),GetSlot(o,m),GetSlot(o,c),GetSlot(o,h));if(null===t)throw new RangeError("DateTime outside of supported range");const n=ParseTimeZoneOffsetString(u);return [new T(jsbiUmd.subtract(t,jsbiUmd.BigInt(n)))]}return function GetIANATimeZoneEpochValue(t,o,n,r,a,i,s,l,d,m){const c=GetEpochFromISOParts(o,n,r,a,i,s,l,d,m);if(null===c)throw new RangeError("DateTime outside of supported range");let h=jsbiUmd.subtract(c,Ee);jsbiUmd.lessThan(h,be)&&(h=c);let T=jsbiUmd.add(c,Ee);jsbiUmd.greaterThan(T,Re)&&(T=c);const u=GetIANATimeZoneOffsetNanoseconds(h,t),p=GetIANATimeZoneOffsetNanoseconds(T,t);return (u===p?[u]:[u,p]).map((h=>{const T=jsbiUmd.subtract(c,jsbiUmd.BigInt(h)),u=GetIANATimeZoneDateTimeParts(T,t);if(o===u.year&&n===u.month&&r===u.day&&a===u.hour&&i===u.minute&&s===u.second&&l===u.millisecond&&d===u.microsecond&&m===u.nanosecond)return T})).filter((e=>void 0!==e))}(u,GetSlot(o,r$1),GetSlot(o,a),GetSlot(o,i$1),GetSlot(o,s),GetSlot(o,l),GetSlot(o,d),GetSlot(o,m),GetSlot(o,c),GetSlot(o,h)).map((e=>new T(e)))}getNextTransition(t){if(!IsTemporalTimeZone(this))throw new TypeError("invalid receiver");const r=ToTemporalInstant(t),a=GetSlot(this,n);if(TestTimeZoneOffsetString(a)||"UTC"===a)return null;let i=GetSlot(r,o);const s=GetIntrinsic("%Temporal.Instant%");return i=function GetIANATimeZoneNextTransition(t,o){const n=jsbiUmd.add(t,Fe),r=maxJSBI(afterLatestPossibleTzdbRuleChange(),n);let a=maxJSBI(Me,t);const i=GetIANATimeZoneOffsetNanoseconds(a,o);let s=a,l=i;for(;i===l&&jsbiUmd.lessThan(jsbiUmd.BigInt(a),r);)s=jsbiUmd.add(a,Ye),l=GetIANATimeZoneOffsetNanoseconds(s,o),i===l&&(a=s);return i===l?null:bisect((e=>GetIANATimeZoneOffsetNanoseconds(e,o)),a,s,i,l)}(i,a),null===i?null:new s(i)}getPreviousTransition(e){if(!IsTemporalTimeZone(this))throw new TypeError("invalid receiver");const t=ToTemporalInstant(e),r=GetSlot(this,n);if(TestTimeZoneOffsetString(r)||"UTC"===r)return null;let a=GetSlot(t,o);const i=GetIntrinsic("%Temporal.Instant%");return a=GetIANATimeZonePreviousTransition(a,r),null===a?null:new i(a)}toString(){if(!IsTemporalTimeZone(this))throw new TypeError("invalid receiver");return ToString(GetSlot(this,n))}toJSON(){if(!IsTemporalTimeZone(this))throw new TypeError("invalid receiver");return ToString(this)}static from(e){return ToTemporalTimeZone(e)}}MakeIntrinsicClass(TimeZone,"Temporal.TimeZone");const pt=Object.create,ft=["week","day","hour","minute","second","millisecond","microsecond","nanosecond"];class PlainYearMonth{constructor(e,t,o=GetISO8601Calendar(),n=1){const r=ToIntegerThrowOnInfinity(e),a=ToIntegerThrowOnInfinity(t),i=ToTemporalCalendar(o),s=ToIntegerThrowOnInfinity(n);if(arguments.length<2)throw new RangeError("missing argument: isoYear and isoMonth are required");CreateTemporalYearMonthSlots(this,r,a,i,s);}get year(){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");return CalendarYear(GetSlot(this,T),this)}get month(){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");return CalendarMonth(GetSlot(this,T),this)}get monthCode(){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");return CalendarMonthCode(GetSlot(this,T),this)}get calendar(){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");return GetSlot(this,T)}get era(){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");return CalendarEra(GetSlot(this,T),this)}get eraYear(){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");return CalendarEraYear(GetSlot(this,T),this)}get daysInMonth(){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");return CalendarDaysInMonth(GetSlot(this,T),this)}get daysInYear(){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");return CalendarDaysInYear(GetSlot(this,T),this)}get monthsInYear(){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");return CalendarMonthsInYear(GetSlot(this,T),this)}get inLeapYear(){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");return CalendarInLeapYear(GetSlot(this,T),this)}with(e,t){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");if(!IsObject(e))throw new TypeError("invalid argument");RejectObjectWithCalendarOrTimeZone(e);const o=GetSlot(this,T),n=CalendarFields(o,["month","monthCode","year"]),r=ToPartialRecord(e,n);if(!r)throw new TypeError("invalid year-month-like");let a=ToTemporalYearMonthFields(this,n);a=CalendarMergeFields(o,a,r),a=ToTemporalYearMonthFields(a,n);return YearMonthFromFields(o,a,GetOptionsObject(t))}add(e,t){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");const o=ToLimitedTemporalDuration(e);let{years:n,months:r,weeks:a,days:i,hours:s,minutes:l,seconds:d,milliseconds:m,microseconds:c,nanoseconds:h}=o;({days:i}=BalanceDuration(i,s,l,d,m,c,h,"day"));const u=GetOptionsObject(t),p=GetSlot(this,T),f=CalendarFields(p,["monthCode","year"]),y=DateFromFields(p,{...ToTemporalYearMonthFields(this,f),day:DurationSign(n,r,a,i,0,0,0,0,0,0)<0?ToPositiveInteger(CalendarDaysInMonth(p,this)):1}),S={...u};return YearMonthFromFields(p,ToTemporalYearMonthFields(CalendarDateAdd(p,y,{...o,days:i},u),f),S)}subtract(e,t){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");let o=ToLimitedTemporalDuration(e);o={years:-o.years,months:-o.months,weeks:-o.weeks,days:-o.days,hours:-o.hours,minutes:-o.minutes,seconds:-o.seconds,milliseconds:-o.milliseconds,microseconds:-o.microseconds,nanoseconds:-o.nanoseconds};let{years:n,months:r,weeks:a,days:i,hours:s,minutes:l,seconds:d,milliseconds:m,microseconds:c,nanoseconds:h}=o;({days:i}=BalanceDuration(i,s,l,d,m,c,h,"day"));const u=GetOptionsObject(t),p=GetSlot(this,T),f=CalendarFields(p,["monthCode","year"]),y=DateFromFields(p,{...ToTemporalYearMonthFields(this,f),day:DurationSign(n,r,a,i,0,0,0,0,0,0)<0?ToPositiveInteger(CalendarDaysInMonth(p,this)):1}),S={...u};return YearMonthFromFields(p,ToTemporalYearMonthFields(CalendarDateAdd(p,y,{...o,days:i},u),f),S)}until(e,t){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");const o=ToTemporalYearMonth(e),n=GetSlot(this,T),r=GetSlot(o,T),a=ToString(n),i=ToString(r);if(a!==i)throw new RangeError(`cannot compute difference between months of ${a} and ${i} calendars`);const s=GetOptionsObject(t),l=ToSmallestTemporalUnit(s,"month",ft),d=ToLargestTemporalUnit(s,"auto",ft,"year");ValidateTemporalUnitRange(d,l);const m=ToTemporalRoundingMode(s,"trunc"),c=ToTemporalRoundingIncrement(s,void 0,!1),h=CalendarFields(n,["monthCode","year"]),u=ToTemporalYearMonthFields(o,h),p=ToTemporalYearMonthFields(this,h),f=DateFromFields(n,{...u,day:1}),y=DateFromFields(n,{...p,day:1}),S=CalendarDateUntil(n,y,f,{...s,largestUnit:d});if("month"===l&&1===c)return S;let{years:g,months:w}=S;({years:g,months:w}=RoundDuration(g,w,0,0,0,0,0,0,0,0,c,l,m,y));return new(GetIntrinsic("%Temporal.Duration%"))(g,w,0,0,0,0,0,0,0,0)}since(e,t){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");const o=ToTemporalYearMonth(e),n=GetSlot(this,T),r=GetSlot(o,T),a=ToString(n),i=ToString(r);if(a!==i)throw new RangeError(`cannot compute difference between months of ${a} and ${i} calendars`);const s=GetOptionsObject(t),l=ToSmallestTemporalUnit(s,"month",ft),d=ToLargestTemporalUnit(s,"auto",ft,"year");ValidateTemporalUnitRange(d,l);const m=ToTemporalRoundingMode(s,"trunc"),c=ToTemporalRoundingIncrement(s,void 0,!1),h=CalendarFields(n,["monthCode","year"]),u=ToTemporalYearMonthFields(o,h),p=ToTemporalYearMonthFields(this,h),f=DateFromFields(n,{...u,day:1}),y=DateFromFields(n,{...p,day:1}),S={...s,largestUnit:d};let{years:g,months:w}=CalendarDateUntil(n,y,f,S);const I=GetIntrinsic("%Temporal.Duration%");return "month"===l&&1===c||({years:g,months:w}=RoundDuration(g,w,0,0,0,0,0,0,0,0,c,l,NegateTemporalRoundingMode(m),y)),new I(-g,-w,0,0,0,0,0,0,0,0)}equals(e){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");const t=ToTemporalYearMonth(e);for(const e of [r$1,a,i$1]){if(GetSlot(this,e)!==GetSlot(t,e))return !1}return CalendarEquals(GetSlot(this,T),GetSlot(t,T))}toString(e){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");return TemporalYearMonthToString(this,ToShowCalendarOption(GetOptionsObject(e)))}toJSON(){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");return TemporalYearMonthToString(this)}toLocaleString(e,t){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");return new at(e,t).format(this)}valueOf(){throw new TypeError("use compare() or equals() to compare Temporal.PlainYearMonth")}toPlainDate(e){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");if(!IsObject(e))throw new TypeError("argument should be an object");const t=GetSlot(this,T),o=CalendarFields(t,["monthCode","year"]),n=ToTemporalYearMonthFields(this,o),r=CalendarFields(t,["day"]),a=[["day"]];r.forEach((e=>{a.some((([t])=>t===e))||a.push([e,void 0]);}));let i=CalendarMergeFields(t,n,PrepareTemporalFields(e,a));const s=[...new Set([...o,...r])],l=[];s.forEach((e=>{l.some((([t])=>t===e))||l.push([e,void 0]);})),i=PrepareTemporalFields(i,l);const d=pt(null);return d.overflow="reject",DateFromFields(t,i,d)}getISOFields(){if(!IsTemporalYearMonth(this))throw new TypeError("invalid receiver");return {calendar:GetSlot(this,T),isoDay:GetSlot(this,i$1),isoMonth:GetSlot(this,a),isoYear:GetSlot(this,r$1)}}static from(e,t){const o=GetOptionsObject(t);return IsTemporalYearMonth(e)?(ToTemporalOverflow(o),CreateTemporalYearMonth(GetSlot(e,r$1),GetSlot(e,a),GetSlot(e,T),GetSlot(e,i$1))):ToTemporalYearMonth(e,o)}static compare(e,t){const o=ToTemporalYearMonth(e),n=ToTemporalYearMonth(t);return CompareISODate(GetSlot(o,r$1),GetSlot(o,a),GetSlot(o,i$1),GetSlot(n,r$1),GetSlot(n,a),GetSlot(n,i$1))}}MakeIntrinsicClass(PlainYearMonth,"Temporal.PlainYearMonth");const yt=Array.prototype.push;class ZonedDateTime{constructor(e,t,o=GetISO8601Calendar()){if(arguments.length<1)throw new TypeError("missing argument: epochNanoseconds is required");CreateTemporalZonedDateTimeSlots(this,ToBigInt(e),ToTemporalTimeZone(t),ToTemporalCalendar(o));}get calendar(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return GetSlot(this,T)}get timeZone(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return GetSlot(this,p)}get year(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return CalendarYear(GetSlot(this,T),dateTime(this))}get month(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return CalendarMonth(GetSlot(this,T),dateTime(this))}get monthCode(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return CalendarMonthCode(GetSlot(this,T),dateTime(this))}get day(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return CalendarDay(GetSlot(this,T),dateTime(this))}get hour(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return GetSlot(dateTime(this),s)}get minute(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return GetSlot(dateTime(this),l)}get second(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return GetSlot(dateTime(this),d)}get millisecond(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return GetSlot(dateTime(this),m)}get microsecond(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return GetSlot(dateTime(this),c)}get nanosecond(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return GetSlot(dateTime(this),h)}get era(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return CalendarEra(GetSlot(this,T),dateTime(this))}get eraYear(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return CalendarEraYear(GetSlot(this,T),dateTime(this))}get epochSeconds(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");const t=GetSlot(this,o);return jsbiUmd.toNumber(jsbiUmd.divide(t,Oe))}get epochMilliseconds(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");const t=GetSlot(this,o);return jsbiUmd.toNumber(jsbiUmd.divide(t,ve))}get epochMicroseconds(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");const t=GetSlot(this,o);return ToBigIntExternal(jsbiUmd.divide(t,De))}get epochNanoseconds(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return ToBigIntExternal(GetSlot(this,o))}get dayOfWeek(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return CalendarDayOfWeek(GetSlot(this,T),dateTime(this))}get dayOfYear(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return CalendarDayOfYear(GetSlot(this,T),dateTime(this))}get weekOfYear(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return CalendarWeekOfYear(GetSlot(this,T),dateTime(this))}get hoursInDay(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");const t=dateTime(this),n=GetIntrinsic("%Temporal.PlainDateTime%"),s=GetSlot(t,r$1),l=GetSlot(t,a),d=GetSlot(t,i$1),m=new n(s,l,d,0,0,0,0,0,0),c=AddISODate(s,l,d,0,0,0,1,"reject"),h=new n(c.year,c.month,c.day,0,0,0,0,0,0),T=GetSlot(this,p),u=GetSlot(BuiltinTimeZoneGetInstantFor(T,m,"compatible"),o),f=GetSlot(BuiltinTimeZoneGetInstantFor(T,h,"compatible"),o);return jsbiUmd.toNumber(jsbiUmd.subtract(f,u))/36e11}get daysInWeek(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return CalendarDaysInWeek(GetSlot(this,T),dateTime(this))}get daysInMonth(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return CalendarDaysInMonth(GetSlot(this,T),dateTime(this))}get daysInYear(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return CalendarDaysInYear(GetSlot(this,T),dateTime(this))}get monthsInYear(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return CalendarMonthsInYear(GetSlot(this,T),dateTime(this))}get inLeapYear(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return CalendarInLeapYear(GetSlot(this,T),dateTime(this))}get offset(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return BuiltinTimeZoneGetOffsetStringFor(GetSlot(this,p),GetSlot(this,u))}get offsetNanoseconds(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return GetOffsetNanosecondsFor(GetSlot(this,p),GetSlot(this,u))}with(e,t){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");if(!IsObject(e))throw new TypeError("invalid zoned-date-time-like");RejectObjectWithCalendarOrTimeZone(e);const o=GetOptionsObject(t),n=ToTemporalDisambiguation(o),r=ToTemporalOffset(o,"prefer"),a=GetSlot(this,p),i=GetSlot(this,T),s=CalendarFields(i,["day","hour","microsecond","millisecond","minute","month","monthCode","nanosecond","second","year"]);yt.call(s,"offset");const l=ToPartialRecord(e,s);if(!l)throw new TypeError("invalid zoned-date-time-like");const d=[["day",void 0],["hour",0],["microsecond",0],["millisecond",0],["minute",0],["month",void 0],["monthCode",void 0],["nanosecond",0],["second",0],["year",void 0],["offset"],["timeZone"]];s.forEach((e=>{d.some((([t])=>t===e))||d.push([e,void 0]);}));let m=PrepareTemporalFields(this,d);m=CalendarMergeFields(i,m,l),m=PrepareTemporalFields(m,d);const{year:c,month:h,day:u,hour:f,minute:y,second:S,millisecond:g,microsecond:w,nanosecond:I}=InterpretTemporalDateTimeFields(i,m,o);return CreateTemporalZonedDateTime(InterpretISODateTimeOffset(c,h,u,f,y,S,g,w,I,"option",ParseTimeZoneOffsetString(m.offset),a,n,r,!1),GetSlot(this,p),i)}withPlainDate(e){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");const t=ToTemporalDate(e),n=GetSlot(t,r$1),u=GetSlot(t,a),f=GetSlot(t,i$1);let y=GetSlot(t,T);const S=dateTime(this),g=GetSlot(S,s),w=GetSlot(S,l),I=GetSlot(S,d),G=GetSlot(S,m),D=GetSlot(S,c),v=GetSlot(S,h);y=ConsolidateCalendars(GetSlot(this,T),y);const O=GetSlot(this,p);return CreateTemporalZonedDateTime(GetSlot(BuiltinTimeZoneGetInstantFor(O,new(GetIntrinsic("%Temporal.PlainDateTime%"))(n,u,f,g,w,I,G,D,v,y),"compatible"),o),O,y)}withPlainTime(e){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");const t=GetIntrinsic("%Temporal.PlainTime%"),n=null==e?new t:ToTemporalTime(e),u=dateTime(this),f=GetSlot(u,r$1),y=GetSlot(u,a),S=GetSlot(u,i$1),g=GetSlot(this,T),w=GetSlot(n,s),I=GetSlot(n,l),G=GetSlot(n,d),D=GetSlot(n,m),v=GetSlot(n,c),O=GetSlot(n,h),C=GetSlot(this,p);return CreateTemporalZonedDateTime(GetSlot(BuiltinTimeZoneGetInstantFor(C,new(GetIntrinsic("%Temporal.PlainDateTime%"))(f,y,S,w,I,G,D,v,O,g),"compatible"),o),C,g)}withTimeZone(e){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");const t=ToTemporalTimeZone(e);return CreateTemporalZonedDateTime(GetSlot(this,o),t,GetSlot(this,T))}withCalendar(e){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");const t=ToTemporalCalendar(e);return CreateTemporalZonedDateTime(GetSlot(this,o),GetSlot(this,p),t)}add(e,t){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");const o=ToLimitedTemporalDuration(e),{years:n,months:r,weeks:a,days:i,hours:s,minutes:l,seconds:d,milliseconds:m,microseconds:c,nanoseconds:h}=o,f=GetOptionsObject(t),y=GetSlot(this,p),S=GetSlot(this,T);return CreateTemporalZonedDateTime(AddZonedDateTime(GetSlot(this,u),y,S,n,r,a,i,s,l,d,m,c,h,f),y,S)}subtract(e,t){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");const o=ToLimitedTemporalDuration(e),{years:n,months:r,weeks:a,days:i,hours:s,minutes:l,seconds:d,milliseconds:m,microseconds:c,nanoseconds:h}=o,f=GetOptionsObject(t),y=GetSlot(this,p),S=GetSlot(this,T);return CreateTemporalZonedDateTime(AddZonedDateTime(GetSlot(this,u),y,S,-n,-r,-a,-i,-s,-l,-d,-m,-c,-h,f),y,S)}until(e,t){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");const n=ToTemporalZonedDateTime(e),r=GetSlot(this,T),a=GetSlot(n,T),i=ToString(r),s=ToString(a);if(i!==s)throw new RangeError(`cannot compute difference between dates of ${i} and ${s} calendars`);const l=GetOptionsObject(t),d=ToSmallestTemporalUnit(l,"nanosecond"),m=ToLargestTemporalUnit(l,"auto",[],LargerOfTwoTemporalUnits("hour",d));ValidateTemporalUnitRange(m,d);const c=ToTemporalRoundingMode(l,"trunc"),h=ToTemporalDateTimeRoundingIncrement(l,d),u=GetSlot(this,o),f=GetSlot(n,o);let y,S,g,w,I,G,D,v,O,C;if("year"!==m&&"month"!==m&&"week"!==m&&"day"!==m)y=0,S=0,g=0,w=0,({seconds:D,milliseconds:v,microseconds:O,nanoseconds:C}=DifferenceInstant(u,f,h,d,c)),({hours:I,minutes:G,seconds:D,milliseconds:v,microseconds:O,nanoseconds:C}=BalanceDuration(0,0,0,D,v,O,C,m));else {const e=GetSlot(this,p);if(!TimeZoneEquals(e,GetSlot(n,p)))throw new RangeError("When calculating difference between time zones, largestUnit must be 'hours' or smaller because day lengths can vary between time zones due to DST or time zone offset changes.");const t={...l,largestUnit:m};(({years:y,months:S,weeks:g,days:w,hours:I,minutes:G,seconds:D,milliseconds:v,microseconds:O,nanoseconds:C}=DifferenceZonedDateTime(u,f,e,r,m,t))),({years:y,months:S,weeks:g,days:w,hours:I,minutes:G,seconds:D,milliseconds:v,microseconds:O,nanoseconds:C}=RoundDuration(y,S,g,w,I,G,D,v,O,C,h,d,c,this)),({years:y,months:S,weeks:g,days:w,hours:I,minutes:G,seconds:D,milliseconds:v,microseconds:O,nanoseconds:C}=AdjustRoundedDurationDays(y,S,g,w,I,G,D,v,O,C,h,d,c,this));}return new(GetIntrinsic("%Temporal.Duration%"))(y,S,g,w,I,G,D,v,O,C)}since(e,t){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");const n=ToTemporalZonedDateTime(e),r=GetSlot(this,T),a=GetSlot(n,T),i=ToString(r),s=ToString(a);if(i!==s)throw new RangeError(`cannot compute difference between dates of ${i} and ${s} calendars`);const l=GetOptionsObject(t),d=ToSmallestTemporalUnit(l,"nanosecond"),m=ToLargestTemporalUnit(l,"auto",[],LargerOfTwoTemporalUnits("hour",d));ValidateTemporalUnitRange(m,d);let c=ToTemporalRoundingMode(l,"trunc");c=NegateTemporalRoundingMode(c);const h=ToTemporalDateTimeRoundingIncrement(l,d),u=GetSlot(this,o),f=GetSlot(n,o);let y,S,g,w,I,G,D,v,O,C;if("year"!==m&&"month"!==m&&"week"!==m&&"day"!==m)y=0,S=0,g=0,w=0,({seconds:D,milliseconds:v,microseconds:O,nanoseconds:C}=DifferenceInstant(u,f,h,d,c)),({hours:I,minutes:G,seconds:D,milliseconds:v,microseconds:O,nanoseconds:C}=BalanceDuration(0,0,0,D,v,O,C,m));else {const e=GetSlot(this,p);if(!TimeZoneEquals(e,GetSlot(n,p)))throw new RangeError("When calculating difference between time zones, largestUnit must be 'hours' or smaller because day lengths can vary between time zones due to DST or time zone offset changes.");const t={...l,largestUnit:m};(({years:y,months:S,weeks:g,days:w,hours:I,minutes:G,seconds:D,milliseconds:v,microseconds:O,nanoseconds:C}=DifferenceZonedDateTime(u,f,e,r,m,t))),({years:y,months:S,weeks:g,days:w,hours:I,minutes:G,seconds:D,milliseconds:v,microseconds:O,nanoseconds:C}=RoundDuration(y,S,g,w,I,G,D,v,O,C,h,d,c,this)),({years:y,months:S,weeks:g,days:w,hours:I,minutes:G,seconds:D,milliseconds:v,microseconds:O,nanoseconds:C}=AdjustRoundedDurationDays(y,S,g,w,I,G,D,v,O,C,h,d,c,this));}return new(GetIntrinsic("%Temporal.Duration%"))(-y,-S,-g,-w,-I,-G,-D,-v,-O,-C)}round(t){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");if(void 0===t)throw new TypeError("options parameter is required");const n="string"==typeof t?CreateOnePropObject("smallestUnit",t):GetOptionsObject(t),f=ToSmallestTemporalUnit(n,void 0,["year","month","week"]);if(void 0===f)throw new RangeError("smallestUnit is required");const y=ToTemporalRoundingMode(n,"halfExpand"),S=ToTemporalRoundingIncrement(n,{day:1,hour:24,minute:60,second:60,millisecond:1e3,microsecond:1e3,nanosecond:1e3}[f],!1),g=dateTime(this);let w=GetSlot(g,r$1),I=GetSlot(g,a),G=GetSlot(g,i$1),D=GetSlot(g,s),v=GetSlot(g,l),O=GetSlot(g,d),C=GetSlot(g,m),E=GetSlot(g,c),b=GetSlot(g,h);const R=GetIntrinsic("%Temporal.PlainDateTime%"),M=GetSlot(this,p),Z=GetSlot(this,T),F=BuiltinTimeZoneGetInstantFor(M,new R(GetSlot(g,r$1),GetSlot(g,a),GetSlot(g,i$1),0,0,0,0,0,0),"compatible"),Y=AddZonedDateTime(F,M,Z,0,0,0,1,0,0,0,0,0,0),P=jsbiUmd.subtract(Y,jsbiUmd.BigInt(GetSlot(F,o)));if(jsbiUmd.equal(P,we))throw new RangeError("cannot round a ZonedDateTime in a calendar with zero-length days");({year:w,month:I,day:G,hour:D,minute:v,second:O,millisecond:C,microsecond:E,nanosecond:b}=RoundISODateTime(w,I,G,D,v,O,C,E,b,S,f,y,jsbiUmd.toNumber(P)));return CreateTemporalZonedDateTime(InterpretISODateTimeOffset(w,I,G,D,v,O,C,E,b,"option",GetOffsetNanosecondsFor(M,GetSlot(this,u)),M,"compatible","prefer",!1),M,GetSlot(this,T))}equals(t){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");const n=ToTemporalZonedDateTime(t),r=GetSlot(this,o),a=GetSlot(n,o);return !!jsbiUmd.equal(jsbiUmd.BigInt(r),jsbiUmd.BigInt(a))&&(!!TimeZoneEquals(GetSlot(this,p),GetSlot(n,p))&&CalendarEquals(GetSlot(this,T),GetSlot(n,T)))}toString(e){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");const t=GetOptionsObject(e),{precision:o,unit:n,increment:r}=ToSecondsStringPrecision(t),a=ToTemporalRoundingMode(t,"trunc");return TemporalZonedDateTimeToString(this,o,ToShowCalendarOption(t),function ToShowTimeZoneNameOption(e){return GetOption(e,"timeZoneName",["auto","never"],"auto")}(t),function ToShowOffsetOption(e){return GetOption(e,"offset",["auto","never"],"auto")}(t),{unit:n,increment:r,roundingMode:a})}toLocaleString(e,t){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return new at(e,t).format(this)}toJSON(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return TemporalZonedDateTimeToString(this,"auto")}valueOf(){throw new TypeError("use compare() or equals() to compare Temporal.ZonedDateTime")}startOfDay(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");const e=dateTime(this),t=GetIntrinsic("%Temporal.PlainDateTime%"),n=GetSlot(this,T),s=new t(GetSlot(e,r$1),GetSlot(e,a),GetSlot(e,i$1),0,0,0,0,0,0,n),l=GetSlot(this,p);return CreateTemporalZonedDateTime(GetSlot(BuiltinTimeZoneGetInstantFor(l,s,"compatible"),o),l,n)}toInstant(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return new(GetIntrinsic("%Temporal.Instant%"))(GetSlot(this,o))}toPlainDate(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return TemporalDateTimeToDate(dateTime(this))}toPlainTime(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return TemporalDateTimeToTime(dateTime(this))}toPlainDateTime(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");return dateTime(this)}toPlainYearMonth(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");const e=GetSlot(this,T);return YearMonthFromFields(e,ToTemporalYearMonthFields(this,CalendarFields(e,["monthCode","year"])))}toPlainMonthDay(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");const e=GetSlot(this,T);return MonthDayFromFields(e,ToTemporalMonthDayFields(this,CalendarFields(e,["day","monthCode"])))}getISOFields(){if(!IsTemporalZonedDateTime(this))throw new TypeError("invalid receiver");const e=dateTime(this),t=GetSlot(this,p);return {calendar:GetSlot(this,T),isoDay:GetSlot(e,i$1),isoHour:GetSlot(e,s),isoMicrosecond:GetSlot(e,c),isoMillisecond:GetSlot(e,m),isoMinute:GetSlot(e,l),isoMonth:GetSlot(e,a),isoNanosecond:GetSlot(e,h),isoSecond:GetSlot(e,d),isoYear:GetSlot(e,r$1),offset:BuiltinTimeZoneGetOffsetStringFor(t,GetSlot(this,u)),timeZone:t}}static from(e,t){const n=GetOptionsObject(t);return IsTemporalZonedDateTime(e)?(ToTemporalOverflow(n),ToTemporalDisambiguation(n),ToTemporalOffset(n,"reject"),CreateTemporalZonedDateTime(GetSlot(e,o),GetSlot(e,p),GetSlot(e,T))):ToTemporalZonedDateTime(e,n)}static compare(t,n){const r=ToTemporalZonedDateTime(t),a=ToTemporalZonedDateTime(n),i=GetSlot(r,o),s=GetSlot(a,o);return jsbiUmd.lessThan(jsbiUmd.BigInt(i),jsbiUmd.BigInt(s))?-1:jsbiUmd.greaterThan(jsbiUmd.BigInt(i),jsbiUmd.BigInt(s))?1:0}}function dateTime(e){return BuiltinTimeZoneGetPlainDateTimeFor(GetSlot(e,p),GetSlot(e,u),GetSlot(e,T))}MakeIntrinsicClass(ZonedDateTime,"Temporal.ZonedDateTime");var St=Object.freeze({__proto__:null,Instant,Calendar,PlainDate,PlainDateTime,Duration,PlainMonthDay,Now:ct,PlainTime,TimeZone,PlainYearMonth,ZonedDateTime});const gt=[Instant,Calendar,PlainDate,PlainDateTime,Duration,PlainMonthDay,PlainTime,TimeZone,PlainYearMonth,ZonedDateTime];for(const e of gt){const t=Object.getOwnPropertyDescriptor(e,"prototype");(t.configurable||t.enumerable||t.writable)&&(t.configurable=!1,t.enumerable=!1,t.writable=!1,Object.defineProperty(e,"prototype",t));}
 
     /* src\components\Date.svelte generated by Svelte v3.48.0 */
-    const file$e = "src\\components\\Date.svelte";
+    const file$f = "src\\components\\Date.svelte";
 
-    function create_fragment$f(ctx) {
+    function create_fragment$g(ctx) {
     	let div;
     	let p0;
     	let t3;
@@ -499,11 +558,11 @@ var app = (function () {
     			p1 = element("p");
     			p1.textContent = `${/*newDate*/ ctx[0].day}`;
     			attr_dev(p0, "class", "mon svelte-h4aeu2");
-    			add_location(p0, file$e, 19, 2, 368);
+    			add_location(p0, file$f, 19, 2, 368);
     			attr_dev(p1, "class", "day svelte-h4aeu2");
-    			add_location(p1, file$e, 20, 2, 429);
+    			add_location(p1, file$f, 20, 2, 429);
     			attr_dev(div, "class", "date-part svelte-h4aeu2");
-    			add_location(div, file$e, 18, 0, 341);
+    			add_location(div, file$f, 18, 0, 341);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -524,7 +583,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$f.name,
+    		id: create_fragment$g.name,
     		type: "component",
     		source: "",
     		ctx
@@ -533,7 +592,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$f($$self, $$props, $$invalidate) {
+    function instance$g($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('Date', slots, []);
     	let newDate = St.Now.zonedDateTimeISO();
@@ -575,13 +634,13 @@ var app = (function () {
     class Date$1 extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$f, create_fragment$f, safe_not_equal, {});
+    		init(this, options, instance$g, create_fragment$g, safe_not_equal, {});
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
     			tagName: "Date",
     			options,
-    			id: create_fragment$f.name
+    			id: create_fragment$g.name
     		});
     	}
     }
@@ -591,9 +650,9 @@ var app = (function () {
     };
 
     /* src\components\Meter.svelte generated by Svelte v3.48.0 */
-    const file$d = "src\\components\\Meter.svelte";
+    const file$e = "src\\components\\Meter.svelte";
 
-    function create_fragment$e(ctx) {
+    function create_fragment$f(ctx) {
     	let div3;
     	let div2;
     	let div0;
@@ -616,17 +675,17 @@ var app = (function () {
     			t3 = space();
     			div1 = element("div");
     			attr_dev(p, "class", "svelte-jqkp86");
-    			add_location(p, file$d, 13, 29, 403);
+    			add_location(p, file$e, 13, 29, 403);
     			attr_dev(div0, "class", "semi-circle svelte-jqkp86");
-    			add_location(div0, file$d, 13, 4, 378);
+    			add_location(div0, file$e, 13, 4, 378);
     			attr_dev(div1, "class", "semi-circle--mask svelte-jqkp86");
     			set_style(div1, "transform", "rotate(" + /*rotate2*/ ctx[3] + "deg) translate3d(0, 0, 0)");
-    			add_location(div1, file$d, 14, 4, 436);
+    			add_location(div1, file$e, 14, 4, 436);
     			attr_dev(div2, "class", "mask svelte-jqkp86");
-    			add_location(div2, file$d, 12, 2, 354);
+    			add_location(div2, file$e, 12, 2, 354);
     			set_style(div3, "--theme-color", /*gaugeColor*/ ctx[2]);
     			attr_dev(div3, "class", "gauge--1 svelte-jqkp86");
-    			add_location(div3, file$d, 11, 0, 292);
+    			add_location(div3, file$e, 11, 0, 292);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -663,7 +722,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$e.name,
+    		id: create_fragment$f.name,
     		type: "component",
     		source: "",
     		ctx
@@ -672,7 +731,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$e($$self, $$props, $$invalidate) {
+    function instance$f($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('Meter', slots, []);
     	let { rotate } = $$props;
@@ -724,13 +783,13 @@ var app = (function () {
     class Meter extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$e, create_fragment$e, safe_not_equal, { rotate: 0, max: 1, gaugeColor: 2 });
+    		init(this, options, instance$f, create_fragment$f, safe_not_equal, { rotate: 0, max: 1, gaugeColor: 2 });
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
     			tagName: "Meter",
     			options,
-    			id: create_fragment$e.name
+    			id: create_fragment$f.name
     		});
 
     		const { ctx } = this.$$;
@@ -775,9 +834,9 @@ var app = (function () {
     }
 
     /* src\components\Prompt.svelte generated by Svelte v3.48.0 */
-    const file$c = "src\\components\\Prompt.svelte";
+    const file$d = "src\\components\\Prompt.svelte";
 
-    function create_fragment$d(ctx) {
+    function create_fragment$e(ctx) {
     	let div1;
     	let div0;
     	let p;
@@ -801,15 +860,15 @@ var app = (function () {
     			button1 = element("button");
     			button1.textContent = "No";
     			attr_dev(p, "class", "svelte-1wt71df");
-    			add_location(p, file$c, 15, 4, 343);
+    			add_location(p, file$d, 15, 4, 343);
     			attr_dev(button0, "class", "yes svelte-1wt71df");
-    			add_location(button0, file$c, 16, 4, 369);
+    			add_location(button0, file$d, 16, 4, 369);
     			attr_dev(button1, "class", "no svelte-1wt71df");
-    			add_location(button1, file$c, 22, 4, 490);
+    			add_location(button1, file$d, 22, 4, 490);
     			attr_dev(div0, "class", "yesNo svelte-1wt71df");
-    			add_location(div0, file$c, 14, 2, 318);
+    			add_location(div0, file$d, 14, 2, 318);
     			attr_dev(div1, "class", "prompt svelte-1wt71df");
-    			add_location(div1, file$c, 5, 0, 144);
+    			add_location(div1, file$d, 5, 0, 144);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -845,7 +904,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$d.name,
+    		id: create_fragment$e.name,
     		type: "component",
     		source: "",
     		ctx
@@ -854,7 +913,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$d($$self, $$props, $$invalidate) {
+    function instance$e($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('Prompt', slots, []);
     	const dispatch = createEventDispatcher();
@@ -896,22 +955,22 @@ var app = (function () {
     class Prompt extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$d, create_fragment$d, safe_not_equal, {});
+    		init(this, options, instance$e, create_fragment$e, safe_not_equal, {});
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
     			tagName: "Prompt",
     			options,
-    			id: create_fragment$d.name
+    			id: create_fragment$e.name
     		});
     	}
     }
 
     /* src\components\Password.svelte generated by Svelte v3.48.0 */
-    const file$b = "src\\components\\Password.svelte";
+    const file$c = "src\\components\\Password.svelte";
 
     // (29:2) {#if showPrompt}
-    function create_if_block$4(ctx) {
+    function create_if_block$5(ctx) {
     	let prompt;
     	let current;
     	prompt = new Prompt({ $$inline: true });
@@ -943,7 +1002,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block$4.name,
+    		id: create_if_block$5.name,
     		type: "if",
     		source: "(29:2) {#if showPrompt}",
     		ctx
@@ -952,7 +1011,7 @@ var app = (function () {
     	return block;
     }
 
-    function create_fragment$c(ctx) {
+    function create_fragment$d(ctx) {
     	let div1;
     	let p0;
     	let t1;
@@ -968,7 +1027,7 @@ var app = (function () {
     	let current;
     	let mounted;
     	let dispose;
-    	let if_block = /*showPrompt*/ ctx[1] && create_if_block$4(ctx);
+    	let if_block = /*showPrompt*/ ctx[1] && create_if_block$5(ctx);
 
     	const block = {
     		c: function create() {
@@ -990,21 +1049,21 @@ var app = (function () {
     			t8 = space();
     			if (if_block) if_block.c();
     			attr_dev(p0, "class", "title svelte-eb11jl");
-    			add_location(p0, file$b, 9, 2, 262);
+    			add_location(p0, file$c, 9, 2, 262);
     			attr_dev(button0, "class", "svelte-eb11jl");
-    			add_location(button0, file$b, 10, 2, 298);
+    			add_location(button0, file$c, 10, 2, 298);
     			attr_dev(button1, "class", "svelte-eb11jl");
-    			add_location(button1, file$b, 11, 2, 334);
-    			add_location(p1, file$b, 17, 4, 453);
+    			add_location(button1, file$c, 11, 2, 334);
+    			add_location(p1, file$c, 17, 4, 453);
     			input.checked = /*tfaTrue*/ ctx[0];
     			attr_dev(input, "type", "checkbox");
     			attr_dev(input, "name", "Allow 2fa checkbox");
     			attr_dev(input, "class", "checkbox svelte-eb11jl");
-    			add_location(input, file$b, 18, 4, 475);
+    			add_location(input, file$c, 18, 4, 475);
     			attr_dev(div0, "class", "tfa svelte-eb11jl");
-    			add_location(div0, file$b, 16, 2, 430);
+    			add_location(div0, file$c, 16, 2, 430);
     			attr_dev(div1, "class", "password svelte-eb11jl");
-    			add_location(div1, file$b, 8, 0, 236);
+    			add_location(div1, file$c, 8, 0, 236);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1047,7 +1106,7 @@ var app = (function () {
     						transition_in(if_block, 1);
     					}
     				} else {
-    					if_block = create_if_block$4(ctx);
+    					if_block = create_if_block$5(ctx);
     					if_block.c();
     					transition_in(if_block, 1);
     					if_block.m(div1, null);
@@ -1081,7 +1140,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$c.name,
+    		id: create_fragment$d.name,
     		type: "component",
     		source: "",
     		ctx
@@ -1090,7 +1149,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$c($$self, $$props, $$invalidate) {
+    function instance$d($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('Password', slots, []);
     	let { tfaTrue } = $$props;
@@ -1158,13 +1217,13 @@ var app = (function () {
     class Password extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$c, create_fragment$c, safe_not_equal, { tfaTrue: 0 });
+    		init(this, options, instance$d, create_fragment$d, safe_not_equal, { tfaTrue: 0 });
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
     			tagName: "Password",
     			options,
-    			id: create_fragment$c.name
+    			id: create_fragment$d.name
     		});
 
     		const { ctx } = this.$$;
@@ -1186,9 +1245,9 @@ var app = (function () {
 
     /* src\components\StatCard.svelte generated by Svelte v3.48.0 */
 
-    const file$a = "src\\components\\StatCard.svelte";
+    const file$b = "src\\components\\StatCard.svelte";
 
-    function create_fragment$b(ctx) {
+    function create_fragment$c(ctx) {
     	let div1;
     	let div0;
     	let img;
@@ -1215,20 +1274,20 @@ var app = (function () {
     			if (!src_url_equal(img.src, img_src_value = /*icon*/ ctx[1] ? /*icon*/ ctx[1] : null)) attr_dev(img, "src", img_src_value);
     			attr_dev(img, "alt", "Icon");
     			attr_dev(img, "class", "svelte-3zes9f");
-    			add_location(img, file$a, 11, 5, 254);
+    			add_location(img, file$b, 11, 5, 254);
 
     			set_style(div0, "background-color", /*iconBackground*/ ctx[3]
     			? /*iconBackground*/ ctx[3]
     			: 'rgba(79, 0, 153, 0.7)');
 
     			attr_dev(div0, "class", "svelte-3zes9f");
-    			add_location(div0, file$a, 7, 2, 138);
+    			add_location(div0, file$b, 7, 2, 138);
     			attr_dev(h2, "class", "svelte-3zes9f");
-    			add_location(h2, file$a, 13, 2, 311);
+    			add_location(h2, file$b, 13, 2, 311);
     			attr_dev(p, "class", "svelte-3zes9f");
-    			add_location(p, file$a, 14, 2, 347);
+    			add_location(p, file$b, 14, 2, 347);
     			attr_dev(div1, "class", "card svelte-3zes9f");
-    			add_location(div1, file$a, 6, 0, 116);
+    			add_location(div1, file$b, 6, 0, 116);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1267,7 +1326,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$b.name,
+    		id: create_fragment$c.name,
     		type: "component",
     		source: "",
     		ctx
@@ -1276,7 +1335,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$b($$self, $$props, $$invalidate) {
+    function instance$c($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('StatCard', slots, []);
     	let { answer } = $$props;
@@ -1316,7 +1375,7 @@ var app = (function () {
     	constructor(options) {
     		super(options);
 
-    		init(this, options, instance$b, create_fragment$b, safe_not_equal, {
+    		init(this, options, instance$c, create_fragment$c, safe_not_equal, {
     			answer: 0,
     			icon: 1,
     			title: 2,
@@ -1327,7 +1386,7 @@ var app = (function () {
     			component: this,
     			tagName: "StatCard",
     			options,
-    			id: create_fragment$b.name
+    			id: create_fragment$c.name
     		});
 
     		const { ctx } = this.$$;
@@ -1384,9 +1443,9 @@ var app = (function () {
     }
 
     /* src\components\Stats.svelte generated by Svelte v3.48.0 */
-    const file$9 = "src\\components\\Stats.svelte";
+    const file$a = "src\\components\\Stats.svelte";
 
-    function create_fragment$a(ctx) {
+    function create_fragment$b(ctx) {
     	let div;
     	let p;
     	let t1;
@@ -1453,9 +1512,9 @@ var app = (function () {
     			t4 = space();
     			create_component(statcard3.$$.fragment);
     			attr_dev(p, "class", "svelte-1txuqok");
-    			add_location(p, file$9, 8, 2, 189);
+    			add_location(p, file$a, 8, 2, 189);
     			attr_dev(div, "class", "stats svelte-1txuqok");
-    			add_location(div, file$9, 7, 0, 166);
+    			add_location(div, file$a, 7, 0, 166);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1513,7 +1572,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$a.name,
+    		id: create_fragment$b.name,
     		type: "component",
     		source: "",
     		ctx
@@ -1522,7 +1581,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$a($$self, $$props, $$invalidate) {
+    function instance$b($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('Stats', slots, []);
     	let { logins } = $$props;
@@ -1568,7 +1627,7 @@ var app = (function () {
     	constructor(options) {
     		super(options);
 
-    		init(this, options, instance$a, create_fragment$a, safe_not_equal, {
+    		init(this, options, instance$b, create_fragment$b, safe_not_equal, {
     			logins: 0,
     			failed: 1,
     			mostPopular: 2,
@@ -1579,7 +1638,7 @@ var app = (function () {
     			component: this,
     			tagName: "Stats",
     			options,
-    			id: create_fragment$a.name
+    			id: create_fragment$b.name
     		});
 
     		const { ctx } = this.$$;
@@ -1674,11 +1733,11 @@ var app = (function () {
 
     /* src\components\Website.svelte generated by Svelte v3.48.0 */
 
-    const { console: console_1$5 } = globals;
-    const file$8 = "src\\components\\Website.svelte";
+    const { console: console_1$4 } = globals;
+    const file$9 = "src\\components\\Website.svelte";
 
     // (18:2) {#if blackListed}
-    function create_if_block_1$1(ctx) {
+    function create_if_block_1$2(ctx) {
     	let p;
 
     	const block = {
@@ -1686,7 +1745,7 @@ var app = (function () {
     			p = element("p");
     			p.textContent = "BlackListed";
     			attr_dev(p, "class", "blacklist-p svelte-7bpd7q");
-    			add_location(p, file$8, 18, 4, 370);
+    			add_location(p, file$9, 18, 4, 370);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, p, anchor);
@@ -1698,7 +1757,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block_1$1.name,
+    		id: create_if_block_1$2.name,
     		type: "if",
     		source: "(18:2) {#if blackListed}",
     		ctx
@@ -1722,11 +1781,11 @@ var app = (function () {
     			if (!src_url_equal(img.src, img_src_value = "./shield-x.svg")) attr_dev(img, "src", img_src_value);
     			attr_dev(img, "alt", "Blacklist");
     			attr_dev(img, "class", "svelte-7bpd7q");
-    			add_location(img, file$8, 44, 24, 1103);
+    			add_location(img, file$9, 44, 24, 1103);
     			attr_dev(button, "name", "Blacklist");
     			attr_dev(button, "title", "Blacklist");
     			attr_dev(button, "class", "svelte-7bpd7q");
-    			add_location(button, file$8, 38, 4, 900);
+    			add_location(button, file$9, 38, 4, 900);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, button, anchor);
@@ -1757,7 +1816,7 @@ var app = (function () {
     }
 
     // (23:2) {#if blackListed}
-    function create_if_block$3(ctx) {
+    function create_if_block$4(ctx) {
     	let button;
     	let img;
     	let img_src_value;
@@ -1771,11 +1830,11 @@ var app = (function () {
     			if (!src_url_equal(img.src, img_src_value = "./shield-check.svg")) attr_dev(img, "src", img_src_value);
     			attr_dev(img, "alt", "Un-Blacklist");
     			attr_dev(img, "class", "svelte-7bpd7q");
-    			add_location(img, file$8, 35, 6, 817);
+    			add_location(img, file$9, 35, 6, 817);
     			attr_dev(button, "name", "Un-Blacklist");
     			attr_dev(button, "title", "Un-Blacklist");
     			attr_dev(button, "class", "svelte-7bpd7q");
-    			add_location(button, file$8, 23, 4, 549);
+    			add_location(button, file$9, 23, 4, 549);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, button, anchor);
@@ -1796,7 +1855,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block$3.name,
+    		id: create_if_block$4.name,
     		type: "if",
     		source: "(23:2) {#if blackListed}",
     		ctx
@@ -1805,7 +1864,7 @@ var app = (function () {
     	return block;
     }
 
-    function create_fragment$9(ctx) {
+    function create_fragment$a(ctx) {
     	let div;
     	let t0;
     	let img;
@@ -1816,10 +1875,10 @@ var app = (function () {
     	let t2;
     	let t3;
     	let div_class_value;
-    	let if_block0 = /*blackListed*/ ctx[3] && create_if_block_1$1(ctx);
+    	let if_block0 = /*blackListed*/ ctx[3] && create_if_block_1$2(ctx);
 
     	function select_block_type(ctx, dirty) {
-    		if (/*blackListed*/ ctx[3]) return create_if_block$3;
+    		if (/*blackListed*/ ctx[3]) return create_if_block$4;
     		return create_else_block$1;
     	}
 
@@ -1840,11 +1899,11 @@ var app = (function () {
     			attr_dev(img, "class", "web-img svelte-7bpd7q");
     			if (!src_url_equal(img.src, img_src_value = "./window.svg")) attr_dev(img, "src", img_src_value);
     			attr_dev(img, "alt", "Website");
-    			add_location(img, file$8, 20, 2, 421);
+    			add_location(img, file$9, 20, 2, 421);
     			attr_dev(p, "class", "name svelte-7bpd7q");
-    			add_location(p, file$8, 21, 2, 481);
+    			add_location(p, file$9, 21, 2, 481);
     			attr_dev(div, "class", div_class_value = "" + (null_to_empty(/*blackListed*/ ctx[3] ? "blackList" : "website") + " svelte-7bpd7q"));
-    			add_location(div, file$8, 16, 0, 292);
+    			add_location(div, file$9, 16, 0, 292);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1863,7 +1922,7 @@ var app = (function () {
     		p: function update(ctx, [dirty]) {
     			if (/*blackListed*/ ctx[3]) {
     				if (if_block0) ; else {
-    					if_block0 = create_if_block_1$1(ctx);
+    					if_block0 = create_if_block_1$2(ctx);
     					if_block0.c();
     					if_block0.m(div, t0);
     				}
@@ -1901,7 +1960,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$9.name,
+    		id: create_fragment$a.name,
     		type: "component",
     		source: "",
     		ctx
@@ -1910,7 +1969,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$9($$self, $$props, $$invalidate) {
+    function instance$a($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('Website', slots, []);
     	let { name } = $$props;
@@ -1932,7 +1991,7 @@ var app = (function () {
     	const writable_props = ['name', 'socket', 'userData', 'blackList'];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1$5.warn(`<Website> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1$4.warn(`<Website> was created with unknown prop '${key}'`);
     	});
 
     	const click_handler = () => {
@@ -1989,7 +2048,7 @@ var app = (function () {
     	constructor(options) {
     		super(options);
 
-    		init(this, options, instance$9, create_fragment$9, safe_not_equal, {
+    		init(this, options, instance$a, create_fragment$a, safe_not_equal, {
     			name: 0,
     			socket: 1,
     			userData: 2,
@@ -2000,26 +2059,26 @@ var app = (function () {
     			component: this,
     			tagName: "Website",
     			options,
-    			id: create_fragment$9.name
+    			id: create_fragment$a.name
     		});
 
     		const { ctx } = this.$$;
     		const props = options.props || {};
 
     		if (/*name*/ ctx[0] === undefined && !('name' in props)) {
-    			console_1$5.warn("<Website> was created without expected prop 'name'");
+    			console_1$4.warn("<Website> was created without expected prop 'name'");
     		}
 
     		if (/*socket*/ ctx[1] === undefined && !('socket' in props)) {
-    			console_1$5.warn("<Website> was created without expected prop 'socket'");
+    			console_1$4.warn("<Website> was created without expected prop 'socket'");
     		}
 
     		if (/*userData*/ ctx[2] === undefined && !('userData' in props)) {
-    			console_1$5.warn("<Website> was created without expected prop 'userData'");
+    			console_1$4.warn("<Website> was created without expected prop 'userData'");
     		}
 
     		if (/*blackList*/ ctx[4] === undefined && !('blackList' in props)) {
-    			console_1$5.warn("<Website> was created without expected prop 'blackList'");
+    			console_1$4.warn("<Website> was created without expected prop 'blackList'");
     		}
     	}
 
@@ -2057,7 +2116,7 @@ var app = (function () {
     }
 
     /* src\components\Websites.svelte generated by Svelte v3.48.0 */
-    const file$7 = "src\\components\\Websites.svelte";
+    const file$8 = "src\\components\\Websites.svelte";
 
     function get_each_context$1(ctx, list, i) {
     	const child_ctx = ctx.slice();
@@ -2121,7 +2180,7 @@ var app = (function () {
     	return block;
     }
 
-    function create_fragment$8(ctx) {
+    function create_fragment$9(ctx) {
     	let div;
     	let current;
     	let each_value = /*sites*/ ctx[0];
@@ -2145,7 +2204,7 @@ var app = (function () {
     			}
 
     			attr_dev(div, "class", "websites svelte-awbw33");
-    			add_location(div, file$7, 6, 0, 133);
+    			add_location(div, file$8, 6, 0, 133);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -2214,7 +2273,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$8.name,
+    		id: create_fragment$9.name,
     		type: "component",
     		source: "",
     		ctx
@@ -2223,7 +2282,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$8($$self, $$props, $$invalidate) {
+    function instance$9($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('Websites', slots, []);
     	let { sites } = $$props;
@@ -2259,13 +2318,13 @@ var app = (function () {
     class Websites extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$8, create_fragment$8, safe_not_equal, { sites: 0, socket: 1, userData: 2 });
+    		init(this, options, instance$9, create_fragment$9, safe_not_equal, { sites: 0, socket: 1, userData: 2 });
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
     			tagName: "Websites",
     			options,
-    			id: create_fragment$8.name
+    			id: create_fragment$9.name
     		});
 
     		const { ctx } = this.$$;
@@ -2310,9 +2369,9 @@ var app = (function () {
     }
 
     /* src\components\Key.svelte generated by Svelte v3.48.0 */
-    const file$6 = "src\\components\\Key.svelte";
+    const file$7 = "src\\components\\Key.svelte";
 
-    function create_fragment$7(ctx) {
+    function create_fragment$8(ctx) {
     	let div;
     	let img0;
     	let img0_src_value;
@@ -2340,19 +2399,19 @@ var app = (function () {
     			attr_dev(img0, "class", "web-img svelte-1g9ne50");
     			if (!src_url_equal(img0.src, img0_src_value = "./key.svg")) attr_dev(img0, "src", img0_src_value);
     			attr_dev(img0, "alt", "Key");
-    			add_location(img0, file$6, 8, 2, 182);
+    			add_location(img0, file$7, 8, 2, 182);
     			attr_dev(p, "class", "name svelte-1g9ne50");
-    			add_location(p, file$6, 9, 2, 235);
+    			add_location(p, file$7, 9, 2, 235);
     			if (!src_url_equal(img1.src, img1_src_value = "./trash3.svg")) attr_dev(img1, "src", img1_src_value);
     			attr_dev(img1, "alt", "Delete");
     			attr_dev(img1, "class", "svelte-1g9ne50");
-    			add_location(img1, file$6, 15, 7, 399);
+    			add_location(img1, file$7, 15, 7, 399);
     			attr_dev(button, "name", "delete");
     			attr_dev(button, "title", "Delete");
     			attr_dev(button, "class", "svelte-1g9ne50");
-    			add_location(button, file$6, 10, 2, 280);
+    			add_location(button, file$7, 10, 2, 280);
     			attr_dev(div, "class", "website svelte-1g9ne50");
-    			add_location(div, file$6, 7, 0, 157);
+    			add_location(div, file$7, 7, 0, 157);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -2386,7 +2445,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$7.name,
+    		id: create_fragment$8.name,
     		type: "component",
     		source: "",
     		ctx
@@ -2395,7 +2454,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$7($$self, $$props, $$invalidate) {
+    function instance$8($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('Key', slots, []);
     	const dispatch = createEventDispatcher();
@@ -2438,13 +2497,13 @@ var app = (function () {
     class Key extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$7, create_fragment$7, safe_not_equal, { name: 0, id: 1 });
+    		init(this, options, instance$8, create_fragment$8, safe_not_equal, { name: 0, id: 1 });
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
     			tagName: "Key",
     			options,
-    			id: create_fragment$7.name
+    			id: create_fragment$8.name
     		});
 
     		const { ctx } = this.$$;
@@ -2764,10 +2823,10 @@ var app = (function () {
 
     /* src\components\Add2fa.svelte generated by Svelte v3.48.0 */
 
-    const { console: console_1$4 } = globals;
-    const file$5 = "src\\components\\Add2fa.svelte";
+    const { console: console_1$3 } = globals;
+    const file$6 = "src\\components\\Add2fa.svelte";
 
-    function create_fragment$6(ctx) {
+    function create_fragment$7(ctx) {
     	let div3;
     	let div2;
     	let p;
@@ -2813,40 +2872,40 @@ var app = (function () {
     			button2.textContent = "Cancel";
     			attr_dev(span0, "id", "success");
     			attr_dev(span0, "class", "svelte-7bekkk");
-    			add_location(span0, file$5, 82, 7, 2625);
+    			add_location(span0, file$6, 82, 7, 2625);
     			attr_dev(span1, "id", "error");
     			attr_dev(span1, "class", "svelte-7bekkk");
-    			add_location(span1, file$5, 82, 52, 2670);
+    			add_location(span1, file$6, 82, 52, 2670);
     			attr_dev(p, "class", "status svelte-7bekkk");
-    			add_location(p, file$5, 81, 4, 2599);
+    			add_location(p, file$6, 81, 4, 2599);
     			if (!src_url_equal(img.src, img_src_value = "/icons/cursor-text.svg")) attr_dev(img, "src", img_src_value);
     			attr_dev(img, "alt", "Person");
     			attr_dev(img, "class", "svelte-7bekkk");
-    			add_location(img, file$5, 89, 9, 2811);
+    			add_location(img, file$6, 89, 9, 2811);
     			attr_dev(div0, "class", "iconpart svelte-7bekkk");
-    			add_location(div0, file$5, 88, 6, 2779);
+    			add_location(div0, file$6, 88, 6, 2779);
     			attr_dev(input, "type", "text");
     			attr_dev(input, "placeholder", "2fa Method Name (e.g., Bobs Security Key).");
     			attr_dev(input, "id", "keyName");
     			attr_dev(input, "class", "svelte-7bekkk");
-    			add_location(input, file$5, 91, 6, 2882);
+    			add_location(input, file$6, 91, 6, 2882);
     			attr_dev(div1, "class", "label svelte-7bekkk");
-    			add_location(div1, file$5, 87, 4, 2752);
+    			add_location(div1, file$6, 87, 4, 2752);
     			attr_dev(button0, "id", "btnBegin");
     			attr_dev(button0, "class", "svelte-7bekkk");
-    			add_location(button0, file$5, 98, 4, 3055);
+    			add_location(button0, file$6, 98, 4, 3055);
     			attr_dev(button1, "id", "finishButton");
     			set_style(button1, "display", "none");
     			attr_dev(button1, "class", "svelte-7bekkk");
-    			add_location(button1, file$5, 101, 4, 3162);
+    			add_location(button1, file$6, 101, 4, 3162);
     			attr_dev(button2, "id", "cancelButton");
     			attr_dev(button2, "class", "svelte-7bekkk");
-    			add_location(button2, file$5, 104, 4, 3265);
+    			add_location(button2, file$6, 104, 4, 3265);
     			attr_dev(div2, "class", "addOnBox svelte-7bekkk");
-    			add_location(div2, file$5, 80, 2, 2571);
+    			add_location(div2, file$6, 80, 2, 2571);
     			attr_dev(div3, "class", "addOn svelte-7bekkk");
     			attr_dev(div3, "id", "addOnCover");
-    			add_location(div3, file$5, 79, 0, 2532);
+    			add_location(div3, file$6, 79, 0, 2532);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -2904,7 +2963,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$6.name,
+    		id: create_fragment$7.name,
     		type: "component",
     		source: "",
     		ctx
@@ -2913,7 +2972,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$6($$self, $$props, $$invalidate) {
+    function instance$7($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('Add2fa', slots, []);
     	const dispatch = createEventDispatcher();
@@ -2994,7 +3053,7 @@ var app = (function () {
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1$4.warn(`<Add2fa> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1$3.warn(`<Add2fa> was created with unknown prop '${key}'`);
     	});
 
     	function span0_binding($$value) {
@@ -3069,22 +3128,22 @@ var app = (function () {
     class Add2fa extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$6, create_fragment$6, safe_not_equal, {});
+    		init(this, options, instance$7, create_fragment$7, safe_not_equal, {});
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
     			tagName: "Add2fa",
     			options,
-    			id: create_fragment$6.name
+    			id: create_fragment$7.name
     		});
     	}
     }
 
     /* src\components\AddKey.svelte generated by Svelte v3.48.0 */
-    const file$4 = "src\\components\\AddKey.svelte";
+    const file$5 = "src\\components\\AddKey.svelte";
 
     // (6:0) {#if showAdd}
-    function create_if_block$2(ctx) {
+    function create_if_block$3(ctx) {
     	let add2fa;
     	let current;
     	add2fa = new Add2fa({ $$inline: true });
@@ -3116,7 +3175,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block$2.name,
+    		id: create_if_block$3.name,
     		type: "if",
     		source: "(6:0) {#if showAdd}",
     		ctx
@@ -3125,13 +3184,13 @@ var app = (function () {
     	return block;
     }
 
-    function create_fragment$5(ctx) {
+    function create_fragment$6(ctx) {
     	let t0;
     	let button;
     	let current;
     	let mounted;
     	let dispose;
-    	let if_block = /*showAdd*/ ctx[0] && create_if_block$2(ctx);
+    	let if_block = /*showAdd*/ ctx[0] && create_if_block$3(ctx);
 
     	const block = {
     		c: function create() {
@@ -3140,7 +3199,7 @@ var app = (function () {
     			button = element("button");
     			button.textContent = "Add 2fa method";
     			attr_dev(button, "class", "enable svelte-15wlws0");
-    			add_location(button, file$4, 13, 0, 199);
+    			add_location(button, file$5, 13, 0, 199);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -3165,7 +3224,7 @@ var app = (function () {
     						transition_in(if_block, 1);
     					}
     				} else {
-    					if_block = create_if_block$2(ctx);
+    					if_block = create_if_block$3(ctx);
     					if_block.c();
     					transition_in(if_block, 1);
     					if_block.m(t0.parentNode, t0);
@@ -3200,7 +3259,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$5.name,
+    		id: create_fragment$6.name,
     		type: "component",
     		source: "",
     		ctx
@@ -3209,7 +3268,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$5($$self, $$props, $$invalidate) {
+    function instance$6($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('AddKey', slots, []);
     	let showAdd = false;
@@ -3247,21 +3306,21 @@ var app = (function () {
     class AddKey extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$5, create_fragment$5, safe_not_equal, {});
+    		init(this, options, instance$6, create_fragment$6, safe_not_equal, {});
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
     			tagName: "AddKey",
     			options,
-    			id: create_fragment$5.name
+    			id: create_fragment$6.name
     		});
     	}
     }
 
     /* src\components\SecondFactor.svelte generated by Svelte v3.48.0 */
 
-    const { console: console_1$3 } = globals;
-    const file$3 = "src\\components\\SecondFactor.svelte";
+    const { console: console_1$2 } = globals;
+    const file$4 = "src\\components\\SecondFactor.svelte";
 
     function get_each_context(ctx, list, i) {
     	const child_ctx = ctx.slice();
@@ -3270,7 +3329,7 @@ var app = (function () {
     }
 
     // (12:0) {#if deleteIt}
-    function create_if_block_1(ctx) {
+    function create_if_block_1$1(ctx) {
     	let prompt;
     	let current;
     	prompt = new Prompt({ $$inline: true });
@@ -3302,7 +3361,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block_1.name,
+    		id: create_if_block_1$1.name,
     		type: "if",
     		source: "(12:0) {#if deleteIt}",
     		ctx
@@ -3366,7 +3425,7 @@ var app = (function () {
     }
 
     // (77:2) {#if !tfa}
-    function create_if_block$1(ctx) {
+    function create_if_block$2(ctx) {
     	let div;
     	let h1;
 
@@ -3376,9 +3435,9 @@ var app = (function () {
     			h1 = element("h1");
     			h1.textContent = "Disabled";
     			attr_dev(h1, "class", "svelte-k27zw3");
-    			add_location(h1, file$3, 78, 6, 1980);
+    			add_location(h1, file$4, 78, 6, 1980);
     			attr_dev(div, "class", "blackout svelte-k27zw3");
-    			add_location(div, file$3, 77, 4, 1950);
+    			add_location(div, file$4, 77, 4, 1950);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -3391,7 +3450,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block$1.name,
+    		id: create_if_block$2.name,
     		type: "if",
     		source: "(77:2) {#if !tfa}",
     		ctx
@@ -3400,7 +3459,7 @@ var app = (function () {
     	return block;
     }
 
-    function create_fragment$4(ctx) {
+    function create_fragment$5(ctx) {
     	let t0;
     	let div2;
     	let div1;
@@ -3414,7 +3473,7 @@ var app = (function () {
     	let addkey;
     	let t8;
     	let current;
-    	let if_block0 = /*deleteIt*/ ctx[2] && create_if_block_1(ctx);
+    	let if_block0 = /*deleteIt*/ ctx[2] && create_if_block_1$1(ctx);
     	let each_value = /*tfaKeys*/ ctx[1];
     	validate_each_argument(each_value);
     	let each_blocks = [];
@@ -3429,7 +3488,7 @@ var app = (function () {
 
     	addkey = new AddKey({ $$inline: true });
     	addkey.$on("success", /*success_handler*/ ctx[7]);
-    	let if_block1 = !/*tfa*/ ctx[0] && create_if_block$1(ctx);
+    	let if_block1 = !/*tfa*/ ctx[0] && create_if_block$2(ctx);
 
     	const block = {
     		c: function create() {
@@ -3456,15 +3515,15 @@ var app = (function () {
     			t8 = space();
     			if (if_block1) if_block1.c();
     			attr_dev(p0, "class", "svelte-k27zw3");
-    			add_location(p0, file$3, 47, 4, 1252);
+    			add_location(p0, file$4, 47, 4, 1252);
     			attr_dev(div0, "class", "show svelte-k27zw3");
-    			add_location(div0, file$3, 48, 4, 1266);
+    			add_location(div0, file$4, 48, 4, 1266);
     			attr_dev(div1, "class", "extraInfo svelte-k27zw3");
-    			add_location(div1, file$3, 46, 2, 1223);
+    			add_location(div1, file$4, 46, 2, 1223);
     			attr_dev(p1, "class", "title svelte-k27zw3");
-    			add_location(p1, file$3, 52, 2, 1383);
+    			add_location(p1, file$4, 52, 2, 1383);
     			attr_dev(div2, "class", "twofactor svelte-k27zw3");
-    			add_location(div2, file$3, 45, 0, 1196);
+    			add_location(div2, file$4, 45, 0, 1196);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -3500,7 +3559,7 @@ var app = (function () {
     						transition_in(if_block0, 1);
     					}
     				} else {
-    					if_block0 = create_if_block_1(ctx);
+    					if_block0 = create_if_block_1$1(ctx);
     					if_block0.c();
     					transition_in(if_block0, 1);
     					if_block0.m(t0.parentNode, t0);
@@ -3545,7 +3604,7 @@ var app = (function () {
 
     			if (!/*tfa*/ ctx[0]) {
     				if (if_block1) ; else {
-    					if_block1 = create_if_block$1(ctx);
+    					if_block1 = create_if_block$2(ctx);
     					if_block1.c();
     					if_block1.m(div2, null);
     				}
@@ -3588,7 +3647,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$4.name,
+    		id: create_fragment$5.name,
     		type: "component",
     		source: "",
     		ctx
@@ -3597,7 +3656,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$4($$self, $$props, $$invalidate) {
+    function instance$5($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('SecondFactor', slots, []);
     	let { tfa } = $$props;
@@ -3607,7 +3666,7 @@ var app = (function () {
     	const writable_props = ['tfa', 'tfaKeys2'];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1$3.warn(`<SecondFactor> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1$2.warn(`<SecondFactor> was created with unknown prop '${key}'`);
     	});
 
     	const closeit_handler = () => {
@@ -3702,24 +3761,24 @@ var app = (function () {
     class SecondFactor extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$4, create_fragment$4, safe_not_equal, { tfa: 0, tfaKeys2: 3 });
+    		init(this, options, instance$5, create_fragment$5, safe_not_equal, { tfa: 0, tfaKeys2: 3 });
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
     			tagName: "SecondFactor",
     			options,
-    			id: create_fragment$4.name
+    			id: create_fragment$5.name
     		});
 
     		const { ctx } = this.$$;
     		const props = options.props || {};
 
     		if (/*tfa*/ ctx[0] === undefined && !('tfa' in props)) {
-    			console_1$3.warn("<SecondFactor> was created without expected prop 'tfa'");
+    			console_1$2.warn("<SecondFactor> was created without expected prop 'tfa'");
     		}
 
     		if (/*tfaKeys2*/ ctx[3] === undefined && !('tfaKeys2' in props)) {
-    			console_1$3.warn("<SecondFactor> was created without expected prop 'tfaKeys2'");
+    			console_1$2.warn("<SecondFactor> was created without expected prop 'tfaKeys2'");
     		}
     	}
 
@@ -3740,63 +3799,301 @@ var app = (function () {
     	}
     }
 
-    /* src\components\NameChange.svelte generated by Svelte v3.48.0 */
+    /* src\components\AskPrompt.svelte generated by Svelte v3.48.0 */
 
-    const { console: console_1$2 } = globals;
-    const file$2 = "src\\components\\NameChange.svelte";
+    const file$3 = "src\\components\\AskPrompt.svelte";
 
-    function create_fragment$3(ctx) {
-    	let div;
-    	let p;
+    function create_fragment$4(ctx) {
+    	let div1;
+    	let div0;
+    	let form;
+    	let input;
     	let t0;
-    	let span;
-    	let t1;
+    	let button0;
     	let t2;
-    	let button;
+    	let button1;
     	let mounted;
     	let dispose;
 
     	const block = {
     		c: function create() {
-    			div = element("div");
-    			p = element("p");
-    			t0 = text("Current Name: ");
-    			span = element("span");
-    			t1 = text(/*currentName*/ ctx[0]);
+    			div1 = element("div");
+    			div0 = element("div");
+    			form = element("form");
+    			input = element("input");
+    			t0 = space();
+    			button0 = element("button");
+    			button0.textContent = "Submit";
     			t2 = space();
-    			button = element("button");
-    			button.textContent = "Change Name";
-    			attr_dev(span, "class", "bold");
-    			add_location(span, file$2, 7, 19, 162);
-    			add_location(p, file$2, 7, 2, 145);
-    			add_location(button, file$2, 8, 2, 209);
-    			attr_dev(div, "class", "name");
-    			add_location(div, file$2, 6, 0, 123);
+    			button1 = element("button");
+    			button1.textContent = "✖";
+    			attr_dev(input, "type", "text");
+    			attr_dev(input, "placeholder", /*promptPlaceholder*/ ctx[0]);
+    			input.autofocus = true;
+    			attr_dev(input, "class", "svelte-1lgzmrh");
+    			add_location(input, file$3, 16, 6, 450);
+    			attr_dev(button0, "type", "submit");
+    			attr_dev(button0, "class", "svelte-1lgzmrh");
+    			add_location(button0, file$3, 17, 6, 521);
+    			attr_dev(form, "class", "svelte-1lgzmrh");
+    			add_location(form, file$3, 14, 4, 329);
+    			attr_dev(button1, "class", "close svelte-1lgzmrh");
+    			add_location(button1, file$3, 19, 4, 577);
+    			attr_dev(div0, "class", "prompt-color svelte-1lgzmrh");
+    			add_location(div0, file$3, 13, 2, 297);
+    			attr_dev(div1, "class", "prompt svelte-1lgzmrh");
+    			attr_dev(div1, "id", "coverPrompt");
+    			add_location(div1, file$3, 12, 0, 236);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			insert_dev(target, div, anchor);
-    			append_dev(div, p);
-    			append_dev(p, t0);
-    			append_dev(p, span);
-    			append_dev(span, t1);
-    			append_dev(div, t2);
-    			append_dev(div, button);
+    			insert_dev(target, div1, anchor);
+    			append_dev(div1, div0);
+    			append_dev(div0, form);
+    			append_dev(form, input);
+    			append_dev(form, t0);
+    			append_dev(form, button0);
+    			append_dev(div0, t2);
+    			append_dev(div0, button1);
+    			input.focus();
 
     			if (!mounted) {
-    				dispose = listen_dev(button, "click", /*changeName*/ ctx[1], false, false, false);
+    				dispose = [
+    					listen_dev(form, "submit", prevent_default(/*submit_handler*/ ctx[4]), false, true, false),
+    					listen_dev(button1, "click", /*click_handler*/ ctx[5], false, false, false),
+    					listen_dev(div1, "click", /*divClick*/ ctx[3], false, false, false)
+    				];
+
     				mounted = true;
     			}
     		},
     		p: function update(ctx, [dirty]) {
-    			if (dirty & /*currentName*/ 1) set_data_dev(t1, /*currentName*/ ctx[0]);
+    			if (dirty & /*promptPlaceholder*/ 1) {
+    				attr_dev(input, "placeholder", /*promptPlaceholder*/ ctx[0]);
+    			}
     		},
     		i: noop,
     		o: noop,
     		d: function destroy(detaching) {
-    			if (detaching) detach_dev(div);
+    			if (detaching) detach_dev(div1);
+    			mounted = false;
+    			run_all(dispose);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_fragment$4.name,
+    		type: "component",
+    		source: "",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    function instance$4($$self, $$props, $$invalidate) {
+    	let { $$slots: slots = {}, $$scope } = $$props;
+    	validate_slots('AskPrompt', slots, []);
+    	let { promptPlaceholder } = $$props;
+    	let { promptEvent } = $$props;
+    	let { promptExtra } = $$props;
+
+    	const divClick = e => {
+    		if (e.target.id === "coverPrompt") {
+    			promptEvent(false, promptExtra);
+    		}
+    	};
+
+    	const writable_props = ['promptPlaceholder', 'promptEvent', 'promptExtra'];
+
+    	Object.keys($$props).forEach(key => {
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console.warn(`<AskPrompt> was created with unknown prop '${key}'`);
+    	});
+
+    	const submit_handler = e => promptEvent(e, promptExtra);
+    	const click_handler = () => promptEvent(false, promptExtra);
+
+    	$$self.$$set = $$props => {
+    		if ('promptPlaceholder' in $$props) $$invalidate(0, promptPlaceholder = $$props.promptPlaceholder);
+    		if ('promptEvent' in $$props) $$invalidate(1, promptEvent = $$props.promptEvent);
+    		if ('promptExtra' in $$props) $$invalidate(2, promptExtra = $$props.promptExtra);
+    	};
+
+    	$$self.$capture_state = () => ({
+    		promptPlaceholder,
+    		promptEvent,
+    		promptExtra,
+    		divClick
+    	});
+
+    	$$self.$inject_state = $$props => {
+    		if ('promptPlaceholder' in $$props) $$invalidate(0, promptPlaceholder = $$props.promptPlaceholder);
+    		if ('promptEvent' in $$props) $$invalidate(1, promptEvent = $$props.promptEvent);
+    		if ('promptExtra' in $$props) $$invalidate(2, promptExtra = $$props.promptExtra);
+    	};
+
+    	if ($$props && "$$inject" in $$props) {
+    		$$self.$inject_state($$props.$$inject);
+    	}
+
+    	return [
+    		promptPlaceholder,
+    		promptEvent,
+    		promptExtra,
+    		divClick,
+    		submit_handler,
+    		click_handler
+    	];
+    }
+
+    class AskPrompt extends SvelteComponentDev {
+    	constructor(options) {
+    		super(options);
+
+    		init(this, options, instance$4, create_fragment$4, safe_not_equal, {
+    			promptPlaceholder: 0,
+    			promptEvent: 1,
+    			promptExtra: 2
+    		});
+
+    		dispatch_dev("SvelteRegisterComponent", {
+    			component: this,
+    			tagName: "AskPrompt",
+    			options,
+    			id: create_fragment$4.name
+    		});
+
+    		const { ctx } = this.$$;
+    		const props = options.props || {};
+
+    		if (/*promptPlaceholder*/ ctx[0] === undefined && !('promptPlaceholder' in props)) {
+    			console.warn("<AskPrompt> was created without expected prop 'promptPlaceholder'");
+    		}
+
+    		if (/*promptEvent*/ ctx[1] === undefined && !('promptEvent' in props)) {
+    			console.warn("<AskPrompt> was created without expected prop 'promptEvent'");
+    		}
+
+    		if (/*promptExtra*/ ctx[2] === undefined && !('promptExtra' in props)) {
+    			console.warn("<AskPrompt> was created without expected prop 'promptExtra'");
+    		}
+    	}
+
+    	get promptPlaceholder() {
+    		throw new Error("<AskPrompt>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set promptPlaceholder(value) {
+    		throw new Error("<AskPrompt>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	get promptEvent() {
+    		throw new Error("<AskPrompt>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set promptEvent(value) {
+    		throw new Error("<AskPrompt>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	get promptExtra() {
+    		throw new Error("<AskPrompt>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set promptExtra(value) {
+    		throw new Error("<AskPrompt>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+    }
+
+    /* src\components\Notification.svelte generated by Svelte v3.48.0 */
+    const file$2 = "src\\components\\Notification.svelte";
+
+    function create_fragment$3(ctx) {
+    	let div1;
+    	let div0;
+    	let p;
+    	let t0;
+    	let button;
+    	let div1_class_value;
+    	let current;
+    	let mounted;
+    	let dispose;
+    	const default_slot_template = /*#slots*/ ctx[3].default;
+    	const default_slot = create_slot(default_slot_template, ctx, /*$$scope*/ ctx[2], null);
+
+    	const block = {
+    		c: function create() {
+    			div1 = element("div");
+    			div0 = element("div");
+    			p = element("p");
+    			if (default_slot) default_slot.c();
+    			t0 = space();
+    			button = element("button");
+    			button.textContent = "✖";
+    			attr_dev(p, "class", "svelte-98l6sy");
+    			add_location(p, file$2, 12, 4, 296);
+    			attr_dev(button, "class", "svelte-98l6sy");
+    			add_location(button, file$2, 13, 4, 317);
+    			attr_dev(div0, "class", "notification-toast-inner svelte-98l6sy");
+    			add_location(div0, file$2, 11, 2, 252);
+    			attr_dev(div1, "class", div1_class_value = "notification-toast " + /*type*/ ctx[0] + " svelte-98l6sy");
+    			add_location(div1, file$2, 10, 0, 209);
+    		},
+    		l: function claim(nodes) {
+    			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, div1, anchor);
+    			append_dev(div1, div0);
+    			append_dev(div0, p);
+
+    			if (default_slot) {
+    				default_slot.m(p, null);
+    			}
+
+    			append_dev(div0, t0);
+    			append_dev(div0, button);
+    			current = true;
+
+    			if (!mounted) {
+    				dispose = listen_dev(button, "click", /*handleClose*/ ctx[1], false, false, false);
+    				mounted = true;
+    			}
+    		},
+    		p: function update(ctx, [dirty]) {
+    			if (default_slot) {
+    				if (default_slot.p && (!current || dirty & /*$$scope*/ 4)) {
+    					update_slot_base(
+    						default_slot,
+    						default_slot_template,
+    						ctx,
+    						/*$$scope*/ ctx[2],
+    						!current
+    						? get_all_dirty_from_scope(/*$$scope*/ ctx[2])
+    						: get_slot_changes(default_slot_template, /*$$scope*/ ctx[2], dirty, null),
+    						null
+    					);
+    				}
+    			}
+
+    			if (!current || dirty & /*type*/ 1 && div1_class_value !== (div1_class_value = "notification-toast " + /*type*/ ctx[0] + " svelte-98l6sy")) {
+    				attr_dev(div1, "class", div1_class_value);
+    			}
+    		},
+    		i: function intro(local) {
+    			if (current) return;
+    			transition_in(default_slot, local);
+    			current = true;
+    		},
+    		o: function outro(local) {
+    			transition_out(default_slot, local);
+    			current = false;
+    		},
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(div1);
+    			if (default_slot) default_slot.d(detaching);
     			mounted = false;
     			dispose();
     		}
@@ -3815,44 +4112,51 @@ var app = (function () {
 
     function instance$3($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
-    	validate_slots('NameChange', slots, []);
-    	let { currentName } = $$props;
+    	validate_slots('Notification', slots, ['default']);
+    	let { type } = $$props;
+    	const dispatch = createEventDispatcher();
 
-    	const changeName = () => {
-    		console.log("changing name");
+    	const handleClose = () => {
+    		dispatch("close", false);
     	};
 
-    	const writable_props = ['currentName'];
+    	const writable_props = ['type'];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1$2.warn(`<NameChange> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console.warn(`<Notification> was created with unknown prop '${key}'`);
     	});
 
     	$$self.$$set = $$props => {
-    		if ('currentName' in $$props) $$invalidate(0, currentName = $$props.currentName);
+    		if ('type' in $$props) $$invalidate(0, type = $$props.type);
+    		if ('$$scope' in $$props) $$invalidate(2, $$scope = $$props.$$scope);
     	};
 
-    	$$self.$capture_state = () => ({ currentName, changeName });
+    	$$self.$capture_state = () => ({
+    		createEventDispatcher,
+    		type,
+    		dispatch,
+    		handleClose
+    	});
 
     	$$self.$inject_state = $$props => {
-    		if ('currentName' in $$props) $$invalidate(0, currentName = $$props.currentName);
+    		if ('type' in $$props) $$invalidate(0, type = $$props.type);
     	};
 
     	if ($$props && "$$inject" in $$props) {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [currentName, changeName];
+    	return [type, handleClose, $$scope, slots];
     }
 
-    class NameChange extends SvelteComponentDev {
+    class Notification extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$3, create_fragment$3, safe_not_equal, { currentName: 0 });
+    		init(this, options, instance$3, create_fragment$3, safe_not_equal, { type: 0 });
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
-    			tagName: "NameChange",
+    			tagName: "Notification",
     			options,
     			id: create_fragment$3.name
     		});
@@ -3860,17 +4164,17 @@ var app = (function () {
     		const { ctx } = this.$$;
     		const props = options.props || {};
 
-    		if (/*currentName*/ ctx[0] === undefined && !('currentName' in props)) {
-    			console_1$2.warn("<NameChange> was created without expected prop 'currentName'");
+    		if (/*type*/ ctx[0] === undefined && !('type' in props)) {
+    			console.warn("<Notification> was created without expected prop 'type'");
     		}
     	}
 
-    	get currentName() {
-    		throw new Error("<NameChange>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	get type() {
+    		throw new Error("<Notification>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
 
-    	set currentName(value) {
-    		throw new Error("<NameChange>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	set type(value) {
+    		throw new Error("<Notification>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
     }
 
@@ -3879,60 +4183,207 @@ var app = (function () {
     const { console: console_1$1 } = globals;
     const file$1 = "src\\components\\Dashboard.svelte";
 
+    // (66:0) {#if notification.show}
+    function create_if_block_1(ctx) {
+    	let notification_1;
+    	let current;
+
+    	notification_1 = new Notification({
+    			props: {
+    				type: /*notification*/ ctx[4].type,
+    				$$slots: { default: [create_default_slot] },
+    				$$scope: { ctx }
+    			},
+    			$$inline: true
+    		});
+
+    	notification_1.$on("close", /*close_handler*/ ctx[12]);
+
+    	const block = {
+    		c: function create() {
+    			create_component(notification_1.$$.fragment);
+    		},
+    		m: function mount(target, anchor) {
+    			mount_component(notification_1, target, anchor);
+    			current = true;
+    		},
+    		p: function update(ctx, dirty) {
+    			const notification_1_changes = {};
+    			if (dirty & /*notification*/ 16) notification_1_changes.type = /*notification*/ ctx[4].type;
+
+    			if (dirty & /*$$scope, notification*/ 131088) {
+    				notification_1_changes.$$scope = { dirty, ctx };
+    			}
+
+    			notification_1.$set(notification_1_changes);
+    		},
+    		i: function intro(local) {
+    			if (current) return;
+    			transition_in(notification_1.$$.fragment, local);
+    			current = true;
+    		},
+    		o: function outro(local) {
+    			transition_out(notification_1.$$.fragment, local);
+    			current = false;
+    		},
+    		d: function destroy(detaching) {
+    			destroy_component(notification_1, detaching);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_if_block_1.name,
+    		type: "if",
+    		source: "(66:0) {#if notification.show}",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    // (67:2) <Notification      type={notification.type}      on:close={() => {        notification.show = false;      }}>
+    function create_default_slot(ctx) {
+    	let t_value = /*notification*/ ctx[4].slot + "";
+    	let t;
+
+    	const block = {
+    		c: function create() {
+    			t = text(t_value);
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, t, anchor);
+    		},
+    		p: function update(ctx, dirty) {
+    			if (dirty & /*notification*/ 16 && t_value !== (t_value = /*notification*/ ctx[4].slot + "")) set_data_dev(t, t_value);
+    		},
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(t);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_default_slot.name,
+    		type: "slot",
+    		source: "(67:2) <Notification      type={notification.type}      on:close={() => {        notification.show = false;      }}>",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    // (74:0) {#if askPrompt.promptShow}
+    function create_if_block$1(ctx) {
+    	let askprompt;
+    	let current;
+
+    	askprompt = new AskPrompt({
+    			props: {
+    				promptEvent: /*askPrompt*/ ctx[3].promptEvent,
+    				promptExtra: /*askPrompt*/ ctx[3].promptExtra,
+    				promptPlaceholder: /*askPrompt*/ ctx[3].promptPlaceholder
+    			},
+    			$$inline: true
+    		});
+
+    	const block = {
+    		c: function create() {
+    			create_component(askprompt.$$.fragment);
+    		},
+    		m: function mount(target, anchor) {
+    			mount_component(askprompt, target, anchor);
+    			current = true;
+    		},
+    		p: function update(ctx, dirty) {
+    			const askprompt_changes = {};
+    			if (dirty & /*askPrompt*/ 8) askprompt_changes.promptEvent = /*askPrompt*/ ctx[3].promptEvent;
+    			if (dirty & /*askPrompt*/ 8) askprompt_changes.promptExtra = /*askPrompt*/ ctx[3].promptExtra;
+    			if (dirty & /*askPrompt*/ 8) askprompt_changes.promptPlaceholder = /*askPrompt*/ ctx[3].promptPlaceholder;
+    			askprompt.$set(askprompt_changes);
+    		},
+    		i: function intro(local) {
+    			if (current) return;
+    			transition_in(askprompt.$$.fragment, local);
+    			current = true;
+    		},
+    		o: function outro(local) {
+    			transition_out(askprompt.$$.fragment, local);
+    			current = false;
+    		},
+    		d: function destroy(detaching) {
+    			destroy_component(askprompt, detaching);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_if_block$1.name,
+    		type: "if",
+    		source: "(74:0) {#if askPrompt.promptShow}",
+    		ctx
+    	});
+
+    	return block;
+    }
+
     function create_fragment$2(ctx) {
+    	let t0;
+    	let t1;
     	let main;
     	let header;
     	let h10;
-    	let t1;
+    	let t3;
     	let ul;
     	let li0;
-    	let button;
-    	let t3;
+    	let button0;
+    	let t5;
     	let li1;
     	let a;
-    	let t5;
-    	let section8;
+    	let t7;
+    	let section7;
     	let section0;
     	let p0;
-    	let t7;
+    	let t9;
     	let div1;
     	let p1;
-    	let t9;
-    	let div0;
     	let t11;
+    	let div0;
+    	let t13;
     	let meter;
-    	let t12;
+    	let t14;
     	let section1;
     	let stats;
-    	let t13;
-    	let section2;
-    	let h11;
-    	let t14;
-    	let t15_value = /*userData*/ ctx[0].userData.name + "";
     	let t15;
-    	let t16;
+    	let section2;
+    	let button1;
+    	let t17;
+    	let h11;
+    	let t18;
+    	let t19_value = /*userData*/ ctx[0].userData.name + "";
+    	let t19;
+    	let t20;
     	let section3;
     	let websites;
-    	let t17;
+    	let t21;
     	let section4;
     	let date;
-    	let t18;
+    	let t22;
     	let section5;
     	let password;
-    	let t19;
+    	let t23;
     	let section6;
     	let secondfactor;
-    	let t20;
-    	let section7;
-    	let namechange;
     	let current;
     	let mounted;
     	let dispose;
+    	let if_block0 = /*notification*/ ctx[4].show && create_if_block_1(ctx);
+    	let if_block1 = /*askPrompt*/ ctx[3].promptShow && create_if_block$1(ctx);
 
     	meter = new Meter({
     			props: {
-    				max: /*subscriptions*/ ctx[7],
-    				rotate: /*secureSubs*/ ctx[3],
+    				max: /*subscriptions*/ ctx[9],
+    				rotate: /*secureSubs*/ ctx[5],
     				gaugeColor: "#430498"
     			},
     			$$inline: true
@@ -3940,10 +4391,10 @@ var app = (function () {
 
     	stats = new Stats({
     			props: {
-    				mostPopular: /*popular*/ ctx[6],
-    				failed: /*failed*/ ctx[5],
-    				logins: /*logins*/ ctx[4],
-    				subscriptions: /*subscriptions*/ ctx[7]
+    				mostPopular: /*popular*/ ctx[8],
+    				failed: /*failed*/ ctx[7],
+    				logins: /*logins*/ ctx[6],
+    				subscriptions: /*subscriptions*/ ctx[9]
     			},
     			$$inline: true
     		});
@@ -3964,172 +4415,228 @@ var app = (function () {
     			$$inline: true
     		});
 
-    	password.$on("changeTfa", /*changeTfa_handler*/ ctx[9]);
+    	password.$on("changeTfa", /*changeTfa_handler*/ ctx[13]);
 
     	secondfactor = new SecondFactor({
     			props: {
     				tfa: /*tfaTrue*/ ctx[2],
-    				tfaKeys2: /*tfaKeys*/ ctx[8]
+    				tfaKeys2: /*tfaKeys*/ ctx[10]
     			},
     			$$inline: true
     		});
 
-    	namechange = new NameChange({ $$inline: true });
-
     	const block = {
     		c: function create() {
+    			if (if_block0) if_block0.c();
+    			t0 = space();
+    			if (if_block1) if_block1.c();
+    			t1 = space();
     			main = element("main");
     			header = element("header");
     			h10 = element("h1");
     			h10.textContent = "Auth Dashboard";
-    			t1 = space();
+    			t3 = space();
     			ul = element("ul");
     			li0 = element("li");
-    			button = element("button");
-    			button.textContent = "Toggle Theme";
-    			t3 = space();
+    			button0 = element("button");
+    			button0.textContent = "Toggle Theme";
+    			t5 = space();
     			li1 = element("li");
     			a = element("a");
     			a.textContent = "Logout";
-    			t5 = space();
-    			section8 = element("section");
+    			t7 = space();
+    			section7 = element("section");
     			section0 = element("section");
     			p0 = element("p");
     			p0.textContent = "Secure Subscriptions";
-    			t7 = space();
+    			t9 = space();
     			div1 = element("div");
     			p1 = element("p");
     			p1.textContent = "?";
-    			t9 = space();
+    			t11 = space();
     			div0 = element("div");
     			div0.textContent = "Percentage of websites your subscribed to that encrypts their data.";
-    			t11 = space();
+    			t13 = space();
     			create_component(meter.$$.fragment);
-    			t12 = space();
+    			t14 = space();
     			section1 = element("section");
     			create_component(stats.$$.fragment);
-    			t13 = space();
+    			t15 = space();
     			section2 = element("section");
+    			button1 = element("button");
+    			button1.textContent = "Change";
+    			t17 = space();
     			h11 = element("h1");
-    			t14 = text("Hi ");
-    			t15 = text(t15_value);
-    			t16 = space();
+    			t18 = text("Hi ");
+    			t19 = text(t19_value);
+    			t20 = space();
     			section3 = element("section");
     			create_component(websites.$$.fragment);
-    			t17 = space();
+    			t21 = space();
     			section4 = element("section");
     			create_component(date.$$.fragment);
-    			t18 = space();
+    			t22 = space();
     			section5 = element("section");
     			create_component(password.$$.fragment);
-    			t19 = space();
+    			t23 = space();
     			section6 = element("section");
     			create_component(secondfactor.$$.fragment);
-    			t20 = space();
-    			section7 = element("section");
-    			create_component(namechange.$$.fragment);
-    			attr_dev(h10, "class", "svelte-6rxt14");
-    			add_location(h10, file$1, 25, 4, 860);
-    			attr_dev(button, "class", "svelte-6rxt14");
-    			add_location(button, file$1, 27, 10, 905);
-    			attr_dev(li0, "class", "svelte-6rxt14");
-    			add_location(li0, file$1, 27, 6, 901);
+    			attr_dev(h10, "class", "svelte-1kirmmu");
+    			add_location(h10, file$1, 82, 4, 2488);
+    			attr_dev(button0, "class", "svelte-1kirmmu");
+    			add_location(button0, file$1, 84, 10, 2533);
+    			attr_dev(li0, "class", "svelte-1kirmmu");
+    			add_location(li0, file$1, 84, 6, 2529);
     			attr_dev(a, "href", "/");
-    			attr_dev(a, "class", "svelte-6rxt14");
-    			add_location(a, file$1, 28, 10, 969);
-    			attr_dev(li1, "class", "svelte-6rxt14");
-    			add_location(li1, file$1, 28, 6, 965);
-    			add_location(ul, file$1, 26, 4, 889);
-    			attr_dev(header, "class", "svelte-6rxt14");
-    			add_location(header, file$1, 24, 2, 846);
-    			attr_dev(p0, "class", "meter-title svelte-6rxt14");
-    			add_location(p0, file$1, 33, 6, 1092);
-    			attr_dev(p1, "class", "svelte-6rxt14");
-    			add_location(p1, file$1, 35, 8, 1180);
-    			attr_dev(div0, "class", "show svelte-6rxt14");
-    			add_location(div0, file$1, 36, 8, 1198);
-    			attr_dev(div1, "class", "extraInfo svelte-6rxt14");
-    			add_location(div1, file$1, 34, 6, 1147);
-    			attr_dev(section0, "class", "meterPart tile svelte-6rxt14");
-    			add_location(section0, file$1, 32, 4, 1052);
-    			attr_dev(section1, "class", "stats tile svelte-6rxt14");
-    			add_location(section1, file$1, 42, 4, 1425);
-    			attr_dev(h11, "class", "svelte-6rxt14");
-    			add_location(h11, file$1, 46, 6, 1584);
-    			attr_dev(section2, "class", "chart tile svelte-6rxt14");
-    			add_location(section2, file$1, 45, 4, 1548);
-    			attr_dev(section3, "class", "tile websites svelte-6rxt14");
-    			add_location(section3, file$1, 48, 4, 1642);
-    			attr_dev(section4, "class", "date tile svelte-6rxt14");
-    			add_location(section4, file$1, 51, 4, 1776);
-    			attr_dev(section5, "class", "password tile svelte-6rxt14");
-    			add_location(section5, file$1, 54, 4, 1841);
-    			attr_dev(section6, "class", "ips tile svelte-6rxt14");
-    			add_location(section6, file$1, 84, 4, 2753);
-    			attr_dev(section7, "class", "tile name-change svelte-6rxt14");
-    			add_location(section7, file$1, 87, 4, 2858);
-    			attr_dev(section8, "class", "main svelte-6rxt14");
-    			add_location(section8, file$1, 31, 2, 1024);
-    			attr_dev(main, "class", "svelte-6rxt14");
-    			add_location(main, file$1, 23, 0, 836);
+    			attr_dev(a, "class", "svelte-1kirmmu");
+    			add_location(a, file$1, 85, 10, 2597);
+    			attr_dev(li1, "class", "svelte-1kirmmu");
+    			add_location(li1, file$1, 85, 6, 2593);
+    			add_location(ul, file$1, 83, 4, 2517);
+    			attr_dev(header, "class", "svelte-1kirmmu");
+    			add_location(header, file$1, 81, 2, 2474);
+    			attr_dev(p0, "class", "meter-title svelte-1kirmmu");
+    			add_location(p0, file$1, 90, 6, 2720);
+    			attr_dev(p1, "class", "svelte-1kirmmu");
+    			add_location(p1, file$1, 92, 8, 2808);
+    			attr_dev(div0, "class", "show svelte-1kirmmu");
+    			add_location(div0, file$1, 93, 8, 2826);
+    			attr_dev(div1, "class", "extraInfo svelte-1kirmmu");
+    			add_location(div1, file$1, 91, 6, 2775);
+    			attr_dev(section0, "class", "meterPart tile svelte-1kirmmu");
+    			add_location(section0, file$1, 89, 4, 2680);
+    			attr_dev(section1, "class", "stats tile svelte-1kirmmu");
+    			add_location(section1, file$1, 99, 4, 3053);
+    			attr_dev(button1, "id", "change-name");
+    			attr_dev(button1, "class", "svelte-1kirmmu");
+    			add_location(button1, file$1, 103, 6, 3212);
+    			attr_dev(h11, "class", "svelte-1kirmmu");
+    			add_location(h11, file$1, 104, 6, 3282);
+    			attr_dev(section2, "class", "chart tile svelte-1kirmmu");
+    			add_location(section2, file$1, 102, 4, 3176);
+    			attr_dev(section3, "class", "tile websites svelte-1kirmmu");
+    			add_location(section3, file$1, 106, 4, 3340);
+    			attr_dev(section4, "class", "date tile svelte-1kirmmu");
+    			add_location(section4, file$1, 109, 4, 3474);
+    			attr_dev(section5, "class", "password tile svelte-1kirmmu");
+    			add_location(section5, file$1, 112, 4, 3539);
+    			attr_dev(section6, "class", "ips tile svelte-1kirmmu");
+    			add_location(section6, file$1, 142, 4, 4451);
+    			attr_dev(section7, "class", "main svelte-1kirmmu");
+    			add_location(section7, file$1, 88, 2, 2652);
+    			attr_dev(main, "class", "svelte-1kirmmu");
+    			add_location(main, file$1, 80, 0, 2464);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
+    			if (if_block0) if_block0.m(target, anchor);
+    			insert_dev(target, t0, anchor);
+    			if (if_block1) if_block1.m(target, anchor);
+    			insert_dev(target, t1, anchor);
     			insert_dev(target, main, anchor);
     			append_dev(main, header);
     			append_dev(header, h10);
-    			append_dev(header, t1);
+    			append_dev(header, t3);
     			append_dev(header, ul);
     			append_dev(ul, li0);
-    			append_dev(li0, button);
-    			append_dev(ul, t3);
+    			append_dev(li0, button0);
+    			append_dev(ul, t5);
     			append_dev(ul, li1);
     			append_dev(li1, a);
-    			append_dev(main, t5);
-    			append_dev(main, section8);
-    			append_dev(section8, section0);
+    			append_dev(main, t7);
+    			append_dev(main, section7);
+    			append_dev(section7, section0);
     			append_dev(section0, p0);
-    			append_dev(section0, t7);
+    			append_dev(section0, t9);
     			append_dev(section0, div1);
     			append_dev(div1, p1);
-    			append_dev(div1, t9);
+    			append_dev(div1, t11);
     			append_dev(div1, div0);
-    			append_dev(section0, t11);
+    			append_dev(section0, t13);
     			mount_component(meter, section0, null);
-    			append_dev(section8, t12);
-    			append_dev(section8, section1);
+    			append_dev(section7, t14);
+    			append_dev(section7, section1);
     			mount_component(stats, section1, null);
-    			append_dev(section8, t13);
-    			append_dev(section8, section2);
+    			append_dev(section7, t15);
+    			append_dev(section7, section2);
+    			append_dev(section2, button1);
+    			append_dev(section2, t17);
     			append_dev(section2, h11);
-    			append_dev(h11, t14);
-    			append_dev(h11, t15);
-    			append_dev(section8, t16);
-    			append_dev(section8, section3);
+    			append_dev(h11, t18);
+    			append_dev(h11, t19);
+    			append_dev(section7, t20);
+    			append_dev(section7, section3);
     			mount_component(websites, section3, null);
-    			append_dev(section8, t17);
-    			append_dev(section8, section4);
+    			append_dev(section7, t21);
+    			append_dev(section7, section4);
     			mount_component(date, section4, null);
-    			append_dev(section8, t18);
-    			append_dev(section8, section5);
+    			append_dev(section7, t22);
+    			append_dev(section7, section5);
     			mount_component(password, section5, null);
-    			append_dev(section8, t19);
-    			append_dev(section8, section6);
+    			append_dev(section7, t23);
+    			append_dev(section7, section6);
     			mount_component(secondfactor, section6, null);
-    			append_dev(section8, t20);
-    			append_dev(section8, section7);
-    			mount_component(namechange, section7, null);
     			current = true;
 
     			if (!mounted) {
-    				dispose = listen_dev(button, "click", toggle, false, false, false);
+    				dispose = [
+    					listen_dev(button0, "click", toggle, false, false, false),
+    					listen_dev(button1, "click", /*changeName*/ ctx[11], false, false, false)
+    				];
+
     				mounted = true;
     			}
     		},
     		p: function update(ctx, [dirty]) {
-    			if ((!current || dirty & /*userData*/ 1) && t15_value !== (t15_value = /*userData*/ ctx[0].userData.name + "")) set_data_dev(t15, t15_value);
+    			if (/*notification*/ ctx[4].show) {
+    				if (if_block0) {
+    					if_block0.p(ctx, dirty);
+
+    					if (dirty & /*notification*/ 16) {
+    						transition_in(if_block0, 1);
+    					}
+    				} else {
+    					if_block0 = create_if_block_1(ctx);
+    					if_block0.c();
+    					transition_in(if_block0, 1);
+    					if_block0.m(t0.parentNode, t0);
+    				}
+    			} else if (if_block0) {
+    				group_outros();
+
+    				transition_out(if_block0, 1, 1, () => {
+    					if_block0 = null;
+    				});
+
+    				check_outros();
+    			}
+
+    			if (/*askPrompt*/ ctx[3].promptShow) {
+    				if (if_block1) {
+    					if_block1.p(ctx, dirty);
+
+    					if (dirty & /*askPrompt*/ 8) {
+    						transition_in(if_block1, 1);
+    					}
+    				} else {
+    					if_block1 = create_if_block$1(ctx);
+    					if_block1.c();
+    					transition_in(if_block1, 1);
+    					if_block1.m(t1.parentNode, t1);
+    				}
+    			} else if (if_block1) {
+    				group_outros();
+
+    				transition_out(if_block1, 1, 1, () => {
+    					if_block1 = null;
+    				});
+
+    				check_outros();
+    			}
+
+    			if ((!current || dirty & /*userData*/ 1) && t19_value !== (t19_value = /*userData*/ ctx[0].userData.name + "")) set_data_dev(t19, t19_value);
     			const websites_changes = {};
     			if (dirty & /*userData*/ 1) websites_changes.sites = /*userData*/ ctx[0].sites;
     			if (dirty & /*socket*/ 2) websites_changes.socket = /*socket*/ ctx[1];
@@ -4144,26 +4651,32 @@ var app = (function () {
     		},
     		i: function intro(local) {
     			if (current) return;
+    			transition_in(if_block0);
+    			transition_in(if_block1);
     			transition_in(meter.$$.fragment, local);
     			transition_in(stats.$$.fragment, local);
     			transition_in(websites.$$.fragment, local);
     			transition_in(date.$$.fragment, local);
     			transition_in(password.$$.fragment, local);
     			transition_in(secondfactor.$$.fragment, local);
-    			transition_in(namechange.$$.fragment, local);
     			current = true;
     		},
     		o: function outro(local) {
+    			transition_out(if_block0);
+    			transition_out(if_block1);
     			transition_out(meter.$$.fragment, local);
     			transition_out(stats.$$.fragment, local);
     			transition_out(websites.$$.fragment, local);
     			transition_out(date.$$.fragment, local);
     			transition_out(password.$$.fragment, local);
     			transition_out(secondfactor.$$.fragment, local);
-    			transition_out(namechange.$$.fragment, local);
     			current = false;
     		},
     		d: function destroy(detaching) {
+    			if (if_block0) if_block0.d(detaching);
+    			if (detaching) detach_dev(t0);
+    			if (if_block1) if_block1.d(detaching);
+    			if (detaching) detach_dev(t1);
     			if (detaching) detach_dev(main);
     			destroy_component(meter);
     			destroy_component(stats);
@@ -4171,9 +4684,8 @@ var app = (function () {
     			destroy_component(date);
     			destroy_component(password);
     			destroy_component(secondfactor);
-    			destroy_component(namechange);
     			mounted = false;
-    			dispose();
+    			run_all(dispose);
     		}
     	};
 
@@ -4191,6 +4703,7 @@ var app = (function () {
     function instance$2($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('Dashboard', slots, []);
+    	const dispatch = createEventDispatcher();
     	let { userData } = $$props;
     	let { socket } = $$props;
     	let secureSubs = userData.https;
@@ -4201,12 +4714,58 @@ var app = (function () {
     	let tfa = userData.tfa;
     	let tfaKeys = userData.tfaKeys;
     	let tfaTrue = tfa === "1" ? true : false;
+
+    	let askPrompt = {
+    		promptPlaceholder: "",
+    		promptEvent: console.log,
+    		promptExtra: "",
+    		promptShow: false
+    	};
+
+    	let notification = { show: false, type: "success", slot: "" };
     	toggleStartup();
+
+    	const changeNameCallback = (name, _extra) => {
+    		if (!name) {
+    			$$invalidate(3, askPrompt.promptShow = false, askPrompt);
+    			return;
+    		}
+
+    		$$invalidate(3, askPrompt.promptShow = false, askPrompt);
+
+    		fetch(`/changeName?name=${name.target[0].value}`, { method: "POST" }).then(response => response.json()).then(data => {
+    			if (data.error) {
+    				$$invalidate(4, notification.type = "alert", notification);
+    				$$invalidate(4, notification.slot = `Cant change name to '${name.target[0].value}'.`, notification);
+    				$$invalidate(4, notification.show = true, notification);
+    				return;
+    			}
+
+    			$$invalidate(4, notification.type = "success", notification);
+    			$$invalidate(4, notification.slot = `Changed name to '${name.target[0].value}'.`, notification);
+    			$$invalidate(4, notification.show = true, notification);
+    			dispatch("nameChange", name.target[0].value);
+    		});
+    	};
+
+    	const changeName = () => {
+    		$$invalidate(3, askPrompt = {
+    			promptPlaceholder: "Change Name to",
+    			promptEvent: changeNameCallback,
+    			promptExtra: "",
+    			promptShow: true
+    		});
+    	};
+
     	const writable_props = ['userData', 'socket'];
 
     	Object.keys($$props).forEach(key => {
     		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1$1.warn(`<Dashboard> was created with unknown prop '${key}'`);
     	});
+
+    	const close_handler = () => {
+    		$$invalidate(4, notification.show = false, notification);
+    	};
 
     	const changeTfa_handler = async ({ detail }) => {
     		if (detail) {
@@ -4250,7 +4809,10 @@ var app = (function () {
     		toggleStartup,
     		Websites,
     		SecondFactor,
-    		NameChange,
+    		AskPrompt,
+    		Notification,
+    		createEventDispatcher,
+    		dispatch,
     		userData,
     		socket,
     		secureSubs,
@@ -4260,20 +4822,26 @@ var app = (function () {
     		subscriptions,
     		tfa,
     		tfaKeys,
-    		tfaTrue
+    		tfaTrue,
+    		askPrompt,
+    		notification,
+    		changeNameCallback,
+    		changeName
     	});
 
     	$$self.$inject_state = $$props => {
     		if ('userData' in $$props) $$invalidate(0, userData = $$props.userData);
     		if ('socket' in $$props) $$invalidate(1, socket = $$props.socket);
-    		if ('secureSubs' in $$props) $$invalidate(3, secureSubs = $$props.secureSubs);
-    		if ('logins' in $$props) $$invalidate(4, logins = $$props.logins);
-    		if ('failed' in $$props) $$invalidate(5, failed = $$props.failed);
-    		if ('popular' in $$props) $$invalidate(6, popular = $$props.popular);
-    		if ('subscriptions' in $$props) $$invalidate(7, subscriptions = $$props.subscriptions);
+    		if ('secureSubs' in $$props) $$invalidate(5, secureSubs = $$props.secureSubs);
+    		if ('logins' in $$props) $$invalidate(6, logins = $$props.logins);
+    		if ('failed' in $$props) $$invalidate(7, failed = $$props.failed);
+    		if ('popular' in $$props) $$invalidate(8, popular = $$props.popular);
+    		if ('subscriptions' in $$props) $$invalidate(9, subscriptions = $$props.subscriptions);
     		if ('tfa' in $$props) tfa = $$props.tfa;
-    		if ('tfaKeys' in $$props) $$invalidate(8, tfaKeys = $$props.tfaKeys);
+    		if ('tfaKeys' in $$props) $$invalidate(10, tfaKeys = $$props.tfaKeys);
     		if ('tfaTrue' in $$props) $$invalidate(2, tfaTrue = $$props.tfaTrue);
+    		if ('askPrompt' in $$props) $$invalidate(3, askPrompt = $$props.askPrompt);
+    		if ('notification' in $$props) $$invalidate(4, notification = $$props.notification);
     	};
 
     	if ($$props && "$$inject" in $$props) {
@@ -4284,12 +4852,16 @@ var app = (function () {
     		userData,
     		socket,
     		tfaTrue,
+    		askPrompt,
+    		notification,
     		secureSubs,
     		logins,
     		failed,
     		popular,
     		subscriptions,
     		tfaKeys,
+    		changeName,
+    		close_handler,
     		changeTfa_handler
     	];
     }
@@ -8255,7 +8827,7 @@ var app = (function () {
 
     const { console: console_1 } = globals;
 
-    // (18:0) {:else}
+    // (21:0) {:else}
     function create_else_block(ctx) {
     	let notlogged;
     	let current;
@@ -8295,14 +8867,14 @@ var app = (function () {
     		block,
     		id: create_else_block.name,
     		type: "else",
-    		source: "(18:0) {:else}",
+    		source: "(21:0) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (16:0) {#if loggedIn}
+    // (19:0) {#if loggedIn}
     function create_if_block(ctx) {
     	let dashboard;
     	let current;
@@ -8314,6 +8886,8 @@ var app = (function () {
     			},
     			$$inline: true
     		});
+
+    	dashboard.$on("nameChange", /*changeName*/ ctx[4]);
 
     	const block = {
     		c: function create() {
@@ -8346,7 +8920,7 @@ var app = (function () {
     		block,
     		id: create_if_block.name,
     		type: "if",
-    		source: "(16:0) {#if loggedIn}",
+    		source: "(19:0) {#if loggedIn}",
     		ctx
     	});
 
@@ -8452,6 +9026,10 @@ var app = (function () {
     		$$invalidate(0, loggedIn = true);
     	});
 
+    	const changeName = ({ detail }) => {
+    		$$invalidate(1, userData.userData.name = detail, userData);
+    	};
+
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
@@ -8465,7 +9043,8 @@ var app = (function () {
     		PROXY,
     		socket,
     		loggedIn,
-    		userData
+    		userData,
+    		changeName
     	});
 
     	$$self.$inject_state = $$props => {
@@ -8477,7 +9056,7 @@ var app = (function () {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [loggedIn, userData, PROXY, socket];
+    	return [loggedIn, userData, PROXY, socket, changeName];
     }
 
     class App extends SvelteComponentDev {
