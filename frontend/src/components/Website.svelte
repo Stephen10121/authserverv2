@@ -97,7 +97,7 @@
 
   .name {
     font-family: "Poppins", sans-serif;
-    font-size: 1rem;
+    font-size: 0.55rem;
   }
 
   .blackList button,
@@ -122,5 +122,10 @@
     -moz-user-select: none;
     -webkit-user-select: none;
     -ms-user-select: none;
+  }
+  @media only screen and (min-width: 1100px) {
+    .name {
+      font-size: 1rem;
+    }
   }
 </style>

@@ -178,7 +178,7 @@
     background-color: var(--header-background-color);
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     padding: 10px;
   }
 
@@ -186,6 +186,7 @@
     font-family: "Poppins", sans-serif;
     font-weight: bold;
     color: var(--header-color);
+    display: none;
   }
 
   header li {
@@ -221,6 +222,7 @@
   .meterPart {
     grid-area: meter;
     position: relative;
+    padding-top: 10px;
   }
 
   .stats {
@@ -229,6 +231,7 @@
 
   .chart {
     grid-area: chart;
+    padding: 30px 0;
   }
 
   .chart h1 {
@@ -261,13 +264,11 @@
     height: 100%;
     background-color: var(--main-background-color);
     padding: 20px;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr 1fr 1fr;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
     gap: 20px;
-    grid-template-areas: "meter stats stats stats" "chart websites date password" "... websites date ips";
-    overflow-x: hidden;
-    overflow-y: auto;
   }
 
   .tile {
@@ -279,6 +280,9 @@
     position: relative;
     box-shadow: var(--shadow);
     flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   .meter-title {
@@ -346,47 +350,44 @@
     border: none;
   }
 
-  @media only screen and (max-width: 1200px) {
+  @media only screen and (min-width: 700px) {
     .main {
-      grid-template-rows: 200px 200px 200px 200px;
-      grid-template-areas: "meter stats stats stats" "meter stats stats stats" "chart websites date password" "... websites date ips";
-    }
-  }
-
-  @media only screen and (max-width: 1100px) {
-    .main {
-      overflow-y: auto;
-      grid-template-rows: 200px 200px 200px 200px 200px 200px;
-      grid-template-areas: "meter stats stats stats" "meter stats stats stats" "chart chart date date" "password password date date" "ips websites websites ..." "... websites websites ...";
-    }
-  }
-
-  @media only screen and (max-width: 700px) {
-    .main {
-      overflow-y: auto;
-      grid-template-rows: 200px 200px 200px 200px 200px 200px;
-      grid-template-areas: "meter stats stats stats" "meter stats stats stats" "chart chart date date" "password password date date" "ips websites websites ..." "... websites websites ...";
-    }
-  }
-
-  @media only screen and (max-width: 550px) {
-    header {
-      justify-content: center;
-    }
-
-    header h1 {
-      display: none;
-    }
-
-    .main {
+      display: grid;
       overflow-y: auto;
       grid-template-columns: 1fr;
-      grid-template-areas: "meter" "stats" "chart" "date" "password" "ips" "websites";
-      grid-template-rows: auto;
+      align-items: initial;
+      justify-content: initial;
+      gap: 10px;
+      grid-template-rows: 1fr 1fr 1fr 1fr;
+      grid-template-areas: "meter stats stats stats" "meter stats stats stats" "chart chart date date" "password password date date" "ips websites websites ..." "... websites websites ...";
+    }
+  }
+  @media only screen and (min-width: 1100px) {
+    .main {
+      display: grid;
+      overflow-y: auto;
+      grid-template-columns: auto;
+      align-items: initial;
+      justify-content: initial;
+      gap: 10px;
+      grid-template-rows: 1fr 1fr 1fr 1fr;
+      grid-template-areas: "meter stats stats stats" "chart chart date date" "password password date date" "ips websites websites ..." "... websites websites ...";
     }
 
-    .meterPart {
-      padding-top: 10px;
+    .chart {
+      padding: 0;
+    }
+  }
+  @media only screen and (min-width: 1200px) {
+    .main {
+      display: grid;
+      overflow-y: auto;
+      grid-template-columns: auto;
+      align-items: initial;
+      justify-content: initial;
+      gap: 10px;
+      grid-template-rows: 1fr 1fr 1fr 1fr;
+      grid-template-areas: "meter stats stats stats stats" "chart websites date date password" "... websites date date ips";
     }
   }
 </style>

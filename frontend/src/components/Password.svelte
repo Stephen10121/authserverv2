@@ -49,6 +49,7 @@
     display: flex;
     align-items: center;
     justify-content: space-evenly;
+    flex-direction: column;
     padding: 40px 10px 10px 10px;
     position: relative;
     gap: 5px;
@@ -71,6 +72,14 @@
     padding: 10px;
     font-family: "Poppins", sans-serif;
     transition: background-color 0.15s linear;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+  }
+
+  .tfa p {
+    font-size: 0.7rem;
   }
   .password button {
     background-color: rgb(204, 0, 0);
@@ -166,6 +175,12 @@
     }
     to {
       background-color: gray;
+    }
+  }
+
+  @media only screen and (min-width: 700px) {
+    .password {
+      flex-direction: row;
     }
   }
 </style>
