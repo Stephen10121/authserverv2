@@ -10,6 +10,7 @@
   import AskPrompt from "./AskPrompt.svelte";
   import Notification from "./Notification.svelte";
   import { createEventDispatcher } from "svelte";
+  import { detach } from "svelte/internal";
   const dispatch = createEventDispatcher();
   export let userData: any;
   export let socket: any;
@@ -123,7 +124,25 @@
       <h1>Hi {userData.userData.name}</h1>
     </section>
     <section class="tile websites">
-      <Websites sites={userData.sites} {socket} userData={userData.userData} />
+      <Websites
+        sites={userData.sites}
+        {socket}
+        userData={userData.userData}
+        on:error={({ detail }) => {
+          notification = {
+            show: true,
+            type: "alert",
+            slot: detail,
+          };
+        }}
+        on:success={({ detail }) => {
+          notification = {
+            show: true,
+            type: "success",
+            slot: detail,
+          };
+        }}
+      />
     </section>
     <section class="date tile">
       <Date />
@@ -359,7 +378,7 @@
       justify-content: initial;
       gap: 10px;
       grid-template-rows: 1fr 1fr 1fr 1fr;
-      grid-template-areas: "meter stats stats stats" "meter stats stats stats" "chart chart date date" "password password date date" "ips websites websites ..." "... websites websites ...";
+      grid-template-areas: "meter stats stats stats" "chart chart date date" "password password date date" "ips websites websites ..." "... websites websites ...";
     }
 
     header {

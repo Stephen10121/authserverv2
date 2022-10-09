@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { createEventDispatcher } from "svelte";
+  const dispatch = createEventDispatcher();
   export let name: string;
   export let socket: any;
   export let userData: any;
@@ -11,7 +13,20 @@
   }
 
   socket.on("blacklist", (data: any) => {
-    console.log(data);
+    if (!data.success) {
+      blackListed = data.blacklist;
+      dispatch(
+        "error",
+        `Unable to ${data.blacklist ? "blacklist" : "unblacklist"} website.`
+      );
+      return;
+    }
+    dispatch(
+      "success",
+      `Successfully ${
+        data.blacklist ? "blacklisted" : "unblacklisted"
+      } website.`
+    );
   });
 </script>
 
