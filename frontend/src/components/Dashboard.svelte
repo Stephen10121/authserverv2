@@ -114,7 +114,7 @@
           Percentage of websites your subscribed to that encrypts their data.
         </div>
       </div>
-      <Meter max={subscriptions} rotate={secureSubs} gaugeColor="#430498" />
+      <Meter max={subscriptions-1} rotate={secureSubs-1} gaugeColor="#430498" />
     </section>
     <section class="stats tile">
       <Stats mostPopular={popular} {failed} {logins} {subscriptions} />
