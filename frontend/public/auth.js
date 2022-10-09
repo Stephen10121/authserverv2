@@ -172,6 +172,11 @@ const verificationResp = await fetch('/startAuthentication', {
 
 // Wait for the results of verification
 const verificationJSON = await verificationResp.json();
+    
+if (verificationJSON.blacklist) {
+            document.querySelector("#blacklisted").style.display = "flex";
+            return;
+}  
 
 // Show UI appropriate for the `verified` status
 if (verificationJSON && verificationJSON.verified) {
