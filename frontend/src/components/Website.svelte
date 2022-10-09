@@ -11,6 +11,7 @@
   } else {
     blackListed = true;
   }
+  let url = new URL(name ? name : "https://google.com");
 
   socket.on("blacklist", (data: any) => {
     if (!data.success) {
@@ -35,7 +36,7 @@
     <p class="blacklist-p">BlackListed</p>
   {/if}
   <img class="web-img" src="./window.svg" alt="Website" />
-  <p class="name">{name ? name : "N/A"}</p>
+  <a href={url.origin} target=_blank class="name">{name ? url.origin : "N/A"}</a>
   {#if blackListed}
     <button
       on:click={() => {
@@ -113,6 +114,8 @@
   .name {
     font-family: "Poppins", sans-serif;
     font-size: 0.55rem;
+    text-decoration: underline;
+    color: black;
   }
 
   .blackList button,
