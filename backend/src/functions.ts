@@ -48,7 +48,7 @@ const getOtherWebsiteKey = async (website: string, owner: string):Promise<String
 export const sendRequest = async (website: string, key: string, name: string, email: string, username: string) => {
     const userData = await getOtherWebsiteKey(website, username);
     if (userData === "false") {
-        return;
+        return "blacklist";
     }
     var clientServerOptions = {
         uri: website,

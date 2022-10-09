@@ -29,6 +29,13 @@ const io = require("socket.io")(server, {
     }
 });
 
+// Allow shared fonts.
+app.use((_req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Headers", "*");
+    next();
+});
+
 app.set('view engine', 'ejs');
 app.use(cookieParser(), express.json(), express.static(path.join(__dirname, "..", "..", "frontend", 'public')), express.urlencoded({ extended: true }), capture());
 app.use(twoAuthRoutes);

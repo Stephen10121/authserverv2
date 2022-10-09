@@ -159,3 +159,33 @@
     cursor: pointer;
     font-family: "George-Italic", sans-serif;
   }
+
+  .blackListed {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background-color: white;
+  }
+
+  .blackListed h1 {
+    font-family: "Poppins", sans-serif;
+    font-size: 2rem;
+  }
+
+  .blackListed button {
+    width: 90%;
+    padding: 10px;
+    background: none;
+    text-decoration: underline;
+    color: rgb(134, 255, 134);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: "George-Italic", sans-serif;
+  }

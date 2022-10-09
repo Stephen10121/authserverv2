@@ -42,6 +42,10 @@ const sendAuth = () => {
             alert("error. check console.");
             return;
         }
+        if (res.data.blacklist) {
+            document.querySelector("#blacklisted").style.display = "flex";
+            return;
+        }
         if (res.data.tfa) {
             document.querySelector("#tfaPart").style.display = "flex";
             document.querySelector("#isuser").style.display = "none";
@@ -59,6 +63,11 @@ const sendAuth = () => {
         alert("error. check console.");
         return;
     });
+}
+
+const unBlackList = () => {
+    window.open("https://auth.gruzservices.com", '_blank');
+    window.close();
 }
 
 document.getElementById("login-form").addEventListener("submit", (e) => {
@@ -89,6 +98,10 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
         if (res.data.error) {
             errorMessage.innerText = res.data.errorMessage;
             errorMessage.classList.remove("hide");
+            return;
+        }
+        if (res.data.blacklist) {
+            document.querySelector("#blacklisted").style.display = "flex";
             return;
         }
         if (res.data.tfa) {
