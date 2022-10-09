@@ -21,7 +21,7 @@
     iconBackground="rgba(0, 82, 195, 0.7)"
   />
   <StatCard
-    answer={subscriptions}
+    answer={subscriptions - 1}
     icon="./shield-check.svg"
     title="Subscriptions"
     iconBackground="rgba(195, 0, 40, 0.7)"
