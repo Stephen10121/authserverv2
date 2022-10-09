@@ -100,10 +100,10 @@ authRoutes.post("/auth", async (req, res) => {
         await User.update({id: user.id}, {usersPopularSites: JSON.stringify(sites)});
     }
     if (await sendRequest(req.body.userData.website, req.body.userData.key, user.usersRName, user.usersEmail, user.usersName) === "blacklist") {
+        await getConnection().getRepository(User).increment({id: user.id}, 'usersFailedLogins', 1);
         res.json({error: false, blacklist: true});
         return;
     }
-    
     await getConnection().getRepository(User).increment({id: user.id}, 'usersSuccessLogins', 1);
     res.json({ msg: "Good" });
 });
