@@ -310,8 +310,14 @@ twoAuthRoutes.post("/startAuthentication", async (req, res) => {
         }
         await User.update({id: user2.id}, {usersPopularSites: JSON.stringify(sites)});
     }
+    
+    if (await sendRequest(body.userData.website, body.userData.key, user2.usersRName, user2.usersEmail, user2.usersName) === "blacklist") {
+        await getConnection().getRepository(User).increment({id: user2.id}, 'usersFailedLogins', 1);
+        res.json({error: false, blacklist: true});
+        return;
+    }
+    
     await getConnection().getRepository(User).increment({id: user2.id}, 'usersSuccessLogins', 1);
-    await sendRequest(body.userData.website, body.userData.key, user2.usersRName, user2.usersEmail, user2.usersName);
     res.send({verified});
     return;
 });
