@@ -1,4 +1,3 @@
-<!-- svelte-ignore missing-declaration -->
 <script lang="ts">
   import Date from "./Date.svelte";
   import Meter from "./Meter.svelte";
@@ -10,7 +9,6 @@
   import AskPrompt from "./AskPrompt.svelte";
   import Notification from "./Notification.svelte";
   import { createEventDispatcher } from "svelte";
-  import { detach } from "svelte/internal";
   const dispatch = createEventDispatcher();
   export let userData: any;
   export let socket: any;
