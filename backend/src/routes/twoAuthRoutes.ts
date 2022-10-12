@@ -1,18 +1,11 @@
-import { verify } from "jsonwebtoken";
 import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from '@simplewebauthn/server';
-import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserModel, Authenticator, addNewDevice, getUserAuthenticator, saveUpdatedAuthenticatorCounter } from "./testfunctions";
-import { User } from "./entity/User";
+import {getUserFromDB, setUserCurrentChallenge, getUserCurrentChallenge, UserModel, Authenticator, addNewDevice, getUserAuthenticator, saveUpdatedAuthenticatorCounter } from "../testfunctions";
+import { User } from "../entity/User";
 import { getConnection } from "typeorm";
-import { sendRequest } from "./functions";
+import { sendRequest } from "../functions";
 import { Router } from "express";
-import { Key, KeysAuthenticator } from "./entity/Keys";
-
-interface Payload {
-    userId: number;
-    tokenVersion: number;
-    iat: number;
-    exp: number;
-}
+import { Key, KeysAuthenticator } from "../entity/Keys";
+import { userAuthorize } from "../userAuthorize";
 
 export const twoAuthRoutes = Router();
 
@@ -25,26 +18,13 @@ const origin = `https://${rpID}`;
 
     
 twoAuthRoutes.get("/getRegistrationOptions", async (req, res) => {
-    if (!req.cookies["G_VAR"]) {
-        res.status(400).send({ error: "User not logged in." });
-        return;
+    const authenticate = await userAuthorize(req);
+    if (!authenticate) {
+        res.json({error:true, msg: "Unauthorized"});
+        return
     }
 
-    let payload2;
-    try {
-        payload2 = verify(req.cookies["G_VAR"], process.env.REFRESH_TOKEN_SECRET!);
-    } catch (err) {
-        res.clearCookie("G_VAR").status(400).send({error: "Invalid cookie."});
-        return;
-    }
-
-    if (!payload2) {
-        res.clearCookie("G_VAR").status(400).send({ error: "No User found." });
-        return;
-    }
-
-    const payload = payload2 as Payload;
-
+    const { payload } = authenticate;
     // (Pseudocode) Retrieve the user from the database
     // after they've logged in
     const user: UserModel | boolean = await getUserFromDB(payload.userId);
@@ -88,30 +68,19 @@ twoAuthRoutes.get("/getRegistrationOptions", async (req, res) => {
     
 twoAuthRoutes.post("/register", async (req, res) => {
     const {body} = req;
-    
-    if (!req.cookies["G_VAR"]) {
-        res.status(400).send({ error: "User not logged in." });
-        return;
-    }
 
     if (!req.body["keyName"]) {
         res.status(400).send({error: "No Key Name."});
         return;
     }
-    let payload2;
-    try {
-        payload2 = verify(req.cookies["G_VAR"], process.env.REFRESH_TOKEN_SECRET!);
-    } catch (err) {
-        res.clearCookie("G_VAR").status(400).send({error: "Invalid cookie."});
+    
+    const authenticate = await userAuthorize(req);
+    if (!authenticate) {
+        res.json({ error: true, msg: "Unauthorized" });
         return;
     }
 
-    if (!payload2) {
-        res.clearCookie("G_VAR").status(400).send({ error: "No User found." });
-        return;
-    }
-
-    const payload = payload2 as Payload;
+    const { payload } = authenticate;
     
     // (Pseudocode) Retrieve the logged-in user
     const user: UserModel | boolean = await getUserFromDB(payload.userId);
@@ -171,28 +140,16 @@ twoAuthRoutes.post("/register", async (req, res) => {
     }
     res.send({verified});
     return;
-    });
+});
 
 twoAuthRoutes.get("/getAuthenticationOptions", async (req, res) => {
-    if (!req.cookies["G_VAR"]) {
-        res.status(400).send({ error: "User not logged in." });
+    const authenticate = await userAuthorize(req);
+    if (!authenticate) {
+        res.json({ error: true, msg: "Unauthorized" });
         return;
     }
 
-    let payload2;
-    try {
-        payload2 = verify(req.cookies["G_VAR"], process.env.REFRESH_TOKEN_SECRET!);
-    } catch (err) {
-        res.clearCookie("G_VAR").status(400).send({error: "Invalid cookie."});
-        return;
-    }
-
-    if (!payload2) {
-        res.clearCookie("G_VAR").status(400).send({ error: "No User found." });
-        return;
-    }
-
-    const payload = payload2 as Payload;
+    const { payload } = authenticate;
     
     // (Pseudocode) Retrieve the logged-in user
     const user: UserModel | boolean = await getUserFromDB(payload.userId);
@@ -225,25 +182,13 @@ twoAuthRoutes.get("/getAuthenticationOptions", async (req, res) => {
     
 twoAuthRoutes.post("/startAuthentication", async (req, res) => {
     const body = req.body;
-    if (!req.cookies["G_VAR"]) {
-        res.status(400).send({ error: "User not logged in." });
+    const authenticate = await userAuthorize(req);
+    if (!authenticate) {
+        res.json({ error: true, msg: "Unauthorized" });
         return;
     }
 
-    let payload2;
-    try {
-        payload2 = verify(req.cookies["G_VAR"], process.env.REFRESH_TOKEN_SECRET!);
-    } catch (err) {
-        res.clearCookie("G_VAR").status(400).send({error: "Invalid cookie."});
-        return;
-    }
-
-    if (!payload2) {
-        res.clearCookie("G_VAR").status(400).send({ error: "No User found." });
-        return;
-    }
-
-    const payload = payload2 as Payload;
+    const { payload } = authenticate;
     
     // (Pseudocode) Retrieve the logged-in user
     const user: UserModel | boolean = await getUserFromDB(payload.userId);
@@ -323,25 +268,14 @@ twoAuthRoutes.post("/startAuthentication", async (req, res) => {
 });
 
 twoAuthRoutes.post("/canceltfa", async (req, res) => {
-    if (!req.cookies["G_VAR"]) {
-        res.status(400).send({ error: "User not logged in." });
+    const authenticate = await userAuthorize(req);
+    if (!authenticate) {
+        res.json({ error: true, msg: "Unauthorized" });
         return;
     }
 
-    let payload2;
-    try {
-        payload2 = verify(req.cookies["G_VAR"], process.env.REFRESH_TOKEN_SECRET!);
-    } catch (err) {
-        res.clearCookie("G_VAR").status(400).send({error: "Invalid cookie."});
-        return;
-    }
+    const { payload } = authenticate;
 
-    if (!payload2) {
-        res.clearCookie("G_VAR").status(400).send({ error: "No User found." });
-        return;
-    }
-
-    const payload = payload2 as Payload;
     try {
         await User.update({id: payload.userId}, {users2FA: "0"});
     } catch (err) {
@@ -353,30 +287,19 @@ twoAuthRoutes.post("/canceltfa", async (req, res) => {
 });
 
 twoAuthRoutes.post("/deleteKey", async (req, res) => {
-    if (!req.cookies["G_VAR"]) {
-        res.status(400).send({ error: "User not logged in." });
-        return;
-    }
-    
     if (!req.body["name"] || !req.body["id"]) {
         res.status(400).send({error: "Missing parameters."});
         return;
     }
 
-    let payload2;
-    try {
-        payload2 = verify(req.cookies["G_VAR"], process.env.REFRESH_TOKEN_SECRET!);
-    } catch (err) {
-        res.clearCookie("G_VAR").status(400).send({error: "Invalid cookie."});
+    const authenticate = await userAuthorize(req);
+    if (!authenticate) {
+        res.json({ error: true, msg: "Unauthorized" });
         return;
     }
 
-    if (!payload2) {
-        res.clearCookie("G_VAR").status(400).send({ error: "No User found." });
-        return;
-    }
+    const { payload } = authenticate;
 
-    const payload = payload2 as Payload;
     try {
         const gotKey = await Key.findOne({where: { keysOwner: payload.userId, id: req.body.id}});
         if (!gotKey) {
@@ -399,25 +322,14 @@ twoAuthRoutes.post("/deleteKey", async (req, res) => {
 });
 
 twoAuthRoutes.get("/getkeys", async (req, res) => {
-    if (!req.cookies["G_VAR"]) {
-        res.status(400).send({ error: "User not logged in." });
+    const authenticate = await userAuthorize(req);
+    if (!authenticate) {
+        res.json({ error: true, msg: "Unauthorized" });
         return;
     }
 
-    let payload2;
-    try {
-        payload2 = verify(req.cookies["G_VAR"], process.env.REFRESH_TOKEN_SECRET!);
-    } catch (err) {
-        res.clearCookie("G_VAR").status(400).send({error: "Invalid cookie."});
-        return;
-    }
+    const { payload } = authenticate;
 
-    if (!payload2) {
-        res.clearCookie("G_VAR").status(400).send({ error: "No User found." });
-        return;
-    }
-
-    const payload = payload2 as Payload;
     try {
         const gotKey = await Key.find({where: { keysOwner: payload.userId}});
         if (!gotKey) {
@@ -441,25 +353,14 @@ twoAuthRoutes.get("/getkeys", async (req, res) => {
 });
 
 twoAuthRoutes.post("/enabletfa", async (req, res) => {
-    if (!req.cookies["G_VAR"]) {
-        res.status(400).send({ error: "User not logged in." });
+    const authenticate = await userAuthorize(req);
+    if (!authenticate) {
+        res.json({ error: true, msg: "Unauthorized" });
         return;
     }
 
-    let payload2;
-    try {
-        payload2 = verify(req.cookies["G_VAR"], process.env.REFRESH_TOKEN_SECRET!);
-    } catch (err) {
-        res.clearCookie("G_VAR").status(400).send({error: "Invalid cookie."});
-        return;
-    }
+    const { payload } = authenticate;
 
-    if (!payload2) {
-        res.clearCookie("G_VAR").status(400).send({ error: "No User found." });
-        return;
-    }
-
-    const payload = payload2 as Payload;
     try {
         await User.update({id: payload.userId}, {users2FA: "1"});
     } catch (err) {

@@ -1,12 +1,9 @@
 import { hash } from "bcryptjs";
 import { Router } from "express";
-import { verify } from "jsonwebtoken";
-import { createAccessToken, createRefreshToken } from "./auth";
-import { User } from "./entity/User";
-import { sendRefreshToken } from "./sendRefreshToken";
+import { User } from "../entity/User";
+import { createRefreshToken } from "../auth";
+
 export const signupRoutes = Router();
-
-
 
 signupRoutes.get("/signup", (req, res) => {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
@@ -70,33 +67,37 @@ signupRoutes.post("/signup", async (req, res) => {
     res.cookie("G_VAR", createRefreshToken(userLogged), { maxAge: 990000000 }).json({ error: false });
 });
 
-signupRoutes.post("/refresh_token", async (req, res) => {
-    const token = req.cookies.G_VAR;
+// Not using this yet
+// import { verify } from "jsonwebtoken";
+// import { createAccessToken, createRefreshToken } from "../auth";
+// import { sendRefreshToken } from "../sendRefreshToken";
+// signupRoutes.post("/refresh_token", async (req, res) => {
+//     const token = req.cookies.G_VAR;
 
-    if (!token) {
-        return res.send({ ok: false, accessToken: "" });
-    }
+//     if (!token) {
+//         return res.send({ ok: false, accessToken: "" });
+//     }
 
-    let payload: any = null;
+//     let payload: any = null;
 
-    try {
-        payload = verify(token, process.env.REFRESH_TOKEN_SECRET!);
-    } catch (err) {
-        console.error(err);
-        return res.send({ ok: false, accessToken: "" });
-    }
+//     try {
+//         payload = verify(token, process.env.REFRESH_TOKEN_SECRET!);
+//     } catch (err) {
+//         console.error(err);
+//         return res.send({ ok: false, accessToken: "" });
+//     }
 
-    const user = await User.findOne({ id: payload.userId });
+//     const user = await User.findOne({ id: payload.userId });
 
-    if (!user) {
-        return res.send({ ok: false, accessToken: "" });
-    }
+//     if (!user) {
+//         return res.send({ ok: false, accessToken: "" });
+//     }
 
-    if (user.tokenVersion !== payload.tokenVersion) {
-        return res.send({ ok: false, accessToken: "" });
-    }
+//     if (user.tokenVersion !== payload.tokenVersion) {
+//         return res.send({ ok: false, accessToken: "" });
+//     }
 
-    sendRefreshToken(res, createRefreshToken(user));
+//     sendRefreshToken(res, createRefreshToken(user));
 
-    return res.send({ ok: true, accessToken: createAccessToken(user) });
-});
+//     return res.send({ ok: true, accessToken: createAccessToken(user) });
+// });

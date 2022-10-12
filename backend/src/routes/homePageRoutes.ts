@@ -1,16 +1,9 @@
 import { Router } from "express";
-import { verify } from "jsonwebtoken";
-import { Key, KeysAuthenticator } from "./entity/Keys";
-import { Site } from "./entity/Sites";
-import { User } from "./entity/User";
+import { Key, KeysAuthenticator } from "../entity/Keys";
+import { Site } from "../entity/Sites";
+import { User } from "../entity/User";
+import { userAuthorize } from "../userAuthorize";
 export const homePageRoutes = Router();
-
-interface Payload {
-    userId: number;
-    tokenVersion: number;
-    iat: number;
-    exp: number;
-}
 
 homePageRoutes.post("/contact", (req, res) => {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress ;
@@ -26,31 +19,14 @@ homePageRoutes.post("/changeName", async (req, res) => {
         return;
     }
     
-    if (!req.cookies["G_VAR"]) {
-        res.json({ error: true, msg: "Unauthorized" });
+    const authorize = await userAuthorize(req);
+    
+    if (!authorize) {
+        res.json({ error: true, msg: "Unauthorized" })
         return;
     }
+    const { payload } = authorize;
 
-    let payload2;
-    try {
-        payload2 = verify(req.cookies.G_VAR, process.env.REFRESH_TOKEN_SECRET!);
-    } catch (err) {
-        res.json({ error: true, msg: "Unauthorized" });
-        return;
-    }
-
-    if (!payload2) {
-        res.json({ error: true, msg: "Unauthorized" });
-        return;
-    }
-
-    const payload = payload2 as Payload;
-    const user = await User.findOne({ where: {id: payload.userId} });
-
-    if (!user) {
-        res.json({ error: true, msg: "Unauthorized" });
-        return;
-    }
     try {
         await User.update({ id: payload.userId }, { usersRName: req.query.name.toString() });
     } catch (err) {

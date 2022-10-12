@@ -8,11 +8,11 @@ import cookieParser from "cookie-parser";
 import { capture } from "express-device";
 import http from "http";
 import path from "path";
-import { twoAuthRoutes } from "./twoAuthRoutes";
-import { authRoutes } from "./authRoutes";
-import { homePageRoutes, myAuth } from "./homePageRoutes";
-import { loginRoutes } from "./loginRoutes";
-import { signupRoutes } from "./signupRoutes";
+import { twoAuthRoutes } from "./routes/twoAuthRoutes";
+import { authRoutes } from "./routes/authRoutes";
+import { homePageRoutes, myAuth } from "./routes/homePageRoutes";
+import { loginRoutes } from "./routes/loginRoutes";
+import { signupRoutes } from "./routes/signupRoutes";
 import socketConnection from "./socketConnection";
 
 const PORT = process.env.PORT || 4000;

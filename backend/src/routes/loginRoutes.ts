@@ -1,9 +1,9 @@
 import { compare } from "bcryptjs";
 import { getConnection } from "typeorm";
-import { createRefreshToken } from "./auth";
-import { User } from "./entity/User";
+import { createRefreshToken } from "../auth";
+import { User } from "../entity/User";
 import { Router } from "express";
-import { Key } from "./entity/Keys";
+import { Key } from "../entity/Keys";
 export const loginRoutes = Router();
 
 loginRoutes.post("/login", async (req, res) => {
