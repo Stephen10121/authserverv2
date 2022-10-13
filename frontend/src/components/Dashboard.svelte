@@ -70,6 +70,29 @@
       });
   };
 
+  const changePasswordCallback = (name: any, _extra: any) => {
+    if (!name) {
+      askPrompt.promptShow = false;
+      return;
+    }
+    askPrompt.promptShow = false;
+    fetch(`/changePassword?newPassword=${name.target[0].value}`, {
+      method: "POST",
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.error) {
+          notification.type = "alert";
+          notification.slot = data.msg;
+          notification.show = true;
+          return;
+        }
+        notification.type = "success";
+        notification.slot = "Changed Password.";
+        notification.show = true;
+      });
+  };
+
   const changeName = () => {
     askPrompt = {
       promptPlaceholder: "Change Name to",
@@ -151,6 +174,14 @@
     </section>
     <section class="password tile">
       <Password
+        on:change-password={() => {
+          askPrompt = {
+            promptPlaceholder: "Change password to",
+            promptEvent: changePasswordCallback,
+            promptExtra: "",
+            promptShow: true,
+          };
+        }}
         {tfaTrue}
         on:changeTfa={async ({ detail }) => {
           if (detail) {

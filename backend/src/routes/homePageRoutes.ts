@@ -57,7 +57,7 @@ homePageRoutes.post("/changePassword", async (req, res) => {
     }
 
     const { payload } = authorize;
-    const hashedPassword = await hash(req.query.newPassword, process.env.SALT!);
+    const hashedPassword = await hash(req.query.newPassword, parseInt(process.env.SALT!));
     try {
         await User.update({ id: payload.userId }, { usersPassword: hashedPassword });
     } catch (err) {

@@ -34,7 +34,7 @@ signupRoutes.post("/signup", async (req, res) => {
         return;
     }
 
-    const hashedPassword = await hash(data.password, process.env.SALT!);
+    const hashedPassword = await hash(data.password, parseInt(process.env.SALT!));
 
     try {
         await User.insert({

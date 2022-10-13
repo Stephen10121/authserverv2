@@ -9,7 +9,11 @@
 
 <div class="password">
   <p class="title">Danger Zone</p>
-  <button>Change Password</button>
+  <button
+    on:click={() => {
+      dispatch("change-password", true);
+    }}>Change Password</button
+  >
   <button
     on:click={() => {
       showPrompt = true;
