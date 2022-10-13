@@ -1,5 +1,6 @@
 import { compare, hash } from "bcryptjs";
 import { Router } from "express";
+import { getConnection } from "typeorm";
 import { Key, KeysAuthenticator } from "../entity/Keys";
 import { Site } from "../entity/Sites";
 import { User } from "../entity/User";
@@ -71,6 +72,66 @@ homePageRoutes.post("/changePassword", async (req, res) => {
         res.json({ error: true, msg: "Internal Error" });
         return;
     }
+    res.json({error: false, msg: "Success"});
+});
+
+homePageRoutes.post("/deleteAccount", async (req, res) => {
+    if (!req.query.password || typeof req.query.password !== "string") {
+        res.json({ error: true, msg: "Missing Arguments" });
+        return;
+    }
+
+    if (req.query.password.includes("\\") || req.query.password.length === 0) {
+        res.json({ error: true, msg: "Wrong password." });
+        return;
+    }
+
+    const authorize = await userAuthorize(req);
+
+    if (!authorize) {
+        res.json({ error: true, msg: "Unauthorized" });
+        return;
+    }
+
+    const { user } = authorize;
+
+    if (!await compare(req.query.password, user.usersPassword)) {
+        res.json({ error: true, msg: "Wrong password." });
+        return;
+    }
+    try {
+        await getConnection()
+        .createQueryBuilder()
+        .delete()
+        .from(Key)
+        .where("keysOwner = :keysOwner", { keysOwner: user.id })
+        .execute();
+        await getConnection()
+        .createQueryBuilder()
+        .delete()
+        .from(KeysAuthenticator)
+        .where("owner = :owner", { owner: user.id })
+        .execute();
+        await getConnection()
+        .createQueryBuilder()
+        .delete()
+        .from(User)
+        .where("usersName = :usersName", { usersName: user.usersName })
+        .execute();
+        await getConnection()
+        .createQueryBuilder()
+        .delete()
+        .from(Site)
+        .where("sitesOwner = :sitesOwner", { sitesOwner: user.usersName })
+        .execute();
+    } catch (err) {
+        console.log(err);
+        res.json({ error: true, msg: "Error deleting user." });
+        return;
+    }
+
+    console.log(`[server] Deleted user "${user.usersName}"`);
+
     res.json({error: false, msg: "Success"});
 });
 

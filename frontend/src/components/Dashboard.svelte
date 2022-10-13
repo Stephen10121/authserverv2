@@ -9,6 +9,7 @@
   import AskPrompt from "./AskPrompt.svelte";
   import Notification from "./Notification.svelte";
   import { createEventDispatcher } from "svelte";
+  import { name } from "platform";
   const dispatch = createEventDispatcher();
   export let userData: any;
   export let socket: any;
@@ -146,6 +147,31 @@
       promptShow: true,
     };
   };
+
+  const deleteAccountCallback = (name: any, _extra: any) => {
+    askPrompt.promptShow = false;
+    if (!name) {
+      return;
+    }
+    fetch(`/deleteAccount?password=${name.target[0].value}`, {
+      method: "POST",
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.error) {
+          notification.type = "alert";
+          notification.slot = data.msg;
+          notification.show = true;
+          return;
+        }
+        notification.type = "success";
+        notification.slot = "Account deleted.";
+        notification.show = true;
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 1000);
+      });
+  };
 </script>
 
 {#if notification.show}
@@ -222,7 +248,7 @@
         on:delete-account={() => {
           askPrompt = {
             promptPlaceholder: "Password",
-            promptEvent: changePasswordCallback,
+            promptEvent: deleteAccountCallback,
             promptExtra: "",
             promptShow: true,
           };
