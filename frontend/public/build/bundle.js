@@ -1274,20 +1274,20 @@ var app = (function () {
     			t3 = text(/*answer*/ ctx[0]);
     			if (!src_url_equal(img.src, img_src_value = /*icon*/ ctx[1] ? /*icon*/ ctx[1] : null)) attr_dev(img, "src", img_src_value);
     			attr_dev(img, "alt", "Icon");
-    			attr_dev(img, "class", "svelte-3zes9f");
+    			attr_dev(img, "class", "svelte-kd328s");
     			add_location(img, file$b, 11, 5, 254);
 
     			set_style(div0, "background-color", /*iconBackground*/ ctx[3]
     			? /*iconBackground*/ ctx[3]
     			: 'rgba(79, 0, 153, 0.7)');
 
-    			attr_dev(div0, "class", "svelte-3zes9f");
+    			attr_dev(div0, "class", "svelte-kd328s");
     			add_location(div0, file$b, 7, 2, 138);
-    			attr_dev(h2, "class", "svelte-3zes9f");
+    			attr_dev(h2, "class", "svelte-kd328s");
     			add_location(h2, file$b, 13, 2, 311);
-    			attr_dev(p, "class", "svelte-3zes9f");
+    			attr_dev(p, "class", "svelte-kd328s");
     			add_location(p, file$b, 14, 2, 347);
-    			attr_dev(div1, "class", "card svelte-3zes9f");
+    			attr_dev(div1, "class", "card svelte-kd328s");
     			add_location(div1, file$b, 6, 0, 116);
     		},
     		l: function claim(nodes) {
@@ -4634,50 +4634,50 @@ var app = (function () {
     			t23 = space();
     			section6 = element("section");
     			create_component(secondfactor.$$.fragment);
-    			attr_dev(h10, "class", "svelte-gggfoe");
+    			attr_dev(h10, "class", "svelte-1aa9bis");
     			add_location(h10, file$1, 81, 4, 2444);
-    			attr_dev(button0, "class", "svelte-gggfoe");
+    			attr_dev(button0, "class", "svelte-1aa9bis");
     			add_location(button0, file$1, 83, 10, 2489);
-    			attr_dev(li0, "class", "svelte-gggfoe");
+    			attr_dev(li0, "class", "svelte-1aa9bis");
     			add_location(li0, file$1, 83, 6, 2485);
     			attr_dev(a, "href", "/");
-    			attr_dev(a, "class", "svelte-gggfoe");
+    			attr_dev(a, "class", "svelte-1aa9bis");
     			add_location(a, file$1, 84, 10, 2553);
-    			attr_dev(li1, "class", "svelte-gggfoe");
+    			attr_dev(li1, "class", "svelte-1aa9bis");
     			add_location(li1, file$1, 84, 6, 2549);
     			add_location(ul, file$1, 82, 4, 2473);
-    			attr_dev(header, "class", "svelte-gggfoe");
+    			attr_dev(header, "class", "svelte-1aa9bis");
     			add_location(header, file$1, 80, 2, 2430);
-    			attr_dev(p0, "class", "meter-title svelte-gggfoe");
+    			attr_dev(p0, "class", "meter-title svelte-1aa9bis");
     			add_location(p0, file$1, 89, 6, 2676);
-    			attr_dev(p1, "class", "svelte-gggfoe");
+    			attr_dev(p1, "class", "svelte-1aa9bis");
     			add_location(p1, file$1, 91, 8, 2764);
-    			attr_dev(div0, "class", "show svelte-gggfoe");
+    			attr_dev(div0, "class", "show svelte-1aa9bis");
     			add_location(div0, file$1, 92, 8, 2782);
-    			attr_dev(div1, "class", "extraInfo svelte-gggfoe");
+    			attr_dev(div1, "class", "extraInfo svelte-1aa9bis");
     			add_location(div1, file$1, 90, 6, 2731);
-    			attr_dev(section0, "class", "meterPart tile svelte-gggfoe");
+    			attr_dev(section0, "class", "meterPart tile svelte-1aa9bis");
     			add_location(section0, file$1, 88, 4, 2636);
-    			attr_dev(section1, "class", "stats tile svelte-gggfoe");
-    			add_location(section1, file$1, 98, 4, 3013);
+    			attr_dev(section1, "class", "stats tile svelte-1aa9bis");
+    			add_location(section1, file$1, 102, 4, 3051);
     			attr_dev(button1, "id", "change-name");
-    			attr_dev(button1, "class", "svelte-gggfoe");
-    			add_location(button1, file$1, 102, 6, 3172);
-    			attr_dev(h11, "class", "svelte-gggfoe");
-    			add_location(h11, file$1, 103, 6, 3242);
-    			attr_dev(section2, "class", "chart tile svelte-gggfoe");
-    			add_location(section2, file$1, 101, 4, 3136);
-    			attr_dev(section3, "class", "tile websites svelte-gggfoe");
-    			add_location(section3, file$1, 105, 4, 3300);
-    			attr_dev(section4, "class", "date tile svelte-gggfoe");
-    			add_location(section4, file$1, 126, 4, 3814);
-    			attr_dev(section5, "class", "password tile svelte-gggfoe");
-    			add_location(section5, file$1, 129, 4, 3879);
-    			attr_dev(section6, "class", "ips tile svelte-gggfoe");
-    			add_location(section6, file$1, 159, 4, 4791);
-    			attr_dev(section7, "class", "main svelte-gggfoe");
+    			attr_dev(button1, "class", "svelte-1aa9bis");
+    			add_location(button1, file$1, 106, 6, 3210);
+    			attr_dev(h11, "class", "svelte-1aa9bis");
+    			add_location(h11, file$1, 107, 6, 3280);
+    			attr_dev(section2, "class", "chart tile svelte-1aa9bis");
+    			add_location(section2, file$1, 105, 4, 3174);
+    			attr_dev(section3, "class", "tile websites svelte-1aa9bis");
+    			add_location(section3, file$1, 109, 4, 3338);
+    			attr_dev(section4, "class", "date tile svelte-1aa9bis");
+    			add_location(section4, file$1, 130, 4, 3852);
+    			attr_dev(section5, "class", "password tile svelte-1aa9bis");
+    			add_location(section5, file$1, 133, 4, 3917);
+    			attr_dev(section6, "class", "ips tile svelte-1aa9bis");
+    			add_location(section6, file$1, 163, 4, 4829);
+    			attr_dev(section7, "class", "main svelte-1aa9bis");
     			add_location(section7, file$1, 87, 2, 2608);
-    			attr_dev(main, "class", "svelte-gggfoe");
+    			attr_dev(main, "class", "svelte-1aa9bis");
     			add_location(main, file$1, 79, 0, 2420);
     		},
     		l: function claim(nodes) {

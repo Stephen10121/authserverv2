@@ -19,7 +19,7 @@
 <style>
   .card div {
     grid-area: img;
-    width: 100%;
+    width: 80%;
     padding: 10px;
     display: flex;
     align-items: center;
@@ -49,6 +49,10 @@
     font-family: "Poppins", sans-serif;
     font-size: 0.75rem;
     color: var(--main-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
   }
 
   .card {
@@ -56,7 +60,7 @@
     grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: 1fr 1fr;
     grid-template-areas: "img title title" "img res res";
-    width: 170px;
+    width: 200px;
     padding: 10px;
     gap: 10px;
     /* border-radius: 10px;
