@@ -71,11 +71,35 @@
   };
 
   const changePasswordCallback = (name: any, _extra: any) => {
+    askPrompt.promptShow = false;
+    if (!name) {
+      notification.type = "alert";
+      notification.slot = "Error";
+      notification.show = true;
+      return;
+    }
+    setTimeout(() => {
+      askPrompt = {
+        promptPlaceholder: "Confirm password",
+        promptEvent: changePasswordConfirmCallback,
+        promptExtra: name.target[0].value,
+        promptShow: true,
+      };
+    }, 1);
+  };
+
+  const changePasswordConfirmCallback = (name: any, extra: any) => {
     if (!name) {
       askPrompt.promptShow = false;
       return;
     }
     askPrompt.promptShow = false;
+    if (extra !== name.target[0].value) {
+      notification.type = "alert";
+      notification.slot = "Passwords dont match.";
+      notification.show = true;
+      return;
+    }
     fetch(`/changePassword?newPassword=${name.target[0].value}`, {
       method: "POST",
     })

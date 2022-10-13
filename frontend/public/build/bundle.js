@@ -4340,7 +4340,7 @@ var app = (function () {
     const { console: console_1$1 } = globals;
     const file$1 = "src\\components\\Dashboard.svelte";
 
-    // (87:0) {#if notification.show}
+    // (110:0) {#if notification.show}
     function create_if_block_1(ctx) {
     	let notification_1;
     	let current;
@@ -4368,7 +4368,7 @@ var app = (function () {
     			const notification_1_changes = {};
     			if (dirty & /*notification*/ 16) notification_1_changes.type = /*notification*/ ctx[4].type;
 
-    			if (dirty & /*$$scope, notification*/ 2097168) {
+    			if (dirty & /*$$scope, notification*/ 4194320) {
     				notification_1_changes.$$scope = { dirty, ctx };
     			}
 
@@ -4392,14 +4392,14 @@ var app = (function () {
     		block,
     		id: create_if_block_1.name,
     		type: "if",
-    		source: "(87:0) {#if notification.show}",
+    		source: "(110:0) {#if notification.show}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (88:2) <Notification      type={notification.type}      on:close={() => {        notification.show = false;      }}>
+    // (111:2) <Notification      type={notification.type}      on:close={() => {        notification.show = false;      }}>
     function create_default_slot(ctx) {
     	let t_value = /*notification*/ ctx[4].slot + "";
     	let t;
@@ -4423,14 +4423,14 @@ var app = (function () {
     		block,
     		id: create_default_slot.name,
     		type: "slot",
-    		source: "(88:2) <Notification      type={notification.type}      on:close={() => {        notification.show = false;      }}>",
+    		source: "(111:2) <Notification      type={notification.type}      on:close={() => {        notification.show = false;      }}>",
     		ctx
     	});
 
     	return block;
     }
 
-    // (95:0) {#if askPrompt.promptShow}
+    // (118:0) {#if askPrompt.promptShow}
     function create_if_block$1(ctx) {
     	let askprompt;
     	let current;
@@ -4477,7 +4477,7 @@ var app = (function () {
     		block,
     		id: create_if_block$1.name,
     		type: "if",
-    		source: "(95:0) {#if askPrompt.promptShow}",
+    		source: "(118:0) {#if askPrompt.promptShow}",
     		ctx
     	});
 
@@ -4642,50 +4642,50 @@ var app = (function () {
     			section6 = element("section");
     			create_component(secondfactor.$$.fragment);
     			attr_dev(h10, "class", "svelte-1aa9bis");
-    			add_location(h10, file$1, 103, 4, 3107);
+    			add_location(h10, file$1, 126, 4, 3810);
     			attr_dev(button0, "class", "svelte-1aa9bis");
-    			add_location(button0, file$1, 105, 10, 3152);
+    			add_location(button0, file$1, 128, 10, 3855);
     			attr_dev(li0, "class", "svelte-1aa9bis");
-    			add_location(li0, file$1, 105, 6, 3148);
+    			add_location(li0, file$1, 128, 6, 3851);
     			attr_dev(a, "href", "/");
     			attr_dev(a, "class", "svelte-1aa9bis");
-    			add_location(a, file$1, 106, 10, 3216);
+    			add_location(a, file$1, 129, 10, 3919);
     			attr_dev(li1, "class", "svelte-1aa9bis");
-    			add_location(li1, file$1, 106, 6, 3212);
-    			add_location(ul, file$1, 104, 4, 3136);
+    			add_location(li1, file$1, 129, 6, 3915);
+    			add_location(ul, file$1, 127, 4, 3839);
     			attr_dev(header, "class", "svelte-1aa9bis");
-    			add_location(header, file$1, 102, 2, 3093);
+    			add_location(header, file$1, 125, 2, 3796);
     			attr_dev(p0, "class", "meter-title svelte-1aa9bis");
-    			add_location(p0, file$1, 111, 6, 3339);
+    			add_location(p0, file$1, 134, 6, 4042);
     			attr_dev(p1, "class", "svelte-1aa9bis");
-    			add_location(p1, file$1, 113, 8, 3427);
+    			add_location(p1, file$1, 136, 8, 4130);
     			attr_dev(div0, "class", "show svelte-1aa9bis");
-    			add_location(div0, file$1, 114, 8, 3445);
+    			add_location(div0, file$1, 137, 8, 4148);
     			attr_dev(div1, "class", "extraInfo svelte-1aa9bis");
-    			add_location(div1, file$1, 112, 6, 3394);
+    			add_location(div1, file$1, 135, 6, 4097);
     			attr_dev(section0, "class", "meterPart tile svelte-1aa9bis");
-    			add_location(section0, file$1, 110, 4, 3299);
+    			add_location(section0, file$1, 133, 4, 4002);
     			attr_dev(section1, "class", "stats tile svelte-1aa9bis");
-    			add_location(section1, file$1, 124, 4, 3714);
+    			add_location(section1, file$1, 147, 4, 4417);
     			attr_dev(button1, "id", "change-name");
     			attr_dev(button1, "class", "svelte-1aa9bis");
-    			add_location(button1, file$1, 128, 6, 3873);
+    			add_location(button1, file$1, 151, 6, 4576);
     			attr_dev(h11, "class", "svelte-1aa9bis");
-    			add_location(h11, file$1, 129, 6, 3943);
+    			add_location(h11, file$1, 152, 6, 4646);
     			attr_dev(section2, "class", "chart tile svelte-1aa9bis");
-    			add_location(section2, file$1, 127, 4, 3837);
+    			add_location(section2, file$1, 150, 4, 4540);
     			attr_dev(section3, "class", "tile websites svelte-1aa9bis");
-    			add_location(section3, file$1, 131, 4, 4001);
+    			add_location(section3, file$1, 154, 4, 4704);
     			attr_dev(section4, "class", "date tile svelte-1aa9bis");
-    			add_location(section4, file$1, 152, 4, 4515);
+    			add_location(section4, file$1, 175, 4, 5218);
     			attr_dev(section5, "class", "password tile svelte-1aa9bis");
-    			add_location(section5, file$1, 155, 4, 4580);
+    			add_location(section5, file$1, 178, 4, 5283);
     			attr_dev(section6, "class", "ips tile svelte-1aa9bis");
-    			add_location(section6, file$1, 193, 4, 5745);
+    			add_location(section6, file$1, 216, 4, 6448);
     			attr_dev(section7, "class", "main svelte-1aa9bis");
-    			add_location(section7, file$1, 109, 2, 3271);
+    			add_location(section7, file$1, 132, 2, 3974);
     			attr_dev(main, "class", "svelte-1aa9bis");
-    			add_location(main, file$1, 101, 0, 3083);
+    			add_location(main, file$1, 124, 0, 3786);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -4909,12 +4909,42 @@ var app = (function () {
     	};
 
     	const changePasswordCallback = (name, _extra) => {
+    		$$invalidate(3, askPrompt.promptShow = false, askPrompt);
+
+    		if (!name) {
+    			$$invalidate(4, notification.type = "alert", notification);
+    			$$invalidate(4, notification.slot = "Error", notification);
+    			$$invalidate(4, notification.show = true, notification);
+    			return;
+    		}
+
+    		setTimeout(
+    			() => {
+    				$$invalidate(3, askPrompt = {
+    					promptPlaceholder: "Confirm password",
+    					promptEvent: changePasswordConfirmCallback,
+    					promptExtra: name.target[0].value,
+    					promptShow: true
+    				});
+    			},
+    			1
+    		);
+    	};
+
+    	const changePasswordConfirmCallback = (name, extra) => {
     		if (!name) {
     			$$invalidate(3, askPrompt.promptShow = false, askPrompt);
     			return;
     		}
 
     		$$invalidate(3, askPrompt.promptShow = false, askPrompt);
+
+    		if (extra !== name.target[0].value) {
+    			$$invalidate(4, notification.type = "alert", notification);
+    			$$invalidate(4, notification.slot = "Passwords dont match.", notification);
+    			$$invalidate(4, notification.show = true, notification);
+    			return;
+    		}
 
     		fetch(`/changePassword?newPassword=${name.target[0].value}`, { method: "POST" }).then(response => response.json()).then(data => {
     			if (data.error) {
@@ -5030,6 +5060,7 @@ var app = (function () {
     		notification,
     		changeNameCallback,
     		changePasswordCallback,
+    		changePasswordConfirmCallback,
     		changeName
     	});
 
