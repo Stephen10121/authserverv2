@@ -1,3 +1,4 @@
+import { hash } from "bcryptjs";
 import { Router } from "express";
 import { Key, KeysAuthenticator } from "../entity/Keys";
 import { Site } from "../entity/Sites";
@@ -29,6 +30,36 @@ homePageRoutes.post("/changeName", async (req, res) => {
 
     try {
         await User.update({ id: payload.userId }, { usersRName: req.query.name.toString() });
+    } catch (err) {
+        console.log(err);
+        res.json({ error: true, msg: "Internal Error" });
+        return;
+    }
+    res.json({error: false, msg: "Success"});
+});
+
+homePageRoutes.post("/changePassword", async (req, res) => {
+    if (!req.query.newPassword || typeof req.query.newPassword !== "string") {
+        res.json({ error: true, msg: "Missing Arguments" });
+        return;
+    }
+
+    if (req.query.newPassword.includes("\\") || req.query.newPassword.length === 0) {
+        res.json({ error: true, msg: "Bad password." });
+        return;
+    }
+
+    const authorize = await userAuthorize(req);
+
+    if (!authorize) {
+        res.json({ error: true, msg: "Unauthorized" });
+        return;
+    }
+
+    const { payload } = authorize;
+    const hashedPassword = await hash(req.query.newPassword, process.env.SALT!);
+    try {
+        await User.update({ id: payload.userId }, { usersPassword: hashedPassword });
     } catch (err) {
         console.log(err);
         res.json({ error: true, msg: "Internal Error" });

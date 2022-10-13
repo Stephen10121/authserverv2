@@ -10,7 +10,7 @@ function makeid() {
     return text;
   }
 
-fs.writeFile('./src/.env', `ACCESS_TOKEN_SECRET=${makeid()}\nREFRESH_TOKEN_SECRET=${makeid()}`,  function(err) {
+fs.writeFile('./src/.env', `ACCESS_TOKEN_SECRET=${makeid()}\nREFRESH_TOKEN_SECRET=${makeid()}\nSALT=${Math.floor(Math.random()*255)}\n`,  function(err) {
     if (err) {
         return console.error(err);
     }
