@@ -37,7 +37,7 @@
         showPrompt = false;
       }}
       on:answer={() => {
-        deleteAccount = true;
+        dispatch("delete-account", true);
         showPrompt = false;
       }}
     />

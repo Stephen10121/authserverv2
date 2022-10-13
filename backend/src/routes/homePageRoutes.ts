@@ -1,4 +1,4 @@
-import { hash } from "bcryptjs";
+import { compare, hash } from "bcryptjs";
 import { Router } from "express";
 import { Key, KeysAuthenticator } from "../entity/Keys";
 import { Site } from "../entity/Sites";
@@ -39,7 +39,7 @@ homePageRoutes.post("/changeName", async (req, res) => {
 });
 
 homePageRoutes.post("/changePassword", async (req, res) => {
-    if (!req.query.newPassword || typeof req.query.newPassword !== "string") {
+    if (!req.query.newPassword || typeof req.query.newPassword !== "string" || !req.query.oldPassword || typeof req.query.oldPassword !== "string") {
         res.json({ error: true, msg: "Missing Arguments" });
         return;
     }
@@ -56,7 +56,13 @@ homePageRoutes.post("/changePassword", async (req, res) => {
         return;
     }
 
-    const { payload } = authorize;
+    const { payload, user } = authorize;
+
+    if (!await compare(req.query.oldPassword, user.usersPassword)) {
+        res.json({ error: true, msg: "Old password wrong." });
+        return;
+    }
+    
     const hashedPassword = await hash(req.query.newPassword, parseInt(process.env.SALT!));
     try {
         await User.update({ id: payload.userId }, { usersPassword: hashedPassword });

@@ -80,9 +80,27 @@
     }
     setTimeout(() => {
       askPrompt = {
+        promptPlaceholder: "New password",
+        promptEvent: changePasswordCallback2,
+        promptExtra: name.target[0].value,
+        promptShow: true,
+      };
+    }, 1);
+  };
+
+  const changePasswordCallback2 = (name: any, extra: any) => {
+    askPrompt.promptShow = false;
+    if (!name) {
+      notification.type = "alert";
+      notification.slot = "Error";
+      notification.show = true;
+      return;
+    }
+    setTimeout(() => {
+      askPrompt = {
         promptPlaceholder: "Confirm password",
         promptEvent: changePasswordConfirmCallback,
-        promptExtra: name.target[0].value,
+        promptExtra: { oldPassword: extra, newPassword: name.target[0].value },
         promptShow: true,
       };
     }, 1);
@@ -94,15 +112,18 @@
       return;
     }
     askPrompt.promptShow = false;
-    if (extra !== name.target[0].value) {
+    if (extra.newPassword !== name.target[0].value) {
       notification.type = "alert";
       notification.slot = "Passwords dont match.";
       notification.show = true;
       return;
     }
-    fetch(`/changePassword?newPassword=${name.target[0].value}`, {
-      method: "POST",
-    })
+    fetch(
+      `/changePassword?oldPassword=${extra.oldPassword}&newPassword=${name.target[0].value}`,
+      {
+        method: "POST",
+      }
+    )
       .then((response) => response.json())
       .then((data) => {
         if (data.error) {
@@ -198,9 +219,17 @@
     </section>
     <section class="password tile">
       <Password
+        on:delete-account={() => {
+          askPrompt = {
+            promptPlaceholder: "Password",
+            promptEvent: changePasswordCallback,
+            promptExtra: "",
+            promptShow: true,
+          };
+        }}
         on:change-password={() => {
           askPrompt = {
-            promptPlaceholder: "Change password to",
+            promptPlaceholder: "Old password.",
             promptEvent: changePasswordCallback,
             promptExtra: "",
             promptShow: true,
