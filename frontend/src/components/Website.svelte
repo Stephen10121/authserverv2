@@ -11,7 +11,12 @@
   } else {
     blackListed = true;
   }
-  let url = new URL(name ? name : "https://google.com");
+  try {
+    new URL(name);
+  } catch (err) {
+    name = "https://www.google.com";
+  }
+  let url = new URL(name);
 
   socket.on("blacklist", (data: any) => {
     if (!data.success) {
@@ -36,7 +41,9 @@
     <p class="blacklist-p">BlackListed</p>
   {/if}
   <img class="web-img" src="./window.svg" alt="Website" />
-  <a href={url.origin} target=_blank class="name">{name ? url.origin : "N/A"}</a>
+  <a href={url.origin} target="_blank" class="name"
+    >{name ? url.origin : "N/A"}</a
+  >
   {#if blackListed}
     <button
       on:click={() => {
